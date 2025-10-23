@@ -1,6 +1,6 @@
 import React from 'react';
-import { BaseItem } from '../types';
-import { AreaIcon, ProjectIcon, ResourceIcon, FileTextIcon, RotateCcwIcon, TrashIcon, ArchiveIcon, ListTodoIcon } from './icons';
+import { BaseItem } from '../../types';
+import { AreaIcon, ProjectIcon, ResourceIcon, FileTextIcon, RotateCcwIcon, TrashIcon, ArchiveIcon, ListTodoIcon } from '../shared/icons';
 
 interface ArchiveViewProps {
     items: BaseItem[];

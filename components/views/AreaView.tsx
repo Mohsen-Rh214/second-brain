@@ -1,9 +1,9 @@
 import React, { useEffect } from 'react';
-import { Area, Project, Note, Resource } from '../types';
+import { Area, Project, Note, Resource } from '../../types';
 import AreaDetail from './AreaDetail';
-import { AreaIcon, PlusIcon } from './icons';
-import { CaptureContext } from '../App';
-import { View } from '../types';
+import { AreaIcon, PlusIcon } from '../shared/icons';
+import { CaptureContext } from '../../types';
+import { View } from '../../types';
 
 interface AreaViewProps {
     areas: Area[];
@@ -16,12 +16,11 @@ interface AreaViewProps {
     onDelete: (itemId: string) => void;
     onSelectNote: (noteId: string) => void;
     onUpdateArea: (areaId: string, updates: { title?: string, description?: string }) => void;
-    onOpenCommandBar: () => void;
     onOpenCaptureModal: (context: CaptureContext) => void;
     onNavigate: (view: View, itemId: string) => void;
 }
 
-const AreaView: React.FC<AreaViewProps> = ({ areas, activeAreaId, onSelectArea, projects, notes, resources, onArchive, onDelete, onSelectNote, onUpdateArea, onOpenCommandBar, onNavigate }) => {
+const AreaView: React.FC<AreaViewProps> = ({ areas, activeAreaId, onSelectArea, projects, notes, resources, onArchive, onDelete, onSelectNote, onUpdateArea, onOpenCaptureModal, onNavigate }) => {
     
     useEffect(() => {
         if (areas.length > 0 && (!activeAreaId || !areas.some(a => a.id === activeAreaId))) {
@@ -33,11 +32,22 @@ const AreaView: React.FC<AreaViewProps> = ({ areas, activeAreaId, onSelectArea, 
 
     const selectedArea = areas.find(a => a.id === activeAreaId) || null;
 
+    const handleAddNewArea = () => {
+        onOpenCaptureModal({ parentId: null, itemType: 'area' });
+    }
+
     return (
         <div className="flex h-full gap-8">
             <aside className="w-1/3 max-w-sm h-full flex flex-col bg-surface/80 backdrop-blur-xl border border-outline rounded-2xl shadow-md">
                 <header className="p-4 border-b border-outline-dark flex-shrink-0 flex items-center justify-between">
                     <h2 className="text-lg font-bold font-heading tracking-tight">Areas</h2>
+                    <button 
+                        onClick={handleAddNewArea} 
+                        aria-label="Add new area" 
+                        className="p-1.5 text-text-secondary hover:bg-neutral hover:text-text-primary rounded-full transition-colors"
+                    >
+                        <PlusIcon className="w-5 h-5"/>
+                    </button>
                 </header>
                 <ul className="flex-1 overflow-y-auto custom-scrollbar p-2">
                     {areas.map(area => (
@@ -68,7 +78,7 @@ const AreaView: React.FC<AreaViewProps> = ({ areas, activeAreaId, onSelectArea, 
                         onDelete={onDelete}
                         onSelectNote={onSelectNote}
                         onUpdateArea={onUpdateArea}
-                        onOpenCommandBar={onOpenCommandBar}
+                        onOpenCaptureModal={onOpenCaptureModal}
                         onNavigate={onNavigate}
                     />
                 ) : (
@@ -77,7 +87,7 @@ const AreaView: React.FC<AreaViewProps> = ({ areas, activeAreaId, onSelectArea, 
                         <h2 className="text-xl font-semibold font-heading text-text-primary">No Areas</h2>
                         <p className="max-w-sm mb-4">Areas are long-term responsibilities with no end date, like "Health" or "Finances".</p>
                          <button 
-                            onClick={onOpenCommandBar}
+                            onClick={handleAddNewArea}
                             className="flex items-center gap-2 bg-accent hover:bg-accent-hover text-accent-content font-semibold px-4 py-2 transition-colors rounded-lg shadow-sm"
                          >
                             <PlusIcon className="w-5 h-5"/>

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import ReactQuill from 'react-quill';
-import { Note, Project, Area } from '../types';
-import { XIcon, ProjectIcon, AreaIcon, FileTextIcon, MaximizeIcon, MinimizeIcon, GitBranchIcon } from './icons';
+import { Note, Project, Area } from '../../types';
+import { XIcon, ProjectIcon, AreaIcon, FileTextIcon, MaximizeIcon, MinimizeIcon, GitBranchIcon } from '../shared/icons';
 
 interface NoteEditorModalProps {
   isOpen: boolean;
@@ -32,7 +32,6 @@ const LinkSelector: React.FC<LinkSelectorProps> = ({ items, onSelect, query, act
     const listRef = useRef<HTMLUListElement>(null);
     
     useEffect(() => {
-        // Scroll active item into view
         listRef.current?.children[activeIndex]?.scrollIntoView({
             block: 'nearest',
         });
@@ -95,7 +94,6 @@ const NoteEditorModal: React.FC<NoteEditorModalProps> = ({ isOpen, onClose, onSa
     setLinkSelectorActiveIndex(0);
   }, [filteredLinkableItems.length]);
 
-  // Effect to manage link selector logic based on text changes in the editor
   useEffect(() => {
     const quill = quillRef.current?.getEditor();
     if (!quill || !linkSelector) return;
@@ -120,7 +118,6 @@ const NoteEditorModal: React.FC<NoteEditorModalProps> = ({ isOpen, onClose, onSa
     return () => { quill.off('text-change', handleTextChange); };
   }, [linkSelector]);
 
-  // Effect to handle keyboard navigation (arrows, enter, escape) for the link selector
   useEffect(() => {
     if (!linkSelector) return;
 
@@ -143,12 +140,10 @@ const NoteEditorModal: React.FC<NoteEditorModalProps> = ({ isOpen, onClose, onSa
         }
     };
     
-    // Use capturing to intercept keys before Quill handles them
     document.addEventListener('keydown', handleKeyDown, true);
     return () => document.removeEventListener('keydown', handleKeyDown, true);
   }, [linkSelector, linkSelectorActiveIndex, filteredLinkableItems]);
 
-  // Effect to handle clicking outside the link selector to close it
   useEffect(() => {
     if (!linkSelector) return;
     const handleClickOutside = (event: MouseEvent) => {
@@ -170,7 +165,7 @@ const NoteEditorModal: React.FC<NoteEditorModalProps> = ({ isOpen, onClose, onSa
   const handleSelectLink = (item: LinkableItem) => {
       const quill = quillRef.current?.getEditor();
       if (quill && linkSelector) {
-          const lengthToDelete = linkQuery.length + 1; // query + '/'
+          const lengthToDelete = linkQuery.length + 1;
           const linkHtml = `&nbsp;<a href="#" data-link-id="${item.id}" class="internal-link">${item.title}</a>&nbsp;`;
           
           quill.deleteText(linkSelector.startPos, lengthToDelete, 'user');
@@ -202,7 +197,7 @@ const NoteEditorModal: React.FC<NoteEditorModalProps> = ({ isOpen, onClose, onSa
                     
                     const textBefore = quill.getText(range.index - 1, 1);
                     if (range.index > 0 && textBefore.trim().length > 0) {
-                        return true; // Don't trigger mid-word
+                        return true;
                     }
 
                     const bounds = quill.getBounds(range.index);

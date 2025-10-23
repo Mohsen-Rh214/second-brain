@@ -1,336 +1,146 @@
-
-
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { Area, Project, Task, Note, Resource, NewItemPayload, InboxItem, View } from './types';
-import Sidebar from './components/Sidebar';
-import Dashboard from './components/Dashboard';
-import CaptureModal from './components/CaptureModal';
-import NoteEditorModal from './components/NoteEditorModal';
-import ResourceEditorModal from './components/ResourceEditorModal';
-import ProjectView from './components/ProjectView';
-import AreaView from './components/AreaView';
-import ArchiveView from './components/ArchiveView';
-import ResourceView from './components/ResourceView';
-import SearchView from './components/SearchView';
-import OrganizeModal from './components/OrganizeModal';
-import { initialAreas, initialProjects, initialTasks, initialNotes, initialResources } from './constants';
-import { PlusIcon } from './components/icons';
-import TaskView from './components/TaskView';
-import ReviewView from './components/ReviewView';
-import GraphView from './components/GraphView';
-import CommandBar from './components/CommandBar';
-
-
-// A simple hook to manage state with localStorage
-function useStickyState<T>(defaultValue: T, key: string): [T, React.Dispatch<React.SetStateAction<T>>] {
-  const [value, setValue] = useState<T>(() => {
-    try {
-      const stickyValue = window.localStorage.getItem(key);
-      return stickyValue !== null ? JSON.parse(stickyValue) : defaultValue;
-    } catch (error) {
-      console.error(`Error reading localStorage key “${key}”:`, error);
-      return defaultValue;
-    }
-  });
-
-  useEffect(() => {
-    window.localStorage.setItem(key, JSON.stringify(value));
-  }, [key, value]);
-
-  return [value, setValue];
-}
-
-export type ItemType = 'note' | 'task' | 'resource' | 'project' | 'area';
-export type DashboardCaptureType = 'note' | 'task' | 'resource';
-
-export type CaptureContext = {
-    parentId: string | null;
-    itemType?: ItemType;
-}
-
-// Moved outside component scope as it's a pure function
-const getItemTypeFromId = (id: string): ItemType | null => {
-    if (id.startsWith('area-')) return 'area';
-    if (id.startsWith('proj-')) return 'project';
-    if (id.startsWith('task-')) return 'task';
-    if (id.startsWith('note-')) return 'note';
-    if (id.startsWith('res-')) return 'resource';
-    return null;
-}
-
-// Moved outside component scope as it's a pure function
-const createNewItem = (prefix: string, data: any) => ({
-    id: `${prefix}-${Date.now()}`,
-    ...data,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-    status: 'active' as const,
-});
+import React, { useCallback, useMemo, useEffect } from 'react';
+import { View, ItemType, DashboardCaptureType, CaptureContext, InboxItem } from './types';
+import Sidebar from './components/layout/Sidebar';
+import Dashboard from './components/views/Dashboard';
+import CaptureModal from './components/modals/CaptureModal';
+import NoteEditorModal from './components/modals/NoteEditorModal';
+import ResourceEditorModal from './components/modals/ResourceEditorModal';
+import ProjectView from './components/views/ProjectView';
+import AreaView from './components/views/AreaView';
+import ArchiveView from './components/views/ArchiveView';
+import ResourceView from './components/views/ResourceView';
+import SearchView from './components/views/SearchView';
+import OrganizeModal from './components/modals/OrganizeModal';
+import { PlusIcon } from './components/shared/icons';
+import TaskView from './components/views/TaskView';
+import ReviewView from './components/views/ReviewView';
+import GraphView from './components/views/GraphView';
+import CommandBar from './components/modals/CommandBar';
+import { useData } from './store/DataContext';
+import { useUI } from './store/UIContext';
+import { getItemTypeFromId } from './utils';
 
 const App: React.FC = () => {
-  const [areas, setAreas] = useStickyState<Area[]>(initialAreas, 'sb-areas');
-  const [projects, setProjects] = useStickyState<Project[]>(initialProjects, 'sb-projects');
-  const [tasks, setTasks] = useStickyState<Task[]>(initialTasks, 'sb-tasks');
-  const [notes, setNotes] = useStickyState<Note[]>(initialNotes, 'sb-notes');
-  const [resources, setResources] = useStickyState<Resource[]>(initialResources, 'sb-resources');
-  
-  const [currentView, setCurrentView] = useState<View>('dashboard');
-  const [activeAreaId, setActiveAreaId] = useState<string | null>(null);
-  const [activeProjectId, setActiveProjectId] = useState<string | null>(null);
+  const { state: dataState, dispatch: dataDispatch } = useData();
+  const { areas, projects, tasks, notes, resources } = dataState;
 
-  const [isCaptureModalOpen, setCaptureModalOpen] = useState(false);
-  const [captureContext, setCaptureContext] = useState<CaptureContext | null>(null);
-  const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
-  const [editingResourceId, setEditingResourceId] = useState<string | null>(null);
-  const [organizingItem, setOrganizingItem] = useState<InboxItem | null>(null);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [isCommandBarOpen, setCommandBarOpen] = useState(false);
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
-
+  const { state: uiState, dispatch: uiDispatch } = useUI();
+  const { 
+    currentView, activeAreaId, activeProjectId, isCaptureModalOpen, captureContext,
+    editingNoteId, editingResourceId, organizingItem, searchQuery, isCommandBarOpen, toastMessage
+  } = uiState;
 
   useEffect(() => {
       const handleKeyDown = (e: KeyboardEvent) => {
           if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
               e.preventDefault();
-              setCommandBarOpen(prev => !prev);
+              uiDispatch({ type: 'SET_COMMAND_BAR_OPEN', payload: !isCommandBarOpen });
           }
            if (e.key === 'Escape') {
-              setCommandBarOpen(false);
+              uiDispatch({ type: 'SET_COMMAND_BAR_OPEN', payload: false });
            }
       };
       window.addEventListener('keydown', handleKeyDown);
       return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
+  }, [isCommandBarOpen, uiDispatch]);
 
   const showToast = useCallback((message: string) => {
-      setToastMessage(message);
-      setTimeout(() => setToastMessage(null), 3000);
-  }, []);
-
+      uiDispatch({ type: 'SHOW_TOAST', payload: message });
+      setTimeout(() => uiDispatch({ type: 'SHOW_TOAST', payload: null }), 3000);
+  }, [uiDispatch]);
 
   const handleNavigate = useCallback((view: View, itemId: string | null = null) => {
-    setSearchQuery(''); // Clear search on navigation
-    setCurrentView(view);
-    setActiveProjectId(null); // Reset active IDs
-    setActiveAreaId(null);
-
-    if (view === 'projects' && itemId) {
-        setActiveProjectId(itemId);
-    }
-    if (view === 'areas' && itemId) {
-        setActiveAreaId(itemId);
-    }
-  }, []);
+    uiDispatch({ type: 'SET_VIEW', payload: { view, itemId } });
+  }, [uiDispatch]);
 
   const handleOpenCaptureModal = useCallback((context: CaptureContext | null = null) => {
-    setCaptureContext(context);
-    setCaptureModalOpen(true);
-  }, []);
-  
+    uiDispatch({ type: 'SET_CAPTURE_MODAL', payload: { isOpen: true, context } });
+  }, [uiDispatch]);
 
   const handleDashboardCapture = useCallback((content: string, type: DashboardCaptureType) => {
-    let title = content.length > 50 ? content.substring(0, 50) + '...' : content;
-    
-    if (type === 'note') {
-        const newNote: Note = createNewItem('note', { title, content: content, parentIds: [] });
-        setNotes(prev => [...prev, newNote]);
-    } else if (type === 'task') {
-        const newTask: Task = createNewItem('task', { title: content, projectId: null, completed: false });
-        setTasks(prev => [...prev, newTask]);
-    } else if (type === 'resource') {
-        let resourceContent = content;
-        // Simple check if it's a URL
-        if (content.match(/^https?:\/\//)) {
-             try {
-                const url = new URL(content);
-                title = url.hostname.replace('www.', '');
-             } catch {
-                title = 'Link Resource';
-             }
-        } else {
-            title = 'Text Resource';
-        }
-        const newResource: Resource = createNewItem('res', { title, type: 'link', content: resourceContent, parentIds: [] });
-        setResources(prev => [...prev, newResource]);
-    }
+    dataDispatch({ type: 'DASHBOARD_CAPTURE', payload: { content, type } });
     showToast(`New ${type} added to Inbox!`);
-  }, [showToast]);
+  }, [dataDispatch, showToast]);
 
-  const handleSaveNewItem = useCallback((itemData: NewItemPayload, itemType: ItemType, parentId: string | null) => {
-    switch (itemType) {
-        case 'note': {
-            const newNote: Note = createNewItem('note', { title: itemData.title, content: itemData.content || '', parentIds: parentId ? [parentId] : [] });
-            setNotes(prev => [...prev, newNote]);
-            if (parentId?.startsWith('proj-')) {
-                setProjects(prev => prev.map(p => p.id === parentId ? { ...p, noteIds: [...p.noteIds, newNote.id] } : p));
-            }
-            break;
-        }
-        case 'task': {
-            const newTask: Task = createNewItem('task', { title: itemData.title, projectId: parentId, completed: false, dueDate: itemData.dueDate || undefined, priority: itemData.priority || undefined });
-            setTasks(prev => [...prev, newTask]);
-            if (parentId?.startsWith('proj-')) {
-                setProjects(prev => prev.map(p => p.id === parentId ? { ...p, taskIds: [...p.taskIds, newTask.id] } : p));
-            }
-            break;
-        }
-        case 'resource': {
-            const newResource: Resource = createNewItem('res', { title: itemData.title, type: itemData.type || 'text', content: itemData.content || '', parentIds: parentId ? [parentId] : [] });
-            setResources(prev => [...prev, newResource]);
-            if (parentId?.startsWith('proj-')) {
-                setProjects(prev => prev.map(p => p.id === parentId ? { ...p, resourceIds: [...p.resourceIds, newResource.id] } : p));
-            }
-            break;
-        }
-        case 'project': {
-            const newProject: Project = createNewItem('proj', { title: itemData.title, description: itemData.description || '', areaId: parentId, taskIds: [], noteIds: [], resourceIds: [] });
-            setProjects(prev => [...prev, newProject]);
-            if (parentId?.startsWith('area-')) {
-                setAreas(prev => prev.map(a => a.id === parentId ? { ...a, projectIds: [...a.projectIds, newProject.id] } : a));
-            }
-            break;
-        }
-        case 'area': {
-            const newArea: Area = createNewItem('area', { title: itemData.title, description: itemData.description || '', projectIds: [] });
-            setAreas(prev => [...prev, newArea]);
-            break;
-        }
-    }
-    setCaptureModalOpen(false);
-  }, []);
-
+  const handleSaveNewItem = useCallback((itemData, itemType, parentId) => {
+      dataDispatch({ type: 'ADD_ITEM', payload: { itemData, itemType, parentId } });
+      uiDispatch({ type: 'SET_CAPTURE_MODAL', payload: { isOpen: false } });
+  }, [dataDispatch, uiDispatch]);
+  
   const handleToggleTask = useCallback((taskId: string) => {
-    setTasks(prevTasks => prevTasks.map(task => 
-      task.id === taskId ? { ...task, completed: !task.completed, updatedAt: new Date().toISOString() } : task
-    ));
-  }, []);
+    dataDispatch({ type: 'TOGGLE_TASK', payload: { taskId } });
+  }, [dataDispatch]);
 
-  const handleUpdateTask = useCallback((taskId: string, updates: Partial<Pick<Task, 'title' | 'priority' | 'dueDate'>>) => {
-      const now = new Date().toISOString();
-      setTasks(prevTasks => prevTasks.map(task => 
-          task.id === taskId ? { ...task, ...updates, updatedAt: now } : task
-      ));
-  }, []);
+  const handleReorderTasks = useCallback((sourceTaskId: string, targetTaskId: string) => {
+      dataDispatch({ type: 'REORDER_TASKS', payload: { sourceTaskId, targetTaskId } });
+  }, [dataDispatch]);
 
-  const handleUpdateItemStatus = useCallback((itemId: string, status: 'active' | 'archived') => {
-      const now = new Date().toISOString();
-      const updater = (item: any) => item.id === itemId ? { ...item, status, updatedAt: now } : item;
-
-      const itemType = getItemTypeFromId(itemId);
-      switch(itemType) {
-          case 'area': setAreas(prev => prev.map(updater)); break;
-          case 'project': setProjects(prev => prev.map(updater)); break;
-          case 'task': setTasks(prev => prev.map(updater)); break;
-          case 'note': setNotes(prev => prev.map(updater)); break;
-          case 'resource': setResources(prev => prev.map(updater)); break;
-      }
-  }, []);
+  const handleUpdateTask = useCallback((taskId, updates) => {
+      dataDispatch({ type: 'UPDATE_TASK', payload: { taskId, updates } });
+  }, [dataDispatch]);
+  
+  const handleUpdateItemStatus = useCallback((itemId, status) => {
+      dataDispatch({ type: 'UPDATE_ITEM_STATUS', payload: { itemId, status } });
+  }, [dataDispatch]);
 
   const handleArchiveItem = useCallback((itemId: string) => handleUpdateItemStatus(itemId, 'archived'), [handleUpdateItemStatus]);
   const handleRestoreItem = useCallback((itemId: string) => handleUpdateItemStatus(itemId, 'active'), [handleUpdateItemStatus]);
   
   const handleDeleteItem = useCallback((itemId: string) => {
     if (!window.confirm("Are you sure you want to permanently delete this item? This action cannot be undone.")) return;
+    dataDispatch({ type: 'DELETE_ITEM', payload: { itemId } });
+  }, [dataDispatch]);
 
-    const itemType = getItemTypeFromId(itemId);
-    switch(itemType) {
-        case 'area': setAreas(prev => prev.filter(i => i.id !== itemId)); break;
-        case 'project': setProjects(prev => prev.filter(i => i.id !== itemId)); break;
-        case 'task': setTasks(prev => prev.filter(i => i.id !== itemId)); break;
-        case 'note': setNotes(prev => prev.filter(i => i.id !== itemId)); break;
-        case 'resource': setResources(prev => prev.filter(i => i.id !== itemId)); break;
-    }
-  }, []);
-
-  const handleUpdateNote = useCallback((noteId: string, title: string, content: string) => {
-    const now = new Date().toISOString();
-    setNotes(prev => prev.map(n => n.id === noteId ? { ...n, title, content, updatedAt: now } : n));
-    setEditingNoteId(null);
-  }, []);
+  const handleUpdateNote = useCallback((noteId, title, content) => {
+    dataDispatch({ type: 'UPDATE_NOTE', payload: { noteId, title, content } });
+    uiDispatch({ type: 'SET_EDITING_NOTE', payload: null });
+  }, [dataDispatch, uiDispatch]);
 
   const handleDraftFromNote = useCallback((sourceNoteId: string) => {
-    setNotes(prev => {
-        const sourceNote = prev.find(n => n.id === sourceNoteId);
-        if (!sourceNote) return prev;
-
-        const linkHtml = `<a href="#" data-link-id="${sourceNote.id}" class="internal-link">${sourceNote.title}</a>`;
-        const newContent = `<blockquote>${sourceNote.content}</blockquote><p><br></p><p><em>Inspired by: ${linkHtml}</em></p>`;
-
-        const newNote: Note = createNewItem('note', {
-            title: `Draft: ${sourceNote.title}`,
-            content: newContent,
-            parentIds: [], // Starts in the inbox
-        });
-        
-        setEditingNoteId(newNote.id);
-        return [...prev, newNote];
-    });
-    
-    showToast('New draft created from note!');
-  }, [showToast]);
-
-  const handleUpdateResource = useCallback((resourceId: string, title: string, content: string) => {
-    const now = new Date().toISOString();
-    setResources(prev => prev.map(r => r.id === resourceId ? { ...r, title, content, updatedAt: now } : r));
-    setEditingResourceId(null);
-  }, []);
-  
-  const handleUpdateProject = useCallback((projectId: string, updates: { title?: string, description?: string }) => {
-    const now = new Date().toISOString();
-    setProjects(prev => prev.map(p => p.id === projectId ? { ...p, ...updates, updatedAt: now } : p));
-  }, []);
-
-  const handleUpdateArea = useCallback((areaId: string, updates: { title?: string, description?: string }) => {
-    const now = new Date().toISOString();
-    setAreas(prev => prev.map(a => a.id === areaId ? { ...a, ...updates, updatedAt: now } : a));
-  }, []);
-
-  const handleOrganizeItem = useCallback((itemId: string, newParentIds: string[]) => {
-    const now = new Date().toISOString();
-    const itemType = getItemTypeFromId(itemId);
-
-    if (itemType === 'note') {
-        setNotes(prev => prev.map(n => n.id === itemId ? { ...n, parentIds: newParentIds, updatedAt: now } : n));
-    } else if (itemType === 'resource') {
-        setResources(prev => prev.map(r => r.id === itemId ? { ...r, parentIds: newParentIds, updatedAt: now } : r));
-    }
-    
-    // Add item to new parents
-    newParentIds.forEach(pid => {
-        if (pid.startsWith('proj-')) {
-            setProjects(projs => projs.map(p => {
-                if (p.id === pid) {
-                    const idArray = itemType === 'note' ? p.noteIds : p.resourceIds;
-                    if (!idArray.includes(itemId)) {
-                        return { ...p, [itemType === 'note' ? 'noteIds' : 'resourceIds']: [...idArray, itemId] };
-                    }
-                }
-                return p;
-            }));
+    dataDispatch({
+        type: 'DRAFT_FROM_NOTE',
+        payload: {
+            sourceNoteId,
+            onDraftCreated: (newNoteId) => {
+                uiDispatch({ type: 'SET_EDITING_NOTE', payload: newNoteId });
+                showToast('New draft created from note!');
+            }
         }
     });
-    setOrganizingItem(null);
-  }, []);
+  }, [dataDispatch, showToast, uiDispatch]);
 
-  const handleMarkReviewed = useCallback((itemIds: string[], type: 'project' | 'area') => {
-      const now = new Date().toISOString();
-      if (type === 'project') {
-          setProjects(projs => projs.map(p => itemIds.includes(p.id) ? {...p, lastReviewed: now, updatedAt: now} : p));
-      } else {
-          setAreas(ars => ars.map(a => itemIds.includes(a.id) ? {...a, lastReviewed: now, updatedAt: now} : a));
-      }
-  }, []);
+  const handleUpdateResource = useCallback((resourceId, title, content) => {
+    dataDispatch({ type: 'UPDATE_RESOURCE', payload: { resourceId, title, content } });
+    uiDispatch({ type: 'SET_EDITING_RESOURCE', payload: null });
+  }, [dataDispatch, uiDispatch]);
+  
+  const handleUpdateProject = useCallback((projectId, updates) => {
+    dataDispatch({ type: 'UPDATE_PROJECT', payload: { projectId, updates } });
+  }, [dataDispatch]);
+
+  const handleUpdateArea = useCallback((areaId, updates) => {
+    dataDispatch({ type: 'UPDATE_AREA', payload: { areaId, updates } });
+  }, [dataDispatch]);
+
+  const handleOrganizeItem = useCallback((itemId, newParentIds) => {
+    dataDispatch({ type: 'ORGANIZE_ITEM', payload: { itemId, newParentIds } });
+    uiDispatch({ type: 'SET_ORGANIZING_ITEM', payload: null });
+  }, [dataDispatch, uiDispatch]);
+
+  const handleMarkReviewed = useCallback((itemIds, type) => {
+      dataDispatch({ type: 'MARK_REVIEWED', payload: { itemIds, type } });
+  }, [dataDispatch]);
 
   const handleSelectItem = useCallback((item: InboxItem) => {
     if (item.id.startsWith('note-')) {
-        setEditingNoteId(item.id);
+        uiDispatch({ type: 'SET_EDITING_NOTE', payload: item.id });
     } else if (item.id.startsWith('res-')) {
-        setEditingResourceId(item.id);
+        uiDispatch({ type: 'SET_EDITING_RESOURCE', payload: item.id });
     }
-  }, []);
+  }, [uiDispatch]);
   
   const handleCommand = useCallback((command: { id: string, type: string }) => {
-    setCommandBarOpen(false);
+    uiDispatch({ type: 'SET_COMMAND_BAR_OPEN', payload: false });
     
     if (command.type === 'action') {
         const itemType = command.id.split('-')[1] as ItemType;
@@ -349,11 +159,11 @@ const App: React.FC = () => {
                 else handleNavigate('dashboard');
                 break;
             }
-            case 'note': setEditingNoteId(command.id); break;
-            case 'resource': setEditingResourceId(command.id); break;
+            case 'note': uiDispatch({ type: 'SET_EDITING_NOTE', payload: command.id }); break;
+            case 'resource': uiDispatch({ type: 'SET_EDITING_RESOURCE', payload: command.id }); break;
         }
     }
-  }, [tasks, handleOpenCaptureModal, handleNavigate]);
+  }, [tasks, handleOpenCaptureModal, handleNavigate, uiDispatch]);
 
   const inboxItems = useMemo(() => [
       ...notes.filter(n => n.status === 'active' && n.parentIds.length === 0),
@@ -375,38 +185,43 @@ const App: React.FC = () => {
 
     switch (currentView) {
       case 'dashboard':
-      case 'inbox': // Inbox is now part of the dashboard
-      case 'tasks': // Tasks are on dashboard and their own page
+      case 'inbox':
         return <Dashboard 
             projects={projects} 
             areas={areas} 
             tasks={tasks} 
-            notes={notes}
-            resources={resources}
             inboxItems={inboxItems}
             onNavigate={handleNavigate}
             onToggleTask={handleToggleTask}
-            onOrganizeItem={setOrganizingItem}
+            onOrganizeItem={(item) => uiDispatch({ type: 'SET_ORGANIZING_ITEM', payload: item })}
             onDeleteItem={handleDeleteItem}
             onSaveNewTask={(title) => handleSaveNewItem({ title }, 'task', null)}
             onDashboardCapture={handleDashboardCapture}
             onSelectItem={handleSelectItem}
+            onReorderTasks={handleReorderTasks}
+            onUpdateTask={handleUpdateTask}
+        />;
+      
+      case 'tasks':
+        return <TaskView 
+            tasks={tasks.filter(t => t.status === 'active')}
+            projects={projects}
+            onToggleTask={handleToggleTask}
         />;
       
       case 'projects':
         return <ProjectView 
             projects={projects.filter(p => p.status === 'active')} 
             activeProjectId={activeProjectId} 
-            onSelectProject={setActiveProjectId}
+            onSelectProject={(id) => uiDispatch({ type: 'SET_ACTIVE_PROJECT', payload: id })}
             tasks={tasks.filter(t => t.status === 'active')}
             notes={notes.filter(n => n.status === 'active')}
             resources={resources.filter(r => r.status === 'active')}
             onToggleTask={handleToggleTask}
             onArchive={handleArchiveItem}
             onDelete={handleDeleteItem}
-            onSelectNote={setEditingNoteId}
+            onSelectNote={(id) => uiDispatch({ type: 'SET_EDITING_NOTE', payload: id })}
             onUpdateProject={handleUpdateProject}
-            onOpenCommandBar={() => setCommandBarOpen(true)}
             onOpenCaptureModal={handleOpenCaptureModal}
             onUpdateTask={handleUpdateTask}
             />;
@@ -414,15 +229,14 @@ const App: React.FC = () => {
           return <AreaView
               areas={areas.filter(a => a.status === 'active')}
               activeAreaId={activeAreaId}
-              onSelectArea={setActiveAreaId}
+              onSelectArea={(id) => uiDispatch({ type: 'SET_ACTIVE_AREA', payload: id })}
               projects={projects.filter(p => p.status === 'active')}
               notes={notes.filter(n => n.status === 'active')}
               resources={resources.filter(r => r.status === 'active')}
               onArchive={handleArchiveItem}
               onDelete={handleDeleteItem}
-              onSelectNote={setEditingNoteId}
+              onSelectNote={(id) => uiDispatch({ type: 'SET_EDITING_NOTE', payload: id })}
               onUpdateArea={handleUpdateArea}
-              onOpenCommandBar={() => setCommandBarOpen(true)}
               onOpenCaptureModal={handleOpenCaptureModal}
               onNavigate={handleNavigate}
           />;
@@ -461,7 +275,6 @@ const App: React.FC = () => {
             onMarkReviewed={handleMarkReviewed}
           />
       default:
-        // This case should ideally never be reached
         return <p>Unknown view: {currentView}</p>;
     }
   };
@@ -472,10 +285,7 @@ const App: React.FC = () => {
   return (
     <div className="h-screen w-screen bg-transparent text-text-primary flex overflow-hidden font-sans">
       <Sidebar 
-        currentView={currentView} 
         onNavigate={handleNavigate}
-        searchQuery={searchQuery}
-        onSearchChange={setSearchQuery}
         inboxCount={inboxItems.length}
       />
       <main className="flex-1 flex flex-col overflow-y-hidden">
@@ -499,11 +309,11 @@ const App: React.FC = () => {
           </div>
       )}
 
-      {isCommandBarOpen && <CommandBar isOpen={isCommandBarOpen} onClose={() => setCommandBarOpen(false)} onCommand={handleCommand} areas={areas} projects={projects} notes={notes} resources={resources} tasks={tasks}/>}
-      {isCaptureModalOpen && <CaptureModal isOpen={isCaptureModalOpen} onClose={() => setCaptureModalOpen(false)} onSave={handleSaveNewItem} projects={projects} areas={areas} context={captureContext}/>}
-      {editingNote && <NoteEditorModal isOpen={!!editingNote} onClose={() => setEditingNoteId(null)} note={editingNote} onSave={handleUpdateNote} onDraftFromNote={handleDraftFromNote} projects={projects} areas={areas} allNotes={notes} />}
-      {editingResource && <ResourceEditorModal isOpen={!!editingResource} onClose={() => setEditingResourceId(null)} resource={editingResource} onSave={handleUpdateResource} />}
-      {organizingItem && <OrganizeModal isOpen={!!organizingItem} onClose={() => setOrganizingItem(null)} item={organizingItem} projects={projects} areas={areas} onSave={handleOrganizeItem} />}
+      {isCommandBarOpen && <CommandBar isOpen={isCommandBarOpen} onClose={() => uiDispatch({ type: 'SET_COMMAND_BAR_OPEN', payload: false })} onCommand={handleCommand} areas={areas} projects={projects} notes={notes} resources={resources} tasks={tasks}/>}
+      {isCaptureModalOpen && <CaptureModal isOpen={isCaptureModalOpen} onClose={() => uiDispatch({ type: 'SET_CAPTURE_MODAL', payload: { isOpen: false }})} onSave={handleSaveNewItem} projects={projects} areas={areas} context={captureContext}/>}
+      {editingNote && <NoteEditorModal isOpen={!!editingNote} onClose={() => uiDispatch({ type: 'SET_EDITING_NOTE', payload: null })} note={editingNote} onSave={handleUpdateNote} onDraftFromNote={handleDraftFromNote} projects={projects} areas={areas} allNotes={notes} />}
+      {editingResource && <ResourceEditorModal isOpen={!!editingResource} onClose={() => uiDispatch({ type: 'SET_EDITING_RESOURCE', payload: null })} resource={editingResource} onSave={handleUpdateResource} />}
+      {organizingItem && <OrganizeModal isOpen={!!organizingItem} onClose={() => uiDispatch({ type: 'SET_ORGANIZING_ITEM', payload: null })} item={organizingItem} projects={projects} areas={areas} onSave={handleOrganizeItem} />}
     </div>
   );
 };

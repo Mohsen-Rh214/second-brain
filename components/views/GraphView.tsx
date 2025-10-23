@@ -1,6 +1,6 @@
 import React, { useMemo, useRef, useCallback } from 'react';
 import ForceGraph2D from 'react-force-graph-2d';
-import { Area, Project, Note, Resource, View } from '../types';
+import { Area, Project, Note, Resource, View } from '../../types';
 
 interface GraphViewProps {
     areas: Area[];
@@ -11,10 +11,10 @@ interface GraphViewProps {
 }
 
 const nodeColors: Record<string, string> = {
-    area: '#BF5AF2',     // vibrant-purple
-    project: '#F2F2F7',  // text-primary
-    note: '#8E8E93',     // text-secondary
-    resource: '#636366', // text-tertiary
+    area: '#BF5AF2',
+    project: '#F2F2F7',
+    note: '#8E8E93',
+    resource: '#636366',
 };
 
 const GraphView: React.FC<GraphViewProps> = ({ areas, projects, notes, resources, onNavigate }) => {
@@ -23,9 +23,8 @@ const GraphView: React.FC<GraphViewProps> = ({ areas, projects, notes, resources
     const graphData = useMemo(() => {
         const nodes: any[] = [];
         const links: any[] = [];
-        const linkSet = new Set(); // To avoid duplicate links
+        const linkSet = new Set();
 
-        // Add nodes
         areas.forEach(a => nodes.push({ id: a.id, name: a.title, type: 'area', val: 20 }));
         projects.forEach(p => nodes.push({ id: p.id, name: p.title, type: 'project', val: 10 }));
         notes.forEach(n => nodes.push({ id: n.id, name: n.title, type: 'note', val: 5 }));
@@ -39,7 +38,6 @@ const GraphView: React.FC<GraphViewProps> = ({ areas, projects, notes, resources
             }
         }
 
-        // Add structural links
         projects.forEach(p => {
             if (p.areaId) addLink(p.areaId, p.id);
         });
@@ -50,7 +48,6 @@ const GraphView: React.FC<GraphViewProps> = ({ areas, projects, notes, resources
             r.parentIds.forEach(pid => addLink(pid, r.id));
         });
         
-        // Add explicit content links from notes
         const linkRegex = /data-link-id="([^"]+)"/g;
         notes.forEach(n => {
             let match;
@@ -94,7 +91,7 @@ const GraphView: React.FC<GraphViewProps> = ({ areas, projects, notes, resources
                 graphData={graphData}
                 nodeLabel="name"
                 nodeColor={(node: any) => nodeColors[node.type] || '#FFFFFF'}
-                linkColor={() => 'rgba(142, 142, 147, 0.3)'} /* text-secondary with transparency */
+                linkColor={() => 'rgba(142, 142, 147, 0.3)'}
                 linkWidth={1}
                 onNodeClick={handleNodeClick}
                 nodeCanvasObject={(node: any, ctx, globalScale) => {
@@ -102,9 +99,9 @@ const GraphView: React.FC<GraphViewProps> = ({ areas, projects, notes, resources
                     const fontSize = 12 / globalScale;
                     ctx.font = `${fontSize}px Inter, sans-serif`;
                     const textWidth = ctx.measureText(label).width;
-                    const bckgDimensions = [textWidth, fontSize].map(n => n + fontSize * 0.4); // some padding
+                    const bckgDimensions = [textWidth, fontSize].map(n => n + fontSize * 0.4);
 
-                    ctx.fillStyle = 'rgba(22, 22, 24, 0.8)'; // background color with transparency
+                    ctx.fillStyle = 'rgba(22, 22, 24, 0.8)';
                     ctx.fillRect(node.x - bckgDimensions[0] / 2, node.y - bckgDimensions[1] / 2, bckgDimensions[0], bckgDimensions[1]);
 
                     ctx.textAlign = 'center';
@@ -112,7 +109,7 @@ const GraphView: React.FC<GraphViewProps> = ({ areas, projects, notes, resources
                     ctx.fillStyle = nodeColors[node.type];
                     ctx.fillText(label, node.x, node.y);
 
-                    node.__bckgDimensions = bckgDimensions; // to re-use in nodePointerAreaPaint
+                    node.__bckgDimensions = bckgDimensions;
                 }}
                  nodePointerAreaPaint={(node: any, color, ctx) => {
                     ctx.fillStyle = color;

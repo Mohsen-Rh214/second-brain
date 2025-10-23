@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Resource } from '../types';
-import { XIcon } from './icons';
+import { Resource } from '../../types';
+import { XIcon } from '../shared/icons';
 
 interface ResourceEditorModalProps {
   isOpen: boolean;

@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
-import { Project, Area, Task, View } from '../types';
-import { InboxIcon, ProjectIcon, AreaIcon, ListTodoIcon, CheckSquareIcon } from './icons';
+import { Project, Area, Task, View } from '../../types';
+import { InboxIcon, ProjectIcon, AreaIcon, ListTodoIcon, CheckSquareIcon } from '../shared/icons';
 
 interface ReviewViewProps {
     inboxCount: number;
@@ -125,7 +125,6 @@ const ReviewView: React.FC<ReviewViewProps> = ({ inboxCount, projects, areas, ta
             </header>
 
             <div className="flex flex-col md:flex-row gap-8">
-                {/* Stepper */}
                 <div className="w-full md:w-1/3">
                     <ol className="space-y-4">
                         {steps.map((step, index) => {
@@ -148,7 +147,6 @@ const ReviewView: React.FC<ReviewViewProps> = ({ inboxCount, projects, areas, ta
                     </ol>
                 </div>
 
-                {/* Step Content */}
                 <div className="w-full md:w-2/3 bg-surface/80 backdrop-blur-xl p-6 border border-outline rounded-xl shadow-md">
                     {renderStepContent()}
 

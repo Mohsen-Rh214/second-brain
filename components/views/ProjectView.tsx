@@ -1,8 +1,8 @@
 import React, { useEffect } from 'react';
-import { Project, Task, Note, Resource } from '../types';
+import { Project, Task, Note, Resource } from '../../types';
 import ProjectDetail from './ProjectDetail';
-import { ProjectIcon, PlusIcon } from './icons';
-import { CaptureContext } from '../App';
+import { ProjectIcon, PlusIcon } from '../shared/icons';
+import { CaptureContext } from '../../types';
 
 interface ProjectViewProps {
     projects: Project[];
@@ -16,12 +16,11 @@ interface ProjectViewProps {
     onDelete: (itemId: string) => void;
     onSelectNote: (noteId: string) => void;
     onUpdateProject: (projectId: string, updates: { title?: string, description?: string }) => void;
-    onOpenCommandBar: () => void;
     onOpenCaptureModal: (context: CaptureContext) => void;
     onUpdateTask: (taskId: string, updates: Partial<Pick<Task, 'title' | 'priority' | 'dueDate'>>) => void;
 }
 
-const ProjectView: React.FC<ProjectViewProps> = ({ projects, activeProjectId, onSelectProject, tasks, notes, resources, onToggleTask, onArchive, onDelete, onSelectNote, onUpdateProject, onOpenCommandBar, onOpenCaptureModal, onUpdateTask }) => {
+const ProjectView: React.FC<ProjectViewProps> = ({ projects, activeProjectId, onSelectProject, tasks, notes, resources, onToggleTask, onArchive, onDelete, onSelectNote, onUpdateProject, onOpenCaptureModal, onUpdateTask }) => {
     
     useEffect(() => {
         // If there's no active project, or the active one is no longer in the list, select the first one.
@@ -34,11 +33,22 @@ const ProjectView: React.FC<ProjectViewProps> = ({ projects, activeProjectId, on
     
     const selectedProject = projects.find(p => p.id === activeProjectId) || null;
 
+    const handleAddNewProject = () => {
+        onOpenCaptureModal({ parentId: null, itemType: 'project' });
+    }
+
     return (
         <div className="flex h-full gap-8">
             <aside className="w-1/3 max-w-sm h-full flex flex-col bg-surface/80 backdrop-blur-xl border border-outline rounded-2xl shadow-md">
                 <header className="p-4 border-b border-outline-dark flex-shrink-0 flex items-center justify-between">
                     <h2 className="text-lg font-bold font-heading tracking-tight">Projects</h2>
+                     <button 
+                        onClick={handleAddNewProject} 
+                        aria-label="Add new project" 
+                        className="p-1.5 text-text-secondary hover:bg-neutral hover:text-text-primary rounded-full transition-colors"
+                    >
+                        <PlusIcon className="w-5 h-5"/>
+                    </button>
                 </header>
                 <ul className="flex-1 overflow-y-auto custom-scrollbar p-2">
                     {projects.map(project => (
@@ -70,7 +80,7 @@ const ProjectView: React.FC<ProjectViewProps> = ({ projects, activeProjectId, on
                         onDelete={onDelete}
                         onSelectNote={onSelectNote}
                         onUpdateProject={onUpdateProject}
-                        onOpenCommandBar={onOpenCommandBar}
+                        onOpenCaptureModal={onOpenCaptureModal}
                         onUpdateTask={onUpdateTask}
                     />
                 ) : (
@@ -79,7 +89,7 @@ const ProjectView: React.FC<ProjectViewProps> = ({ projects, activeProjectId, on
                         <h2 className="text-xl font-semibold font-heading text-text-primary">No Projects</h2>
                         <p className="max-w-sm mb-4">Projects are short-term efforts with a defined goal. Create your first project to start organizing your tasks and notes.</p>
                          <button 
-                            onClick={onOpenCommandBar}
+                            onClick={handleAddNewProject}
                             className="flex items-center gap-2 bg-accent hover:bg-accent-hover text-accent-content font-semibold px-4 py-2 transition-colors rounded-lg shadow-sm"
                          >
                             <PlusIcon className="w-5 h-5"/>

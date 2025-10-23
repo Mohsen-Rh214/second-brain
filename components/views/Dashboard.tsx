@@ -1,14 +1,13 @@
 import React, { useState, useMemo } from 'react';
-import { Area, Project, Task, Note, Resource, View, InboxItem } from '../types';
-import { DashboardCaptureType } from '../App';
-import { ProjectIcon, CheckSquareIcon, ArrowRightIcon, InboxIcon, FileTextIcon, SquareIcon, TrashIcon, CalendarIcon, ResourceIcon } from './icons';
+import { Area, Project, Task, View, InboxItem, DashboardCaptureType } from '../../types';
+import { ProjectIcon, CheckSquareIcon, ArrowRightIcon, InboxIcon, FileTextIcon, TrashIcon, CalendarIcon, ResourceIcon, SquareIcon } from '../shared/icons';
+import Card from '../shared/Card';
+import TaskItem from '../shared/TaskItem';
 
 interface DashboardProps {
   projects: Project[];
   areas: Area[];
   tasks: Task[];
-  notes: Note[];
-  resources: Resource[];
   inboxItems: InboxItem[];
   onNavigate: (view: View, itemId?: string) => void;
   onToggleTask: (taskId: string) => void;
@@ -17,33 +16,9 @@ interface DashboardProps {
   onSaveNewTask: (title: string) => void;
   onDashboardCapture: (content: string, type: DashboardCaptureType) => void;
   onSelectItem: (item: InboxItem) => void;
+  onReorderTasks: (sourceTaskId: string, targetTaskId: string) => void;
+  onUpdateTask: (taskId: string, updates: Partial<Pick<Task, 'title' | 'priority' | 'dueDate'>>) => void;
 }
-
-const Widget = React.memo(function Widget({ icon, title, children }: { icon: React.ReactElement; title: string; children: React.ReactNode }) {
-    return (
-        <div className="bg-surface/80 backdrop-blur-xl border border-outline rounded-2xl shadow-md h-full flex flex-col">
-            <header className="flex items-center gap-3 p-5 border-b border-outline-dark">
-            <div className="text-accent">{icon}</div>
-            <h2 className="font-bold text-lg font-heading text-text-primary tracking-tight">{title}</h2>
-            </header>
-            <div className="p-5 flex-1">{children}</div>
-        </div>
-    );
-});
-
-const TaskItem = React.memo(function TaskItem({ task, onToggleTask, projectName }: { task: Task, onToggleTask: (id: string) => void, projectName?: string }) {
-    return (
-        <div className="flex items-start gap-3 p-2 group hover:bg-neutral rounded-xl transition-all duration-300 ease-soft hover:-translate-y-0.5">
-            <button onClick={() => onToggleTask(task.id)} aria-label={task.completed ? 'Mark as incomplete' : 'Mark as complete'} className="mt-1 flex-shrink-0 text-text-secondary hover:text-accent transition-colors">
-                {task.completed ? <CheckSquareIcon className="w-5 h-5 text-accent" /> : <SquareIcon className="w-5 h-5" />}
-            </button>
-            <div className="flex-1">
-                <span className={`transition-colors ${task.completed ? 'line-through text-text-tertiary' : ''}`}>{task.title}</span>
-                {projectName && <p className="text-xs text-text-secondary">{projectName}</p>}
-            </div>
-        </div>
-    );
-});
 
 const CaptureCard = React.memo(function CaptureCard({ onCapture }: { onCapture: (content: string, type: DashboardCaptureType) => void }) {
     const [content, setContent] = useState('');
@@ -98,10 +73,11 @@ const CaptureCard = React.memo(function CaptureCard({ onCapture }: { onCapture: 
     );
 });
 
-
-const Dashboard: React.FC<DashboardProps> = ({ projects, tasks, inboxItems, onNavigate, onToggleTask, onOrganizeItem, onDeleteItem, onSaveNewTask, onDashboardCapture, onSelectItem }) => {
+const Dashboard: React.FC<DashboardProps> = ({ projects, areas, tasks, inboxItems, onNavigate, onToggleTask, onOrganizeItem, onDeleteItem, onSaveNewTask, onDashboardCapture, onSelectItem, onReorderTasks, onUpdateTask }) => {
     
     const [myDayTask, setMyDayTask] = useState('');
+    const [draggedTaskId, setDraggedTaskId] = useState<string | null>(null);
+    const [dragOverTaskId, setDragOverTaskId] = useState<string | null>(null);
 
     const { myDayTasks, upcomingTasks, recentProjects } = useMemo(() => {
         const today = new Date();
@@ -139,15 +115,55 @@ const Dashboard: React.FC<DashboardProps> = ({ projects, tasks, inboxItems, onNa
       </header>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-8">
-          {/* Column 1: Capture & My Day */}
           <div className="lg:col-span-1 xl:col-span-1 space-y-8">
               <CaptureCard onCapture={onDashboardCapture} />
               
-              <Widget icon={<CheckSquareIcon className="w-6 h-6" />} title="My Day">
+              <Card 
+                icon={<CheckSquareIcon className="w-6 h-6" />} 
+                title="My Day"
+              >
                    {myDayTasks.length > 0 ? (
-                       <ul className="space-y-1 mb-4">
+                       <ul className="space-y-1 mb-4" onDragLeave={() => setDragOverTaskId(null)}>
                            {myDayTasks.map(task => (
-                               <li key={task.id}><TaskItem task={task} onToggleTask={onToggleTask} projectName={task.projectId ? projects.find(p=>p.id === task.projectId)?.title : undefined} /></li>
+                               <li 
+                                key={task.id} 
+                                draggable={true}
+                                onDragStart={(e) => {
+                                    e.dataTransfer.setData('text/plain', task.id);
+                                    e.dataTransfer.effectAllowed = 'move';
+                                    setDraggedTaskId(task.id);
+                                }}
+                                onDragEnd={() => {
+                                    setDraggedTaskId(null);
+                                    setDragOverTaskId(null);
+                                }}
+                                onDragOver={(e) => {
+                                    e.preventDefault();
+                                    e.dataTransfer.dropEffect = 'move';
+                                    setDragOverTaskId(task.id);
+                                }}
+                                onDrop={(e) => {
+                                    e.preventDefault();
+                                    const sourceId = e.dataTransfer.getData('text/plain');
+                                    const targetId = task.id;
+                                    if (sourceId && targetId && sourceId !== targetId) {
+                                        onReorderTasks(sourceId, targetId);
+                                    }
+                                    setDraggedTaskId(null);
+                                    setDragOverTaskId(null);
+                                }}
+                                className={`relative cursor-move transition-opacity ${draggedTaskId === task.id ? 'opacity-30' : 'opacity-100'}`}
+                                >
+                                {dragOverTaskId === task.id && draggedTaskId !== task.id && (
+                                    <div className="absolute -top-1 left-2 right-2 h-1 bg-accent rounded-full" />
+                                )}
+                                <TaskItem 
+                                    task={task} 
+                                    onToggleTask={onToggleTask} 
+                                    projectName={task.projectId ? projects.find(p=>p.id === task.projectId)?.title : undefined}
+                                    onUpdateTask={onUpdateTask}
+                                />
+                               </li>
                            ))}
                        </ul>
                    ) : (
@@ -163,12 +179,11 @@ const Dashboard: React.FC<DashboardProps> = ({ projects, tasks, inboxItems, onNa
                         />
                         <button type="submit" className="px-4 py-2 text-sm font-medium bg-secondary hover:bg-secondary-hover text-secondary-content transition-colors rounded-lg">Add</button>
                     </form>
-              </Widget>
+              </Card>
           </div>
 
-          {/* Column 2: Inbox & Upcoming */}
           <div className="lg:col-span-1 xl:col-span-1 space-y-8">
-             <Widget icon={<InboxIcon className="w-6 h-6" />} title="Inbox">
+             <Card icon={<InboxIcon className="w-6 h-6" />} title="Inbox">
                   {inboxItems.length > 0 ? (
                       <div>
                           <ul className="space-y-2 mb-4">
@@ -194,8 +209,8 @@ const Dashboard: React.FC<DashboardProps> = ({ projects, tasks, inboxItems, onNa
                   ) : (
                       <p className="text-sm text-text-tertiary text-center py-4">Inbox is clear. Well done!</p>
                   )}
-             </Widget>
-              <Widget icon={<CalendarIcon className="w-6 h-6" />} title="Upcoming">
+             </Card>
+              <Card icon={<CalendarIcon className="w-6 h-6" />} title="Upcoming">
                    {upcomingTasks.length > 0 ? (
                        <ul className="space-y-1">
                            {upcomingTasks.map(task => (
@@ -213,12 +228,11 @@ const Dashboard: React.FC<DashboardProps> = ({ projects, tasks, inboxItems, onNa
                    ) : (
                        <p className="text-sm text-text-tertiary text-center py-4">Nothing on the horizon for the next week.</p>
                    )}
-              </Widget>
+              </Card>
           </div>
 
-          {/* Column 3: Recent Projects */}
           <div className="lg:col-span-2 xl:col-span-1 space-y-8">
-              <Widget icon={<ProjectIcon className="w-6 h-6" />} title="Recent Projects">
+              <Card icon={<ProjectIcon className="w-6 h-6" />} title="Recent Projects">
                   {recentProjects.length > 0 ? (
                       <ul className="space-y-2">
                           {recentProjects.map(project => (
@@ -226,7 +240,7 @@ const Dashboard: React.FC<DashboardProps> = ({ projects, tasks, inboxItems, onNa
                                   <button onClick={() => onNavigate('projects', project.id)} className="w-full flex justify-between items-center text-left p-3 hover:bg-neutral rounded-xl transition-all duration-300 ease-soft hover:-translate-y-0.5">
                                       <div>
                                         <p className="font-semibold">{project.title}</p>
-                                        <p className="text-xs text-text-secondary truncate">{projects.find(p => p.id === project.areaId)?.title || 'No Area'}</p>
+                                        <p className="text-xs text-text-secondary truncate">{areas.find(a => a.id === project.areaId)?.title || 'No Area'}</p>
                                       </div>
                                       <ArrowRightIcon className="w-4 h-4 text-text-tertiary"/>
                                   </button>
@@ -236,7 +250,7 @@ const Dashboard: React.FC<DashboardProps> = ({ projects, tasks, inboxItems, onNa
                   ) : (
                        <p className="text-sm text-text-tertiary text-center py-4">No active projects yet.</p>
                   )}
-              </Widget>
+              </Card>
           </div>
       </div>
     </div>

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { Area, Project, Note, Resource, Task } from '../types';
-import { AreaIcon, ProjectIcon, ResourceIcon, FileTextIcon, SearchIcon, PlusIcon, HomeIcon, ArchiveIcon, GitMergeIcon, ClipboardCheckIcon, ListTodoIcon } from './icons';
+import { Area, Project, Note, Resource, Task } from '../../types';
+import { AreaIcon, ProjectIcon, ResourceIcon, FileTextIcon, SearchIcon, PlusIcon, HomeIcon, ArchiveIcon, GitMergeIcon, ClipboardCheckIcon, ListTodoIcon } from '../shared/icons';
 
 interface Command {
   id: string;
@@ -37,13 +37,11 @@ const CommandBar: React.FC<CommandBarProps> = ({ isOpen, onClose, onCommand, are
   }, [isOpen]);
 
   const baseCommands: Command[] = useMemo(() => [
-    // Actions
     { id: 'new-task', type: 'action', title: 'New Task', category: 'Actions', icon: <PlusIcon className="w-5 h-5"/>, action: () => {} },
     { id: 'new-note', type: 'action', title: 'New Note', category: 'Actions', icon: <PlusIcon className="w-5 h-5"/>, action: () => {} },
     { id: 'new-resource', type: 'action', title: 'New Resource', category: 'Actions', icon: <PlusIcon className="w-5 h-5"/>, action: () => {} },
     { id: 'new-project', type: 'action', title: 'New Project', category: 'Actions', icon: <PlusIcon className="w-5 h-5"/>, action: () => {} },
     { id: 'new-area', type: 'action', title: 'New Area', category: 'Actions', icon: <PlusIcon className="w-5 h-5"/>, action: () => {} },
-    // Navigation
     { id: 'go-home', type: 'navigation', title: 'Go to Home', category: 'Navigation', icon: <HomeIcon className="w-5 h-5"/>, action: () => {} },
     { id: 'go-areas', type: 'navigation', title: 'Go to Areas', category: 'Navigation', icon: <AreaIcon className="w-5 h-5"/>, action: () => {} },
     { id: 'go-projects', type: 'navigation', title: 'Go to Projects', category: 'Navigation', icon: <ProjectIcon className="w-5 h-5"/>, action: () => {} },
@@ -159,7 +157,6 @@ const CommandBar: React.FC<CommandBarProps> = ({ isOpen, onClose, onCommand, are
             <li key={category}>
               <h3 className="text-xs font-semibold text-text-secondary px-2 pt-2 pb-1">{category}</h3>
               <ul>
-                {/* Fix for: Property 'map' does not exist on type 'unknown'. */}
                 {(commands as Command[]).map((cmd) => {
                     const currentIndex = flatCommandList.findIndex(c => c.id === cmd.id);
                     return (

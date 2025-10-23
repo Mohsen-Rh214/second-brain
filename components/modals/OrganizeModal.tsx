@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { InboxItem, Project, Area } from '../types';
-import { XIcon } from './icons';
+import { InboxItem, Project, Area } from '../../types';
+import { XIcon } from '../shared/icons';
 
 interface OrganizeModalProps {
   isOpen: boolean;

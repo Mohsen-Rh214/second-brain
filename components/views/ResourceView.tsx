@@ -1,7 +1,7 @@
 import React from 'react';
-import { Resource, Project, Area } from '../types';
-import { ResourceIcon, LinkIcon, FileTextIcon, ArchiveBoxIcon, TrashIcon, ProjectIcon, AreaIcon, PlusIcon } from './icons';
-import { CaptureContext } from '../App';
+import { Resource, Project, Area } from '../../types';
+import { ResourceIcon, LinkIcon, FileTextIcon, ArchiveBoxIcon, TrashIcon, ProjectIcon, AreaIcon, PlusIcon } from '../shared/icons';
+import { CaptureContext } from '../../types';
 
 interface ResourceViewProps {
     resources: Resource[];

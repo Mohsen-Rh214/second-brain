@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
-import { Area, Project, Task, Note, Resource } from '../types';
-import { View } from '../types';
-import { AreaIcon, ProjectIcon, ResourceIcon, FileTextIcon, SearchIcon, ListTodoIcon } from './icons';
+import { Area, Project, Task, Note, Resource } from '../../types';
+import { View } from '../../types';
+import { AreaIcon, ProjectIcon, ResourceIcon, FileTextIcon, SearchIcon, ListTodoIcon } from '../shared/icons';
 
 interface SearchViewProps {
     query: string;
@@ -47,12 +47,10 @@ const SearchView: React.FC<SearchViewProps> = ({ query, areas, projects, tasks, 
                 onNavigate('projects', item.id);
                 break;
             case 'tasks':
-                // For tasks, navigate to the parent project
                 if (item.projectId) onNavigate('projects', item.projectId);
                 break;
             case 'notes':
             case 'resources':
-                // For notes/resources, try to navigate to a parent project first, then area
                 const parentProject = item.parentIds.find((id:string) => id.startsWith('proj-'));
                 if (parentProject) {
                     onNavigate('projects', parentProject);
@@ -66,7 +64,6 @@ const SearchView: React.FC<SearchViewProps> = ({ query, areas, projects, tasks, 
         }
     }
     
-    // Fix for: Property 'length' does not exist on type 'unknown'.
     const totalResults = searchResults ? Object.values(searchResults).reduce((sum, arr) => sum + (arr as any[]).length, 0) : 0;
 
     return (
@@ -84,7 +81,6 @@ const SearchView: React.FC<SearchViewProps> = ({ query, areas, projects, tasks, 
                 </div>
             ) : (
                 Object.entries(searchResults || {}).map(([type, items]) => {
-                    // Fix for: Property 'length' does not exist on type 'unknown' and Property 'map' does not exist on type 'unknown'.
                     const itemsArray = items as (Area | Project | Task | Note | Resource)[];
                     if (itemsArray.length === 0) return null;
 

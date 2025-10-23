@@ -1,8 +1,8 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { Area, Project, Task } from '../types';
-import { XIcon } from './icons';
-import { ItemType, CaptureContext } from '../App';
-import { NewItemPayload } from '../types';
+import { Area, Project, Task } from '../../types';
+import { XIcon } from '../shared/icons';
+import { ItemType, CaptureContext } from '../../types';
+import { NewItemPayload } from '../../types';
 
 interface CaptureModalProps {
   isOpen: boolean;
@@ -36,11 +36,9 @@ const CaptureModal: React.FC<CaptureModalProps> = ({ isOpen, onClose, onSave, pr
         setActiveType(context.itemType || 'task');
         setParentId(context.parentId || null);
     } else {
-        // Reset to default if no context
         setActiveType('task');
         setParentId(null);
     }
-    // Reset fields when context changes or modal opens
     setTitle('');
     setContent('');
     setDescription('');
@@ -73,7 +71,7 @@ const CaptureModal: React.FC<CaptureModalProps> = ({ isOpen, onClose, onSave, pr
   const getParentLabel = () => {
     if (activeType === 'task') return 'Link to Project (Optional)';
     if (activeType === 'project') return 'Link to Area';
-    if (activeType === 'area') return ''; // No parent for area
+    if (activeType === 'area') return '';
     return 'Link to Project or Area (Optional)';
   }
 

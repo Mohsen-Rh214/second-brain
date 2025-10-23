@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
-import { Task, Project } from '../types';
-import { CheckSquareIcon, SquareIcon, ListTodoIcon, FlagIcon, CalendarIcon } from './icons';
+import { Task, Project } from '../../types';
+import { CheckSquareIcon, SquareIcon, ListTodoIcon, FlagIcon, CalendarIcon } from '../shared/icons';
 
 interface TaskViewProps {
     tasks: Task[];
@@ -62,7 +62,6 @@ const TaskView: React.FC<TaskViewProps> = ({ tasks, projects, onToggleTask }) =>
             return keys.sort((a, b) => (priorityOrder[a] || 4) - (priorityOrder[b] || 4));
         }
         if (groupBy === 'dueDate') {
-            // Sort by date, putting 'No Due Date' last
             return keys.sort((a, b) => {
                 if (a === 'No Due Date') return 1;
                 if (b === 'No Due Date') return -1;
