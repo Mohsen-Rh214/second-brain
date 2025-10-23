@@ -1,6 +1,6 @@
+
 import React from 'react';
 import { Area, Project, Task, Note, Resource, BaseItem } from '../types';
-// FIX: Import View from types.ts instead of App.tsx
 import { View } from '../types';
 import { AreaIcon, ProjectIcon, CheckSquareIcon, ArrowRightIcon, InboxIcon, FileTextIcon, ResourceIcon } from './icons';
 

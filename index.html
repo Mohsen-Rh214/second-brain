@@ -2,99 +2,23 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <link rel="icon" href="data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%2310b981' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpath d='M12 5a3 3 0 1 0-5.993.142' /%3e%3cpath d='M18 5a3 3 0 1 0-5.993.142' /%3e%3cpath d='M12 19a3 3 0 1 0-5.993-.142' /%3e%3cpath d='M18 19a3 3 0 1 0-5.993-.142' /%3e%3cpath d='M12 12a3 3 0 1 0-5.993.142' /%3e%3cpath d='M18 12a3 3 0 1 0-5.993.142' /%3e%3cpath d='M6 5.142V19' /%3e%3cpath d='M18 5.142V19' /%3e%3cpath d='M6.142 12H18' /%3e%3cpath d='M6.142 5H18' /%3e%3cpath d='M6.142 19H18' /%3e%3c/svg%3e">
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link href="/index.css" rel="stylesheet">
     <title>Second Brain</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://cdn.jsdelivr.net/npm/quill@2.0.2/dist/quill.snow.css" rel="stylesheet">
-    <style>
-      body {
-        overscroll-behavior: none;
-      }
-      /* Custom scrollbar for webkit browsers */
-      .custom-scrollbar::-webkit-scrollbar {
-        width: 8px;
-        height: 8px;
-      }
-      .custom-scrollbar::-webkit-scrollbar-track {
-        background: #1e293b; /* slate-800 */
-      }
-      .custom-scrollbar::-webkit-scrollbar-thumb {
-        background: #475569; /* slate-600 */
-        border-radius: 4px;
-      }
-      .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-        background: #64748b; /* slate-500 */
-      }
-      /* Screen-reader only utility class */
-      .sr-only {
-        position: absolute;
-        width: 1px;
-        height: 1px;
-        padding: 0;
-        margin: -1px;
-        overflow: hidden;
-        clip: rect(0, 0, 0, 0);
-        white-space: nowrap;
-        border-width: 0;
-      }
-      /* Rich Text Editor Dark Theme */
-      .ql-toolbar {
-        background: #334155 !important; /* slate-700 */
-        border: 1px solid #475569 !important; /* slate-600 */
-        border-top-left-radius: 0.375rem;
-        border-top-right-radius: 0.375rem;
-      }
-      .ql-container {
-        border: 1px solid #475569 !important; /* slate-600 */
-        border-bottom-left-radius: 0.375rem;
-        border-bottom-right-radius: 0.375rem;
-        font-size: 1rem !important;
-        background-color: #1e293b; /* slate-800 */
-      }
-      .ql-editor {
-        color: #f1f5f9; /* slate-100 */
-        min-height: 15rem;
-      }
-      .ql-editor.ql-blank::before {
-        color: #94a3b8 !important; /* slate-400 */
-        font-style: normal !important;
-      }
-      .ql-stroke {
-        stroke: #94a3b8 !important; /* slate-400 */
-      }
-      .ql-fill {
-        fill: #94a3b8 !important; /* slate-400 */
-      }
-      .ql-picker-label {
-        color: #94a3b8 !important; /* slate-400 */
-      }
-      .ql-active .ql-stroke {
-        stroke: #34d399 !important; /* emerald-400 */
-      }
-      .ql-active .ql-fill {
-        fill: #34d399 !important; /* emerald-400 */
-      }
-      .ql-active .ql-picker-label {
-        color: #34d399 !important; /* emerald-400 */
-      }
-    </style>
   <script type="importmap">
 {
   "imports": {
-    "react/": "https://aistudiocdn.com/react@^19.2.0/",
     "react": "https://aistudiocdn.com/react@^19.2.0",
     "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
-    "quill": "https://cdn.jsdelivr.net/npm/quill@2.0.2/dist/quill.js",
-    "react-quill": "https://cdn.jsdelivr.net/npm/react-quill@2.0.0/+esm",
+    "react/": "https://aistudiocdn.com/react@^19.2.0/",
+    "react-quill": "https://aistudiocdn.com/react-quill@^2.0.0",
     "react-force-graph-2d": "https://aistudiocdn.com/react-force-graph-2d@^1.29.0",
-    "react-kapsule": "https://unpkg.com/react-kapsule@1.13.2/dist/react-kapsule.mjs",
-    "force-graph": "https://unpkg.com/force-graph@1.43.4/dist/force-graph.mjs",
-    "prop-types": "https://unpkg.com/prop-types@15.8.1/index.js"
+    "vite": "https://aistudiocdn.com/vite@^7.1.11",
+    "@vitejs/plugin-react": "https://aistudiocdn.com/@vitejs/plugin-react@^5.0.4"
   }
 }
 </script>
-<link rel="stylesheet" href="/index.css">
 </head>
   <body class="bg-slate-900 text-slate-100">
     <div id="root"></div>

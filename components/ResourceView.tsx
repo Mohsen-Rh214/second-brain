@@ -1,4 +1,5 @@
 
+
 import React from 'react';
 import { Resource, Project, Area } from '../types';
 import { ResourceIcon, LinkIcon, FileTextIcon, ArchiveBoxIcon, TrashIcon, ProjectIcon, AreaIcon } from './icons';

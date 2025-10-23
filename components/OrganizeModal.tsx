@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { InboxItem, Project, Area } from '../types';
 import { XIcon } from './icons';

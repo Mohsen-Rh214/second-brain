@@ -60,62 +60,51 @@ A dedicated, step-by-step workflow that guides you through the essential habit o
 
 ## Technology Stack
 
-This application is built with a modern, no-build-step frontend architecture.
+This application is built with a modern, professional frontend architecture.
 
 *   **Frontend Framework:** [React](https://react.dev/)
 *   **Language:** [TypeScript](https://www.typescriptlang.org/)
-*   **Styling:** [Tailwind CSS](https://tailwindcss.com/) (via CDN)
+*   **Build Tool:** [Vite](https://vitejs.dev/)
+*   **Styling:** [Tailwind CSS](https://tailwindcss.com/)
+*   **Package Manager:** [npm](https://www.npmjs.com/)
 *   **Data Persistence:** Browser `localStorage`
 *   **Rich Text Editor:** [ReactQuill](https://github.com/zenoamaro/react-quill)
 *   **Graph Visualization:** [react-force-graph-2d](https://github.com/vasturiano/react-force-graph)
-*   **Module Loading:** ES Modules with an `importmap` (no bundler like Webpack or Vite is needed).
 
 ## Getting Started
 
-Because this project uses an `importmap` for dependency management, there is no `npm install` or build step required.
+1.  **Clone the repository.**
+2.  **Install dependencies:**
+    ```bash
+    npm install
+    ```
+3.  **Run the development server:**
+    ```bash
+    npm run dev
+    ```
+4.  Open your browser and navigate to the local URL provided by Vite (usually `http://localhost:5173`).
 
-1.  **Clone the repository (or have the files locally).**
-2.  **Serve the project directory with a local web server.**
-
-A simple way to do this is with Python's built-in HTTP server. Navigate to the project's root directory in your terminal and run:
-
-```bash
-# For Python 3
-python -m http.server
-
-# Or for Python 2
-python -m SimpleHTTPServer
-```
-
-Then, open your browser and navigate to `http://localhost:8000`.
 
 ## File Structure
 
 ```
 .
-├── index.html          # Main HTML file, includes the importmap for dependencies
-├── index.tsx           # React application entry point
-├── metadata.json       # Application metadata
-├── types.ts            # Core TypeScript type definitions for the data model
-├── constants.ts        # Initial seed data for the application
-├── App.tsx             # The root React component, handling all state and logic
-├── README.md           # This file
+├── index.html              # Main HTML entry point for Vite
+├── index.css               # Central stylesheet with Tailwind directives
+├── index.tsx               # React application entry point
+├── package.json            # NPM dependencies and scripts
+├── vite.config.ts          # Vite build tool configuration
+├── tsconfig.json           # TypeScript configuration
+├── tailwind.config.js      # Tailwind CSS configuration
+├── postcss.config.js       # PostCSS configuration
+├── metadata.json           # Application metadata
+├── types.ts                # Core TypeScript type definitions
+├── constants.ts            # Initial seed data for the application
+├── App.tsx                 # The root React component
+├── README.md               # This file
 └── components/
     ├── AreaDetail.tsx
     ├── AreaView.tsx
-    ├── ArchiveView.tsx
-    ├── CaptureModal.tsx
-    ├── Dashboard.tsx
-    ├── GraphView.tsx
-    ├── InboxView.tsx
-    ├── NoteEditorModal.tsx
-    ├── OrganizeModal.tsx
-    ├── ProjectDetail.tsx
-    ├── ProjectView.tsx
-    ├── ResourceView.tsx
-    ├── ReviewView.tsx
-    ├── SearchView.tsx
-    ├── Sidebar.tsx
-    ├── TaskView.tsx
-    └── icons.tsx       # Reusable SVG icon components
+    ├── ... (all component files)
+    └── icons.tsx           # Reusable SVG icon components
 ```

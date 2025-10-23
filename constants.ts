@@ -1,3 +1,4 @@
+
 import { Area, Project, Task, Note, Resource } from './types';
 
 const now = new Date();

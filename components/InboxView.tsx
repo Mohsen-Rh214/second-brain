@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { InboxItem } from '../types';
 import { InboxIcon, FileTextIcon, ResourceIcon } from './icons';

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Area, Project, Task, Note, Resource, NewItemPayload, InboxItem, View } from './types';
 import Sidebar from './components/Sidebar';

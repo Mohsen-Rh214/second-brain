@@ -1,6 +1,6 @@
+
 import React from 'react';
 import { BaseItem } from '../types';
-// FIX: Import ArchiveIcon
 import { AreaIcon, ProjectIcon, ResourceIcon, FileTextIcon, CheckSquareIcon, RotateCcwIcon, TrashIcon, ArchiveIcon } from './icons';
 
 interface ArchiveViewProps {

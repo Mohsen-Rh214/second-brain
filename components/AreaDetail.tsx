@@ -3,7 +3,6 @@
 import React, { useState, useEffect } from 'react';
 import { Area, Project, Note, Resource } from '../types';
 import { ProjectIcon, FileTextIcon, ResourceIcon, LinkIcon, ArchiveBoxIcon, TrashIcon, EditIcon, PlusIcon } from './icons';
-// FIX: Import View from types.ts instead of App.tsx
 import { CaptureContext } from '../App';
 import { View } from '../types';
 

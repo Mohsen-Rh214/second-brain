@@ -4,7 +4,6 @@ import React, { useEffect } from 'react';
 import { Area, Project, Note, Resource } from '../types';
 import AreaDetail from './AreaDetail';
 import { AreaIcon } from './icons';
-// FIX: Import View from types.ts instead of App.tsx
 import { CaptureContext } from '../App';
 import { View } from '../types';
 

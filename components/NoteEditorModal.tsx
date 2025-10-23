@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect } from 'react';
 import ReactQuill from 'react-quill';
 import { Note } from '../types';

@@ -2,7 +2,6 @@
 
 import React, { useMemo } from 'react';
 import { Area, Project, Task, Note, Resource } from '../types';
-// FIX: Import View from types.ts instead of App.tsx
 import { View } from '../types';
 import { AreaIcon, ProjectIcon, ResourceIcon, FileTextIcon, CheckSquareIcon, SearchIcon } from './icons';
 
