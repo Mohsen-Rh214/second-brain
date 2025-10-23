@@ -2,6 +2,7 @@ import React from 'react';
 import { Resource, Project, Area } from '../../types';
 import { ResourceIcon, LinkIcon, FileTextIcon, ArchiveBoxIcon, TrashIcon, ProjectIcon, AreaIcon, PlusIcon } from '../shared/icons';
 import { CaptureContext } from '../../types';
+import EmptyState from '../shared/EmptyState';
 
 interface ResourceViewProps {
     resources: Resource[];
@@ -52,11 +53,11 @@ const ResourceView: React.FC<ResourceViewProps> = ({ resources, projects, areas,
             </header>
             
             {resources.length === 0 ? (
-                <div className="flex flex-col items-center justify-center h-64 text-text-tertiary border-2 border-dashed border-outline-dark rounded-xl bg-surface/80 backdrop-blur-xl">
-                    <ResourceIcon className="w-16 h-16 mb-4" />
-                    <h2 className="text-xl font-semibold font-heading text-text-primary">No Resources Yet</h2>
-                    <p>Click "Add Resource" to capture your first item.</p>
-                </div>
+                <EmptyState 
+                    icon={<ResourceIcon />}
+                    title="Build Your Personal Library"
+                    description="Resources are topics of interest or useful information, like articles, links, or code snippets. Start capturing knowledge."
+                />
             ) : (
                 <div className="bg-surface/80 backdrop-blur-xl border border-outline rounded-xl shadow-md">
                     <ul className="divide-y divide-outline-dark">

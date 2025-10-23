@@ -1,8 +1,10 @@
 import React, { useEffect } from 'react';
-import { Project, Task, Note, Resource } from '../../types';
+import { Project, Task, Note, Resource, NewItemPayload, ItemType } from '../../types';
 import ProjectDetail from './ProjectDetail';
 import { ProjectIcon, PlusIcon } from '../shared/icons';
+import ProgressBar from '../shared/ProgressBar';
 import { CaptureContext } from '../../types';
+import EmptyState from '../shared/EmptyState';
 
 interface ProjectViewProps {
     projects: Project[];
@@ -17,10 +19,12 @@ interface ProjectViewProps {
     onSelectNote: (noteId: string) => void;
     onUpdateProject: (projectId: string, updates: { title?: string, description?: string }) => void;
     onOpenCaptureModal: (context: CaptureContext) => void;
+    onSaveNewItem: (itemData: NewItemPayload, itemType: ItemType, parentId: string | null) => void;
+    onReorderTasks: (sourceTaskId: string, targetTaskId: string) => void;
     onUpdateTask: (taskId: string, updates: Partial<Pick<Task, 'title' | 'priority' | 'dueDate'>>) => void;
 }
 
-const ProjectView: React.FC<ProjectViewProps> = ({ projects, activeProjectId, onSelectProject, tasks, notes, resources, onToggleTask, onArchive, onDelete, onSelectNote, onUpdateProject, onOpenCaptureModal, onUpdateTask }) => {
+const ProjectView: React.FC<ProjectViewProps> = ({ projects, activeProjectId, onSelectProject, tasks, notes, resources, onToggleTask, onArchive, onDelete, onSelectNote, onUpdateProject, onOpenCaptureModal, onSaveNewItem, onReorderTasks, onUpdateTask }) => {
     
     useEffect(() => {
         // If there's no active project, or the active one is no longer in the list, select the first one.
@@ -36,6 +40,12 @@ const ProjectView: React.FC<ProjectViewProps> = ({ projects, activeProjectId, on
     const handleAddNewProject = () => {
         onOpenCaptureModal({ parentId: null, itemType: 'project' });
     }
+    
+    const getProjectProgress = (project: Project) => {
+        const projectTasks = tasks.filter(t => project.taskIds.includes(t.id));
+        const completed = projectTasks.filter(t => t.completed).length;
+        return { completed, total: projectTasks.length };
+    };
 
     return (
         <div className="flex h-full gap-8">
@@ -45,27 +55,38 @@ const ProjectView: React.FC<ProjectViewProps> = ({ projects, activeProjectId, on
                      <button 
                         onClick={handleAddNewProject} 
                         aria-label="Add new project" 
-                        className="p-1.5 text-text-secondary hover:bg-neutral hover:text-text-primary rounded-full transition-colors"
+                        className="p-1.5 text-text-secondary hover:bg-neutral hover:text-text-primary rounded-full transition-colors active:scale-95"
                     >
                         <PlusIcon className="w-5 h-5"/>
                     </button>
                 </header>
                 <ul className="flex-1 overflow-y-auto custom-scrollbar p-2">
-                    {projects.map(project => (
-                        <li key={project.id}>
-                            <button
-                                onClick={() => onSelectProject(project.id)}
-                                className={`w-full text-left p-3 mb-1 transition-all duration-200 rounded-xl ${
-                                    activeProjectId === project.id 
-                                    ? 'bg-accent/10 text-accent' 
-                                    : 'hover:bg-neutral'
-                                }`}
-                            >
-                                <h3 className="font-semibold text-text-primary">{project.title}</h3>
-                                <p className="text-xs text-text-secondary truncate">{project.description || 'No description'}</p>
-                            </button>
-                        </li>
-                    ))}
+                    {projects.map(project => {
+                        const { completed, total } = getProjectProgress(project);
+                        return (
+                            <li key={project.id}>
+                                <button
+                                    onClick={() => onSelectProject(project.id)}
+                                    className={`w-full text-left p-3 mb-1 transition-all duration-200 rounded-xl ${
+                                        activeProjectId === project.id 
+                                        ? 'bg-accent/10 text-accent' 
+                                        : 'hover:bg-neutral'
+                                    }`}
+                                >
+                                    <div className="flex justify-between items-center">
+                                        <h3 className="font-semibold text-text-primary">{project.title}</h3>
+                                        {total > 0 && (
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-xs font-mono text-text-tertiary">{completed}/{total}</span>
+                                                <ProgressBar completed={completed} total={total} />
+                                            </div>
+                                        )}
+                                    </div>
+                                    <p className="text-xs text-text-secondary truncate mt-1">{project.description || 'No description'}</p>
+                                </button>
+                            </li>
+                        )
+                    })}
                 </ul>
             </aside>
             <section className="flex-1 overflow-y-auto custom-scrollbar">
@@ -81,21 +102,25 @@ const ProjectView: React.FC<ProjectViewProps> = ({ projects, activeProjectId, on
                         onSelectNote={onSelectNote}
                         onUpdateProject={onUpdateProject}
                         onOpenCaptureModal={onOpenCaptureModal}
+                        onSaveNewItem={onSaveNewItem}
+                        onReorderTasks={onReorderTasks}
                         onUpdateTask={onUpdateTask}
                     />
                 ) : (
-                    <div className="flex flex-col items-center justify-center h-full text-text-tertiary text-center p-8 bg-surface/80 backdrop-blur-xl border border-outline rounded-2xl shadow-md">
-                        <ProjectIcon className="w-16 h-16 mb-4" />
-                        <h2 className="text-xl font-semibold font-heading text-text-primary">No Projects</h2>
-                        <p className="max-w-sm mb-4">Projects are short-term efforts with a defined goal. Create your first project to start organizing your tasks and notes.</p>
-                         <button 
-                            onClick={handleAddNewProject}
-                            className="flex items-center gap-2 bg-accent hover:bg-accent-hover text-accent-content font-semibold px-4 py-2 transition-colors rounded-lg shadow-sm"
-                         >
-                            <PlusIcon className="w-5 h-5"/>
-                            Create New Project
-                        </button>
-                    </div>
+                    <EmptyState 
+                        icon={<ProjectIcon />}
+                        title="Start Your First Project"
+                        description="A project has a clear goal and a finish line, like 'Plan Vacation' or 'Launch New Website'. What will you accomplish next?"
+                        actionButton={
+                            <button 
+                                onClick={handleAddNewProject}
+                                className="flex items-center gap-2 bg-accent hover:bg-accent-hover text-accent-content font-semibold px-4 py-2 transition-colors rounded-lg shadow-sm active:scale-95"
+                            >
+                                <PlusIcon className="w-5 h-5"/>
+                                Create New Project
+                            </button>
+                        }
+                    />
                 )}
             </section>
         </div>

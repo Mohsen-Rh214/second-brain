@@ -2,6 +2,7 @@ import React from 'react';
 import { BaseItem } from '../../types';
 import { AreaIcon, ProjectIcon, ResourceIcon, FileTextIcon, RotateCcwIcon, TrashIcon, ArchiveIcon, ListTodoIcon } from '../shared/icons';
 import { getItemTypeFromId } from '../../utils';
+import EmptyState from '../shared/EmptyState';
 
 interface ArchiveViewProps {
     items: BaseItem[];
@@ -41,11 +42,11 @@ const ArchiveView: React.FC<ArchiveViewProps> = ({ items, onRestore, onDelete })
             </header>
 
             {archivedItems.length === 0 ? (
-                 <div className="flex flex-col items-center justify-center h-64 text-text-tertiary border-2 border-dashed border-outline-dark rounded-xl bg-surface/80 backdrop-blur-xl">
-                    <ArchiveIcon className="w-16 h-16 mb-4" />
-                    <h2 className="text-xl font-semibold font-heading text-text-primary">The Archives are Empty</h2>
-                    <p>When you archive an item, it will appear here.</p>
-                </div>
+                 <EmptyState 
+                    icon={<ArchiveIcon />}
+                    title="A Clean Slate"
+                    description="The archives are currently empty. When you complete a project or an area is no longer active, archive it to keep your workspace tidy."
+                />
             ) : (
                 orderedTypes.map(type => {
                     const group = groupedItems[type];

@@ -28,10 +28,11 @@ export interface Project extends BaseItem {
 
 export interface Task extends BaseItem {
   completed: boolean;
-  // A task belongs to one project, or can be a standalone "My Day" task.
+  // A task can belong to one project, or be unorganized (projectId is null).
   projectId: string | null;
   dueDate?: string; // e.g., '2024-08-15'
   priority?: 'Low' | 'Medium' | 'High';
+  isMyDay?: boolean; // True if explicitly added to My Day, not just by due date
 }
 
 export interface Note extends BaseItem {
@@ -54,9 +55,10 @@ export type NewItemPayload = {
     type?: 'link' | 'file' | 'text';
     dueDate?: string;
     priority?: 'Low' | 'Medium' | 'High';
+    isMyDay?: boolean;
 };
 
-export type InboxItem = Note | Resource;
+export type InboxItem = Note | Resource | Task;
 
 export type View = 'dashboard' | 'inbox' | 'areas' | 'projects' | 'tasks' | 'resources' | 'archives' | 'graph' | 'review';
 

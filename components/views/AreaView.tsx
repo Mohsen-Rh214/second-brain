@@ -1,15 +1,17 @@
 import React, { useEffect } from 'react';
-import { Area, Project, Note, Resource } from '../../types';
+import { Area, Project, Note, Resource, Task } from '../../types';
 import AreaDetail from './AreaDetail';
 import { AreaIcon, PlusIcon } from '../shared/icons';
 import { CaptureContext } from '../../types';
 import { View } from '../../types';
+import EmptyState from '../shared/EmptyState';
 
 interface AreaViewProps {
     areas: Area[];
     activeAreaId: string | null;
     onSelectArea: (id: string | null) => void;
     projects: Project[];
+    tasks: Task[];
     notes: Note[];
     resources: Resource[];
     onArchive: (itemId: string) => void;
@@ -20,7 +22,7 @@ interface AreaViewProps {
     onNavigate: (view: View, itemId: string) => void;
 }
 
-const AreaView: React.FC<AreaViewProps> = ({ areas, activeAreaId, onSelectArea, projects, notes, resources, onArchive, onDelete, onSelectNote, onUpdateArea, onOpenCaptureModal, onNavigate }) => {
+const AreaView: React.FC<AreaViewProps> = ({ areas, activeAreaId, onSelectArea, projects, tasks, notes, resources, onArchive, onDelete, onSelectNote, onUpdateArea, onOpenCaptureModal, onNavigate }) => {
     
     useEffect(() => {
         if (areas.length > 0 && (!activeAreaId || !areas.some(a => a.id === activeAreaId))) {
@@ -44,7 +46,7 @@ const AreaView: React.FC<AreaViewProps> = ({ areas, activeAreaId, onSelectArea, 
                     <button 
                         onClick={handleAddNewArea} 
                         aria-label="Add new area" 
-                        className="p-1.5 text-text-secondary hover:bg-neutral hover:text-text-primary rounded-full transition-colors"
+                        className="p-1.5 text-text-secondary hover:bg-neutral hover:text-text-primary rounded-full transition-colors active:scale-95"
                     >
                         <PlusIcon className="w-5 h-5"/>
                     </button>
@@ -72,6 +74,7 @@ const AreaView: React.FC<AreaViewProps> = ({ areas, activeAreaId, onSelectArea, 
                     <AreaDetail
                         area={selectedArea}
                         projects={projects.filter(p => selectedArea.projectIds.includes(p.id))}
+                        tasks={tasks}
                         notes={notes.filter(n => n.parentIds.includes(selectedArea.id))}
                         resources={resources.filter(r => r.parentIds.includes(selectedArea.id))}
                         onArchive={onArchive}
@@ -82,18 +85,20 @@ const AreaView: React.FC<AreaViewProps> = ({ areas, activeAreaId, onSelectArea, 
                         onNavigate={onNavigate}
                     />
                 ) : (
-                    <div className="flex flex-col items-center justify-center h-full text-text-tertiary text-center p-8 bg-surface/80 backdrop-blur-xl border border-outline rounded-2xl shadow-md">
-                        <AreaIcon className="w-16 h-16 mb-4" />
-                        <h2 className="text-xl font-semibold font-heading text-text-primary">No Areas</h2>
-                        <p className="max-w-sm mb-4">Areas are long-term responsibilities with no end date, like "Health" or "Finances".</p>
-                         <button 
-                            onClick={handleAddNewArea}
-                            className="flex items-center gap-2 bg-accent hover:bg-accent-hover text-accent-content font-semibold px-4 py-2 transition-colors rounded-lg shadow-sm"
-                         >
-                            <PlusIcon className="w-5 h-5"/>
-                            Create New Area
-                        </button>
-                    </div>
+                     <EmptyState 
+                        icon={<AreaIcon />}
+                        title="Create Your First Area of Life"
+                        description="Areas are the broad, ongoing responsibilities that shape your life, like 'Personal Growth' or 'Career'. What's a major part of your life you want to focus on?"
+                        actionButton={
+                            <button 
+                                onClick={handleAddNewArea}
+                                className="flex items-center gap-2 bg-accent hover:bg-accent-hover text-accent-content font-semibold px-4 py-2 transition-colors rounded-lg shadow-sm active:scale-95"
+                             >
+                                <PlusIcon className="w-5 h-5"/>
+                                Create New Area
+                            </button>
+                        }
+                    />
                 )}
             </section>
         </div>

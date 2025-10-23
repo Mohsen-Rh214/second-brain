@@ -1,10 +1,11 @@
-import React from 'react';
-import { Project, Task, Note, Resource, CaptureContext } from '../../types';
+import React, { useState } from 'react';
+import { Project, Task, Note, Resource, CaptureContext, NewItemPayload, ItemType } from '../../types';
 import { CheckSquareIcon, FileTextIcon, LinkIcon, ResourceIcon } from '../shared/icons';
 import Card from '../shared/Card';
 import ActionMenu from '../shared/ActionMenu';
 import TaskItem from '../shared/TaskItem';
 import { useEditable } from '../../hooks/useEditable';
+import CardEmptyState from '../shared/CardEmptyState';
 
 interface ProjectDetailProps {
     project: Project;
@@ -17,11 +18,18 @@ interface ProjectDetailProps {
     onSelectNote: (noteId: string) => void;
     onUpdateProject: (projectId: string, updates: { title?: string, description?: string }) => void;
     onOpenCaptureModal: (context: CaptureContext) => void;
+    onSaveNewItem: (itemData: NewItemPayload, itemType: ItemType, parentId: string | null) => void;
+    onReorderTasks: (sourceTaskId: string, targetTaskId: string) => void;
     onUpdateTask: (taskId: string, updates: Partial<Pick<Task, 'title' | 'priority' | 'dueDate'>>) => void;
 }
 
-const ProjectDetail: React.FC<ProjectDetailProps> = ({ project, tasks, notes, resources, onToggleTask, onArchive, onDelete, onSelectNote, onUpdateProject, onOpenCaptureModal, onUpdateTask }) => {
+const ProjectDetail: React.FC<ProjectDetailProps> = ({ project, tasks, notes, resources, onToggleTask, onArchive, onDelete, onSelectNote, onUpdateProject, onOpenCaptureModal, onSaveNewItem, onReorderTasks, onUpdateTask }) => {
     
+    const [isAddingTask, setIsAddingTask] = useState(false);
+    const [newTaskTitle, setNewTaskTitle] = useState('');
+    const [draggedTaskId, setDraggedTaskId] = useState<string | null>(null);
+    const [dragOverTaskId, setDragOverTaskId] = useState<string | null>(null);
+
     const titleEditor = useEditable(project.title, (newTitle) => onUpdateProject(project.id, { title: newTitle }));
     const descriptionEditor = useEditable(project.description, (newDescription) => onUpdateProject(project.id, { description: newDescription }));
 
@@ -41,6 +49,16 @@ const ProjectDetail: React.FC<ProjectDetailProps> = ({ project, tasks, notes, re
         titleEditor.handleCancel();
         descriptionEditor.handleCancel();
     };
+    
+    const handleAddTask = (e: React.FormEvent) => {
+        e.preventDefault();
+        if (newTaskTitle.trim()) {
+            onSaveNewItem({ title: newTaskTitle }, 'task', project.id);
+            setNewTaskTitle('');
+            setIsAddingTask(false);
+        }
+    };
+
 
     return (
         <div>
@@ -61,8 +79,8 @@ const ProjectDetail: React.FC<ProjectDetailProps> = ({ project, tasks, notes, re
                                 className="w-full bg-background/50 border border-outline rounded-lg px-3 py-2 text-text-secondary focus:outline-none focus:ring-1 focus:ring-accent custom-scrollbar max-w-prose"
                             />
                              <div className="flex gap-2 mt-2">
-                                <button onClick={handleSave} className="px-3 py-1.5 text-sm bg-accent hover:bg-accent-hover text-accent-content transition-colors rounded-lg">Save</button>
-                                <button onClick={handleCancel} className="px-3 py-1.5 text-sm bg-secondary hover:bg-secondary-hover text-secondary-content transition-colors rounded-lg">Cancel</button>
+                                <button onClick={handleSave} className="px-3 py-1.5 text-sm bg-accent hover:bg-accent-hover text-accent-content transition-all rounded-lg active:scale-95">Save</button>
+                                <button onClick={handleCancel} className="px-3 py-1.5 text-sm bg-secondary hover:bg-secondary-hover text-secondary-content transition-all rounded-lg active:scale-95">Cancel</button>
                             </div>
                         </div>
                     ) : (
@@ -81,17 +99,53 @@ const ProjectDetail: React.FC<ProjectDetailProps> = ({ project, tasks, notes, re
                 </div>
             </header>
 
-            <Card icon={<CheckSquareIcon className="w-6 h-6" />} title="Tasks" onAdd={() => onOpenCaptureModal({ parentId: project.id, itemType: 'task' })}>
+            <Card icon={<CheckSquareIcon className="w-6 h-6" />} title="Tasks" onAdd={() => setIsAddingTask(true)} isCollapsible defaultOpen>
+                {isAddingTask && (
+                    <form onSubmit={handleAddTask} className="flex gap-2 mb-4 p-2 bg-background/50 rounded-lg border border-outline-dark animate-pop-in">
+                        <input
+                            type="text"
+                            value={newTaskTitle}
+                            onChange={(e) => setNewTaskTitle(e.target.value)}
+                            onKeyDown={(e) => e.key === 'Escape' && setIsAddingTask(false)}
+                            placeholder="What needs to be done?"
+                            autoFocus
+                            className="flex-1 bg-transparent border-none px-2 py-1 text-sm text-text-primary focus:outline-none"
+                        />
+                        <button type="submit" className="px-3 py-1 text-xs font-medium bg-secondary hover:bg-secondary-hover text-secondary-content transition-all rounded-md active:scale-95">Add Task</button>
+                        <button type="button" onClick={() => setIsAddingTask(false)} className="px-3 py-1 text-xs font-medium text-text-secondary hover:bg-neutral rounded-md active:scale-95">Cancel</button>
+                    </form>
+                )}
                 {tasks.length > 0 ? (
-                    <ul className="space-y-1 mb-4">
-                        {tasks.map(task => (
-                            <li key={task.id}><TaskItem task={task} onToggleTask={onToggleTask} onUpdateTask={onUpdateTask} /></li>
+                    <ul className="space-y-1" onDragLeave={() => setDragOverTaskId(null)}>
+                        {tasks.map((task, index) => (
+                            <li 
+                                key={task.id} 
+                                className={`relative cursor-move transition-opacity ${draggedTaskId === task.id ? 'opacity-30' : 'opacity-100'} ${index === 0 && !isAddingTask ? 'animate-pop-in' : ''}`}
+                                draggable={true}
+                                onDragStart={(e) => { e.dataTransfer.setData('text/plain', task.id); setDraggedTaskId(task.id); }}
+                                onDragEnd={() => { setDraggedTaskId(null); setDragOverTaskId(null); }}
+                                onDragOver={(e) => { e.preventDefault(); setDragOverTaskId(task.id); }}
+                                onDrop={(e) => {
+                                    e.preventDefault();
+                                    const sourceId = e.dataTransfer.getData('text/plain');
+                                    if (sourceId && task.id && sourceId !== task.id) {
+                                        onReorderTasks(sourceId, task.id);
+                                    }
+                                    setDraggedTaskId(null);
+                                    setDragOverTaskId(null);
+                                }}
+                            >
+                                {dragOverTaskId === task.id && draggedTaskId !== task.id && (
+                                    <div className="absolute -top-1 left-2 right-2 h-1 bg-accent rounded-full" />
+                                )}
+                                <TaskItem task={task} onToggleTask={onToggleTask} onUpdateTask={onUpdateTask} />
+                            </li>
                         ))}
                     </ul>
-                ) : <p className="text-text-tertiary text-sm text-center py-4">No tasks yet. Add one to get started!</p>}
+                ) : <CardEmptyState>Every great project starts with a single step. Add your first task.</CardEmptyState>}
             </Card>
 
-            <Card icon={<FileTextIcon className="w-6 h-6" />} title="Notes" onAdd={() => onOpenCaptureModal({ parentId: project.id, itemType: 'note' })}>
+            <Card icon={<FileTextIcon className="w-6 h-6" />} title="Notes" onAdd={() => onOpenCaptureModal({ parentId: project.id, itemType: 'note' })} isCollapsible defaultOpen>
                  {notes.length > 0 ? (
                     <ul className="space-y-2">
                         {notes.map(note => (
@@ -102,10 +156,10 @@ const ProjectDetail: React.FC<ProjectDetailProps> = ({ project, tasks, notes, re
                             </li>
                         ))}
                     </ul>
-                ) : <p className="text-text-tertiary text-sm text-center py-4">No notes for this project yet.</p>}
+                ) : <CardEmptyState>Jot down ideas, meeting minutes, or inspiration.</CardEmptyState>}
             </Card>
 
-            <Card icon={<ResourceIcon className="w-6 h-6" />} title="Resources" onAdd={() => onOpenCaptureModal({ parentId: project.id, itemType: 'resource' })}>
+            <Card icon={<ResourceIcon className="w-6 h-6" />} title="Resources" onAdd={() => onOpenCaptureModal({ parentId: project.id, itemType: 'resource' })} isCollapsible defaultOpen>
                  {resources.length > 0 ? (
                     <ul className="space-y-1">
                         {resources.map(resource => (
@@ -115,7 +169,7 @@ const ProjectDetail: React.FC<ProjectDetailProps> = ({ project, tasks, notes, re
                             </li>
                         ))}
                     </ul>
-                ) : <p className="text-text-tertiary text-sm text-center py-4">No resources for this project yet.</p>}
+                ) : <CardEmptyState>Collect links, files, and snippets related to this project.</CardEmptyState>}
             </Card>
 
         </div>

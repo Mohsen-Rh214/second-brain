@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useReducer } from 'react';
-import { View, CaptureContext, InboxItem } from '../types';
+import { View, CaptureContext, InboxItem, Task } from '../types';
 
 interface UIState {
     currentView: View;
@@ -13,6 +13,7 @@ interface UIState {
     searchQuery: string;
     isCommandBarOpen: boolean;
     toastMessage: string | null;
+    linkingTask: Task | null;
 }
 
 type UIAction =
@@ -23,6 +24,7 @@ type UIAction =
     | { type: 'SET_EDITING_NOTE'; payload: string | null }
     | { type: 'SET_EDITING_RESOURCE'; payload: string | null }
     | { type: 'SET_ORGANIZING_ITEM'; payload: InboxItem | null }
+    | { type: 'SET_LINKING_TASK'; payload: Task | null }
     | { type: 'SET_SEARCH_QUERY'; payload: string }
     | { type: 'SET_COMMAND_BAR_OPEN'; payload: boolean }
     | { type: 'SHOW_TOAST'; payload: string | null };
@@ -39,6 +41,7 @@ const initialState: UIState = {
     searchQuery: '',
     isCommandBarOpen: false,
     toastMessage: null,
+    linkingTask: null,
 };
 
 const uiReducer = (state: UIState, action: UIAction): UIState => {
@@ -65,6 +68,8 @@ const uiReducer = (state: UIState, action: UIAction): UIState => {
             return { ...state, editingResourceId: action.payload };
         case 'SET_ORGANIZING_ITEM':
             return { ...state, organizingItem: action.payload };
+        case 'SET_LINKING_TASK':
+            return { ...state, linkingTask: action.payload };
         case 'SET_SEARCH_QUERY':
             return { ...state, searchQuery: action.payload };
         case 'SET_COMMAND_BAR_OPEN':

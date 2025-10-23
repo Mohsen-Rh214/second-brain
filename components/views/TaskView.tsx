@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { Task, Project } from '../../types';
 import { CheckSquareIcon, SquareIcon, ListTodoIcon, FlagIcon, CalendarIcon } from '../shared/icons';
+import EmptyState from '../shared/EmptyState';
 
 interface TaskViewProps {
     tasks: Task[];
@@ -97,11 +98,11 @@ const TaskView: React.FC<TaskViewProps> = ({ tasks, projects, onToggleTask }) =>
             </div>
 
             {activeTasks.length === 0 ? (
-                 <div className="flex flex-col items-center justify-center h-64 text-text-tertiary border-2 border-dashed border-outline-dark rounded-xl bg-surface/80 backdrop-blur-xl">
-                    <ListTodoIcon className="w-16 h-16 mb-4" />
-                    <h2 className="text-xl font-semibold font-heading text-text-primary">No Active Tasks</h2>
-                    <p>Create a new task within a project to see it here.</p>
-                </div>
+                 <EmptyState
+                    icon={<ListTodoIcon />}
+                    title="All Clear!"
+                    description="You have no active tasks across all your projects. Enjoy the peace, or start a new project to get things moving."
+                />
             ) : (
                 <div className="space-y-6">
                     {sortedGroupKeys.map(groupKey => (

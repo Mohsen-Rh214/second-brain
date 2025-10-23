@@ -2,6 +2,7 @@ import React, { useMemo } from 'react';
 import { Area, Project, Task, Note, Resource } from '../../types';
 import { View } from '../../types';
 import { AreaIcon, ProjectIcon, ResourceIcon, FileTextIcon, SearchIcon, ListTodoIcon } from '../shared/icons';
+import EmptyState from '../shared/EmptyState';
 
 interface SearchViewProps {
     query: string;
@@ -74,11 +75,11 @@ const SearchView: React.FC<SearchViewProps> = ({ query, areas, projects, tasks, 
             </header>
             
             {totalResults === 0 ? (
-                 <div className="flex flex-col items-center justify-center h-64 text-text-tertiary border-2 border-dashed border-outline-dark rounded-xl bg-surface/80 backdrop-blur-xl">
-                    <SearchIcon className="w-16 h-16 mb-4" />
-                    <h2 className="text-xl font-semibold font-heading text-text-primary">No Results Found</h2>
-                    <p>Try a different search term.</p>
-                </div>
+                 <EmptyState
+                    icon={<SearchIcon />}
+                    title="No Results Found"
+                    description="Try a different search term or check for typos."
+                />
             ) : (
                 Object.entries(searchResults || {}).map(([type, items]) => {
                     const itemsArray = items as (Area | Project | Task | Note | Resource)[];

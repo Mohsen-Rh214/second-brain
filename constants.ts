@@ -1,4 +1,5 @@
 
+
 import { Area, Project, Task, Note, Resource } from './types';
 
 const now = new Date();
@@ -81,6 +82,17 @@ export const initialTasks: Task[] = [
     createdAt: now.toISOString(),
     updatedAt: now.toISOString(),
     status: 'active',
+  },
+  {
+    id: 'task-4',
+    title: 'Review PKM book draft',
+    projectId: null,
+    completed: false,
+    priority: 'Medium',
+    createdAt: new Date(now.getTime() - 1 * 24 * 60 * 60 * 1000).toISOString(),
+    updatedAt: new Date(now.getTime() - 1 * 24 * 60 * 60 * 1000).toISOString(),
+    status: 'active',
+    isMyDay: true,
   },
 ];
 

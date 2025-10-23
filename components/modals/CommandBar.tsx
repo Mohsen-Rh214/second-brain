@@ -81,7 +81,7 @@ const CommandBar: React.FC<CommandBarProps> = ({ isOpen, onClose, onCommand, are
   const filteredCommands = useMemo(() => {
     const lowerQuery = query.toLowerCase();
     if (!lowerQuery) {
-        const defaultActionIds = ['new-task', 'new-note', 'new-resource'];
+        const defaultActionIds = ['new-task', 'new-note', 'new-resource', 'new-project', 'new-area'];
         return baseCommands.filter(cmd => 
             cmd.type === 'navigation' || (cmd.type === 'action' && defaultActionIds.includes(cmd.id))
         );

@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { Area, Project, Task, View, InboxItem, DashboardCaptureType } from '../../types';
-import { ProjectIcon, CheckSquareIcon, ArrowRightIcon, InboxIcon, FileTextIcon, TrashIcon, CalendarIcon, ResourceIcon, SquareIcon } from '../shared/icons';
+import { ProjectIcon, CheckSquareIcon, ArrowRightIcon, InboxIcon, FileTextIcon, TrashIcon, CalendarIcon, ResourceIcon, SquareIcon, AreaIcon, ListTodoIcon } from '../shared/icons';
 import Card from '../shared/Card';
 import TaskItem from '../shared/TaskItem';
 
@@ -12,12 +12,14 @@ interface DashboardProps {
   onNavigate: (view: View, itemId?: string) => void;
   onToggleTask: (taskId: string) => void;
   onOrganizeItem: (item: InboxItem) => void;
+  onDirectOrganizeItem: (itemId: string, newParentIds: string[]) => void;
   onDeleteItem: (itemId: string) => void;
   onSaveNewTask: (title: string) => void;
   onDashboardCapture: (content: string, type: DashboardCaptureType) => void;
   onSelectItem: (item: InboxItem) => void;
   onReorderTasks: (sourceTaskId: string, targetTaskId: string) => void;
-  onUpdateTask: (taskId: string, updates: Partial<Pick<Task, 'title' | 'priority' | 'dueDate'>>) => void;
+  onUpdateTask: (taskId: string, updates: Partial<Task>) => void;
+  onOpenLinkTaskModal: (taskId: string) => void;
 }
 
 const CaptureCard = React.memo(function CaptureCard({ onCapture }: { onCapture: (content: string, type: DashboardCaptureType) => void }) {
@@ -37,6 +39,16 @@ const CaptureCard = React.memo(function CaptureCard({ onCapture }: { onCapture: 
         { id: 'resource', label: 'Resource' },
         { id: 'task', label: 'Task' },
     ];
+    
+    const handleDragOver = (e: React.DragEvent) => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'none';
+    };
+
+    const handleDrop = (e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+    }
 
     return (
         <div className="bg-surface/80 backdrop-blur-xl border border-outline rounded-2xl shadow-md p-5 h-full flex flex-col">
@@ -48,6 +60,8 @@ const CaptureCard = React.memo(function CaptureCard({ onCapture }: { onCapture: 
                     rows={3}
                     placeholder="Capture a thought, paste a link..."
                     className="w-full flex-1 bg-background/50 border border-outline px-3 py-2 text-sm text-text-primary focus:outline-none focus:ring-1 focus:ring-accent rounded-xl mb-3 custom-scrollbar"
+                    onDragOver={handleDragOver}
+                    onDrop={handleDrop}
                 />
                 <div className="flex justify-between items-center">
                     <div className="flex items-center gap-2">
@@ -66,25 +80,30 @@ const CaptureCard = React.memo(function CaptureCard({ onCapture }: { onCapture: 
                              </button>
                         ))}
                     </div>
-                    <button type="submit" className="px-4 py-2 text-sm font-medium bg-secondary hover:bg-secondary-hover text-secondary-content transition-colors rounded-lg">Add</button>
+                    <button type="submit" className="px-4 py-2 text-sm font-medium bg-secondary hover:bg-secondary-hover text-secondary-content transition-colors rounded-lg active:scale-95">Add</button>
                 </div>
              </form>
         </div>
     );
 });
 
-const Dashboard: React.FC<DashboardProps> = ({ projects, areas, tasks, inboxItems, onNavigate, onToggleTask, onOrganizeItem, onDeleteItem, onSaveNewTask, onDashboardCapture, onSelectItem, onReorderTasks, onUpdateTask }) => {
+const Dashboard: React.FC<DashboardProps> = ({ projects, areas, tasks, inboxItems, onNavigate, onToggleTask, onOrganizeItem, onDirectOrganizeItem, onDeleteItem, onSaveNewTask, onDashboardCapture, onSelectItem, onReorderTasks, onUpdateTask, onOpenLinkTaskModal }) => {
     
     const [myDayTask, setMyDayTask] = useState('');
     const [draggedTaskId, setDraggedTaskId] = useState<string | null>(null);
     const [dragOverTaskId, setDragOverTaskId] = useState<string | null>(null);
+    const [draggedInboxItemId, setDraggedInboxItemId] = useState<string | null>(null);
+    const [dropTargetId, setDropTargetId] = useState<string | null>(null);
+    const [isMyDayDropTarget, setIsMyDayDropTarget] = useState(false);
+    const [fadingOutTaskIds, setFadingOutTaskIds] = useState<Set<string>>(new Set());
 
-    const { myDayTasks, upcomingTasks, recentProjects } = useMemo(() => {
+    const { myDayTasks, upcomingTasks, recentProjects, recentAreas } = useMemo(() => {
         const today = new Date();
         today.setHours(23, 59, 59, 999);
         
-        const myDayTasks = tasks.filter(t => t.status === 'active' && !t.completed && (
-            (t.dueDate && new Date(t.dueDate) <= today) || t.projectId === null
+        const myDayTasks = tasks.filter(t => t.status === 'active' && (
+            (!t.completed && (t.isMyDay || (t.dueDate && new Date(t.dueDate) <= today))) ||
+            fadingOutTaskIds.has(t.id) // Keep item in list while fading out
         ));
 
         const upcomingTasks = tasks.filter(t => t.status === 'active' && !t.completed && t.dueDate && new Date(t.dueDate) > today)
@@ -94,10 +113,15 @@ const Dashboard: React.FC<DashboardProps> = ({ projects, areas, tasks, inboxItem
         const recentProjects = projects
             .filter(p => p.status === 'active')
             .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
-            .slice(0, 5);
+            .slice(0, 3);
         
-        return { myDayTasks, upcomingTasks, recentProjects };
-    }, [projects, tasks]);
+        const recentAreas = areas
+            .filter(p => p.status === 'active')
+            .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
+            .slice(0, 3);
+        
+        return { myDayTasks, upcomingTasks, recentProjects, recentAreas };
+    }, [projects, areas, tasks, fadingOutTaskIds]);
         
     const handleAddMyDayTask = (e: React.FormEvent) => {
         e.preventDefault();
@@ -107,6 +131,41 @@ const Dashboard: React.FC<DashboardProps> = ({ projects, areas, tasks, inboxItem
         }
     }
 
+    const handleToggleMyDayTask = (taskId: string) => {
+        const task = myDayTasks.find(t => t.id === taskId);
+        if (task && !task.completed) {
+            setFadingOutTaskIds(prev => new Set(prev).add(taskId));
+            setTimeout(() => {
+                onToggleTask(taskId);
+                setFadingOutTaskIds(prev => {
+                    const newSet = new Set(prev);
+                    newSet.delete(taskId);
+                    return newSet;
+                });
+            }, 500);
+        } else {
+            onToggleTask(taskId);
+        }
+    };
+    
+    const handleInputDragOver = (e: React.DragEvent) => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'none';
+    };
+
+    const handleInputDrop = (e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+    }
+
+    const getItemIcon = (item: InboxItem) => {
+        if (item.id.startsWith('note-')) return <FileTextIcon className="w-4 h-4 text-text-tertiary" />;
+        if (item.id.startsWith('res-')) return <ResourceIcon className="w-4 h-4 text-text-tertiary"/>;
+        if (item.id.startsWith('task-')) return <ListTodoIcon className="w-4 h-4 text-text-tertiary"/>;
+        return null;
+    }
+
+
   return (
     <div className="custom-scrollbar space-y-8 h-full">
       <header className="mb-4">
@@ -115,143 +174,233 @@ const Dashboard: React.FC<DashboardProps> = ({ projects, areas, tasks, inboxItem
       </header>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-8">
-          <div className="lg:col-span-1 xl:col-span-1 space-y-8">
-              <CaptureCard onCapture={onDashboardCapture} />
-              
-              <Card 
+          {/* Row 1 */}
+          <CaptureCard onCapture={onDashboardCapture} />
+
+          <Card icon={<InboxIcon className="w-6 h-6" />} title="Inbox">
+              {inboxItems.length > 0 ? (
+                  <div>
+                      <ul className="space-y-2 mb-4">
+                          {inboxItems.slice(0, 5).map(item => (
+                              <li key={item.id} 
+                                draggable
+                                onDragStart={(e) => {
+                                    e.dataTransfer.setData('text/plain', item.id);
+                                    setDraggedInboxItemId(item.id);
+                                }}
+                                onDragEnd={() => setDraggedInboxItemId(null)}
+                                className={`flex justify-between items-center p-2 group hover:bg-neutral rounded-xl transition-all duration-300 ease-soft cursor-grab ${draggedInboxItemId === item.id ? 'opacity-30' : ''}`}
+                              >
+                                  <button onClick={() => onSelectItem(item)} className="flex items-center gap-2 text-left">
+                                      {getItemIcon(item)}
+                                      <span className="font-medium truncate group-hover:text-accent">{item.title}</span>
+                                  </button>
+                                  <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                      <button onClick={() => onOrganizeItem(item)} className="text-sm bg-accent hover:bg-accent-hover text-accent-content font-semibold px-2 py-1 transition-colors rounded-md active:scale-95">Organize</button>
+                                      <button onClick={() => onDeleteItem(item.id)} className="p-1 text-text-secondary hover:text-destructive"><TrashIcon className="w-4 h-4"/></button>
+                                  </div>
+                              </li>
+                          ))}
+                      </ul>
+                      {inboxItems.length > 5 &&
+                        <button onClick={() => onNavigate('dashboard')} className="w-full text-center text-sm font-semibold text-accent hover:underline p-2">
+                            Process all {inboxItems.length} items &rarr;
+                        </button>
+                      }
+                  </div>
+              ) : (
+                  <p className="text-sm text-text-tertiary text-center py-4">Inbox is clear. Well done!</p>
+              )}
+          </Card>
+
+          <Card icon={<ProjectIcon className="w-6 h-6" />} title="Recent Projects">
+              {recentProjects.length > 0 ? (
+                  <ul className="space-y-2">
+                      {recentProjects.map(project => (
+                          <li key={project.id}
+                            onDragOver={(e) => { if (draggedInboxItemId) e.preventDefault(); }}
+                            onDragEnter={(e) => { if (draggedInboxItemId) { e.preventDefault(); setDropTargetId(project.id); } }}
+                            onDragLeave={() => { if (draggedInboxItemId) { setDropTargetId(null); } }}
+                            onDrop={(e) => {
+                                if (draggedInboxItemId) {
+                                    e.preventDefault();
+                                    const itemId = e.dataTransfer.getData('text/plain');
+                                    if (itemId) onDirectOrganizeItem(itemId, [project.id]);
+                                    setDropTargetId(null);
+                                    setDraggedInboxItemId(null);
+                                }
+                            }}
+                          >
+                              <button onClick={() => onNavigate('projects', project.id)} className={`w-full flex justify-between items-center text-left p-3 rounded-xl transition-all duration-300 ease-soft hover:-translate-y-0.5 ${dropTargetId === project.id ? 'bg-accent/20 ring-2 ring-accent/80 ring-inset' : 'hover:bg-neutral'}`}>
+                                  <div>
+                                    <p className="font-semibold">{project.title}</p>
+                                    <p className="text-xs text-text-secondary truncate">{areas.find(a => a.id === project.areaId)?.title || 'No Area'}</p>
+                                  </div>
+                                  <ArrowRightIcon className="w-4 h-4 text-text-tertiary"/>
+                              </button>
+                          </li>
+                      ))}
+                  </ul>
+              ) : ( <p className="text-sm text-text-tertiary text-center py-4">No active projects yet.</p> )}
+          </Card>
+
+          {/* Row 2 */}
+          <div
+            onDragOver={(e) => {
+                const item = inboxItems.find(i => i.id === draggedInboxItemId);
+                if (item && item.id.startsWith('task-')) {
+                    e.preventDefault();
+                    e.dataTransfer.dropEffect = 'move';
+                }
+            }}
+            onDragEnter={(e) => {
+                const item = inboxItems.find(i => i.id === draggedInboxItemId);
+                if (item && item.id.startsWith('task-')) {
+                    e.preventDefault();
+                    setIsMyDayDropTarget(true);
+                }
+            }}
+            onDragLeave={() => {
+                setIsMyDayDropTarget(false);
+            }}
+            onDrop={(e) => {
+                e.preventDefault();
+                const itemId = e.dataTransfer.getData('text/plain');
+                const item = inboxItems.find(i => i.id === itemId);
+                if (item && item.id.startsWith('task-')) {
+                    onUpdateTask(itemId, { isMyDay: true });
+                }
+                setIsMyDayDropTarget(false);
+                setDraggedInboxItemId(null);
+            }}
+            className={`rounded-2xl transition-all duration-300 ease-soft ${isMyDayDropTarget ? 'ring-2 ring-accent/80 ring-inset' : ''}`}
+          >
+            <Card 
                 icon={<CheckSquareIcon className="w-6 h-6" />} 
                 title="My Day"
-              >
-                   {myDayTasks.length > 0 ? (
-                       <ul className="space-y-1 mb-4" onDragLeave={() => setDragOverTaskId(null)}>
-                           {myDayTasks.map(task => (
-                               <li 
-                                key={task.id} 
-                                draggable={true}
-                                onDragStart={(e) => {
-                                    e.dataTransfer.setData('text/plain', task.id);
-                                    e.dataTransfer.effectAllowed = 'move';
-                                    setDraggedTaskId(task.id);
-                                }}
-                                onDragEnd={() => {
-                                    setDraggedTaskId(null);
-                                    setDragOverTaskId(null);
-                                }}
-                                onDragOver={(e) => {
-                                    e.preventDefault();
-                                    e.dataTransfer.dropEffect = 'move';
-                                    setDragOverTaskId(task.id);
-                                }}
-                                onDrop={(e) => {
-                                    e.preventDefault();
-                                    const sourceId = e.dataTransfer.getData('text/plain');
-                                    const targetId = task.id;
-                                    if (sourceId && targetId && sourceId !== targetId) {
-                                        onReorderTasks(sourceId, targetId);
-                                    }
-                                    setDraggedTaskId(null);
-                                    setDragOverTaskId(null);
-                                }}
-                                className={`relative cursor-move transition-opacity ${draggedTaskId === task.id ? 'opacity-30' : 'opacity-100'}`}
-                                >
-                                {dragOverTaskId === task.id && draggedTaskId !== task.id && (
-                                    <div className="absolute -top-1 left-2 right-2 h-1 bg-accent rounded-full" />
-                                )}
-                                <TaskItem 
-                                    task={task} 
-                                    onToggleTask={onToggleTask} 
-                                    projectName={task.projectId ? projects.find(p=>p.id === task.projectId)?.title : undefined}
-                                    onUpdateTask={onUpdateTask}
-                                />
-                               </li>
-                           ))}
-                       </ul>
-                   ) : (
-                       <p className="text-sm text-text-tertiary text-center py-4">No tasks for today. Enjoy the calm!</p>
-                   )}
-                   <form onSubmit={handleAddMyDayTask} className="flex gap-2">
+                className={`${isMyDayDropTarget ? 'bg-accent/10' : ''}`}
+            >
+                <form onSubmit={handleAddMyDayTask} className="flex gap-2 mb-4">
                         <input
                             type="text"
                             value={myDayTask}
                             onChange={(e) => setMyDayTask(e.target.value)}
                             placeholder="Add a task for today..."
                             className="flex-1 bg-background/50 border border-outline px-3 py-2 text-sm text-text-primary focus:outline-none focus:ring-1 focus:ring-accent rounded-lg"
+                            onDragOver={handleInputDragOver}
+                            onDrop={handleInputDrop}
                         />
-                        <button type="submit" className="px-4 py-2 text-sm font-medium bg-secondary hover:bg-secondary-hover text-secondary-content transition-colors rounded-lg">Add</button>
+                        <button type="submit" className="px-4 py-2 text-sm font-medium bg-secondary hover:bg-secondary-hover text-secondary-content transition-colors rounded-lg active:scale-95">Add</button>
                     </form>
-              </Card>
+                {myDayTasks.length > 0 ? (
+                    <ul className="space-y-1" onDragLeave={() => setDragOverTaskId(null)}>
+                        {myDayTasks.map(task => {
+                            const isFading = fadingOutTaskIds.has(task.id);
+                            return (
+                                <li 
+                                    key={task.id} 
+                                    draggable={true}
+                                    onDragStart={(e) => {
+                                        e.dataTransfer.setData('text/plain', task.id);
+                                        e.dataTransfer.effectAllowed = 'move';
+                                        setDraggedTaskId(task.id);
+                                    }}
+                                    onDragEnd={() => {
+                                        setDraggedTaskId(null);
+                                        setDragOverTaskId(null);
+                                    }}
+                                    onDragOver={(e) => {
+                                        if (draggedTaskId) {
+                                            e.preventDefault();
+                                            e.dataTransfer.dropEffect = 'move';
+                                            setDragOverTaskId(task.id);
+                                        }
+                                    }}
+                                    onDrop={(e) => {
+                                        if (draggedTaskId) {
+                                            e.preventDefault();
+                                            e.stopPropagation(); // Prevent drop on wrapper from firing
+                                            const sourceId = e.dataTransfer.getData('text/plain');
+                                            const targetId = task.id;
+                                            if (sourceId && targetId && sourceId !== targetId) {
+                                                onReorderTasks(sourceId, targetId);
+                                            }
+                                            setDraggedTaskId(null);
+                                            setDragOverTaskId(null);
+                                        }
+                                    }}
+                                    className={`relative cursor-move transition-opacity ${draggedTaskId === task.id ? 'opacity-30' : 'opacity-100'} ${isFading ? 'task-item-fading' : ''}`}
+                                    >
+                                    {dragOverTaskId === task.id && draggedTaskId !== task.id && (
+                                        <div className="absolute -top-1 left-2 right-2 h-1 bg-accent rounded-full" />
+                                    )}
+                                    <TaskItem 
+                                        task={task} 
+                                        onToggleTask={handleToggleMyDayTask} 
+                                        projectName={task.projectId ? projects.find(p=>p.id === task.projectId)?.title : undefined}
+                                        onUpdateTask={onUpdateTask}
+                                        onLinkTask={onOpenLinkTaskModal}
+                                        isFadingOut={isFading}
+                                    />
+                                </li>
+                            );
+                        })}
+                    </ul>
+                ) : (
+                    <p className="text-sm text-text-tertiary text-center py-4">No tasks for today. Enjoy the calm!</p>
+                )}
+            </Card>
           </div>
 
-          <div className="lg:col-span-1 xl:col-span-1 space-y-8">
-             <Card icon={<InboxIcon className="w-6 h-6" />} title="Inbox">
-                  {inboxItems.length > 0 ? (
-                      <div>
-                          <ul className="space-y-2 mb-4">
-                              {inboxItems.slice(0, 5).map(item => (
-                                  <li key={item.id} className="flex justify-between items-center p-2 group hover:bg-neutral rounded-xl transition-all duration-300 ease-soft">
-                                      <button onClick={() => onSelectItem(item)} className="flex items-center gap-2 text-left">
-                                          {item.id.startsWith('note-') ? <FileTextIcon className="w-4 h-4 text-text-tertiary" /> : <ResourceIcon className="w-4 h-4 text-text-tertiary"/>}
-                                          <span className="font-medium truncate group-hover:text-accent">{item.title}</span>
-                                      </button>
-                                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                          <button onClick={() => onOrganizeItem(item)} className="text-sm bg-accent hover:bg-accent-hover text-accent-content font-semibold px-2 py-1 transition-colors rounded-md">Organize</button>
-                                          <button onClick={() => onDeleteItem(item.id)} className="p-1 text-text-secondary hover:text-destructive"><TrashIcon className="w-4 h-4"/></button>
-                                      </div>
-                                  </li>
-                              ))}
-                          </ul>
-                          {inboxItems.length > 5 &&
-                            <button onClick={() => onNavigate('dashboard')} className="w-full text-center text-sm font-semibold text-accent hover:underline p-2">
-                                Process all {inboxItems.length} items &rarr;
-                            </button>
-                          }
-                      </div>
-                  ) : (
-                      <p className="text-sm text-text-tertiary text-center py-4">Inbox is clear. Well done!</p>
-                  )}
-             </Card>
-              <Card icon={<CalendarIcon className="w-6 h-6" />} title="Upcoming">
-                   {upcomingTasks.length > 0 ? (
-                       <ul className="space-y-1">
-                           {upcomingTasks.map(task => (
-                               <li key={task.id}>
-                                   <div className="flex items-center justify-between p-2 rounded-xl">
-                                       <div className="flex items-center gap-3">
-                                            <button onClick={() => onToggleTask(task.id)} className="text-text-secondary hover:text-accent"><SquareIcon className="w-5 h-5" /></button>
-                                            <span className="flex-1">{task.title}</span>
-                                       </div>
-                                       <span className="text-xs text-text-secondary">{new Date(task.dueDate!).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}</span>
+          <Card icon={<CalendarIcon className="w-6 h-6" />} title="Upcoming">
+               {upcomingTasks.length > 0 ? (
+                   <ul className="space-y-1">
+                       {upcomingTasks.map(task => (
+                           <li key={task.id}>
+                               <div className="flex items-center justify-between p-2 rounded-xl">
+                                   <div className="flex items-center gap-3">
+                                        <button onClick={() => onToggleTask(task.id)} className="text-text-secondary hover:text-accent"><SquareIcon className="w-5 h-5" /></button>
+                                        <span className="flex-1">{task.title}</span>
                                    </div>
-                               </li>
-                           ))}
-                       </ul>
-                   ) : (
-                       <p className="text-sm text-text-tertiary text-center py-4">Nothing on the horizon for the next week.</p>
-                   )}
-              </Card>
-          </div>
+                                   <span className="text-xs text-text-secondary">{new Date(task.dueDate!).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}</span>
+                               </div>
+                           </li>
+                       ))}
+                   </ul>
+               ) : (
+                   <p className="text-sm text-text-tertiary text-center py-4">Nothing on the horizon for the next week.</p>
+               )}
+          </Card>
 
-          <div className="lg:col-span-2 xl:col-span-1 space-y-8">
-              <Card icon={<ProjectIcon className="w-6 h-6" />} title="Recent Projects">
-                  {recentProjects.length > 0 ? (
-                      <ul className="space-y-2">
-                          {recentProjects.map(project => (
-                              <li key={project.id}>
-                                  <button onClick={() => onNavigate('projects', project.id)} className="w-full flex justify-between items-center text-left p-3 hover:bg-neutral rounded-xl transition-all duration-300 ease-soft hover:-translate-y-0.5">
-                                      <div>
-                                        <p className="font-semibold">{project.title}</p>
-                                        <p className="text-xs text-text-secondary truncate">{areas.find(a => a.id === project.areaId)?.title || 'No Area'}</p>
-                                      </div>
-                                      <ArrowRightIcon className="w-4 h-4 text-text-tertiary"/>
-                                  </button>
-                              </li>
-                          ))}
-                      </ul>
-                  ) : (
-                       <p className="text-sm text-text-tertiary text-center py-4">No active projects yet.</p>
-                  )}
-              </Card>
-          </div>
+          <Card icon={<AreaIcon className="w-6 h-6" />} title="Recent Areas">
+              {recentAreas.length > 0 ? (
+                  <div className="grid grid-cols-1 gap-2">
+                      {recentAreas.map(area => (
+                          <div key={area.id}
+                            onDragOver={(e) => { if (draggedInboxItemId) e.preventDefault(); }}
+                            onDragEnter={(e) => { if (draggedInboxItemId) { e.preventDefault(); setDropTargetId(area.id); } }}
+                            onDragLeave={() => { if (draggedInboxItemId) { setDropTargetId(null); } }}
+                            onDrop={(e) => {
+                                if (draggedInboxItemId) {
+                                    e.preventDefault();
+                                    const itemId = e.dataTransfer.getData('text/plain');
+                                    if (itemId) onDirectOrganizeItem(itemId, [area.id]);
+                                    setDropTargetId(null);
+                                    setDraggedInboxItemId(null);
+                                }
+                            }}
+                          >
+                              <button onClick={() => onNavigate('areas', area.id)} className={`w-full flex justify-between items-center text-left p-3 rounded-xl transition-all duration-300 ease-soft hover:-translate-y-0.5 ${dropTargetId === area.id ? 'bg-accent/20 ring-2 ring-accent/80 ring-inset' : 'hover:bg-neutral'}`}>
+                                  <div>
+                                    <p className="font-semibold">{area.title}</p>
+                                  </div>
+                                  <ArrowRightIcon className="w-4 h-4 text-text-tertiary"/>
+                              </button>
+                          </div>
+                      ))}
+                  </div>
+              ) : ( <p className="text-sm text-text-tertiary text-center py-4">No active areas yet.</p> )}
+          </Card>
       </div>
     </div>
   );

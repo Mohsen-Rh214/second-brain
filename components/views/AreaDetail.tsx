@@ -1,13 +1,16 @@
 import React from 'react';
-import { Area, Project, Note, Resource, View, CaptureContext } from '../../types';
+import { Area, Project, Note, Resource, View, CaptureContext, Task } from '../../types';
 import { ProjectIcon, FileTextIcon, ResourceIcon, LinkIcon } from '../shared/icons';
 import Card from '../shared/Card';
 import ActionMenu from '../shared/ActionMenu';
+import ProgressBar from '../shared/ProgressBar';
 import { useEditable } from '../../hooks/useEditable';
+import CardEmptyState from '../shared/CardEmptyState';
 
 interface AreaDetailProps {
     area: Area;
     projects: Project[];
+    tasks: Task[];
     notes: Note[];
     resources: Resource[];
     onArchive: (itemId: string) => void;
@@ -18,7 +21,7 @@ interface AreaDetailProps {
     onNavigate: (view: View, itemId: string) => void;
 }
 
-const AreaDetail: React.FC<AreaDetailProps> = ({ area, projects, notes, resources, onArchive, onDelete, onSelectNote, onUpdateArea, onOpenCaptureModal, onNavigate }) => {
+const AreaDetail: React.FC<AreaDetailProps> = ({ area, projects, tasks, notes, resources, onArchive, onDelete, onSelectNote, onUpdateArea, onOpenCaptureModal, onNavigate }) => {
     const titleEditor = useEditable(area.title, (newTitle) => onUpdateArea(area.id, { title: newTitle }));
     const descriptionEditor = useEditable(area.description, (newDescription) => onUpdateArea(area.id, { description: newDescription }));
 
@@ -37,6 +40,12 @@ const AreaDetail: React.FC<AreaDetailProps> = ({ area, projects, notes, resource
     const handleCancel = () => {
         titleEditor.handleCancel();
         descriptionEditor.handleCancel();
+    };
+    
+    const getProjectProgress = (project: Project) => {
+        const projectTasks = tasks.filter(t => project.taskIds.includes(t.id));
+        const completed = projectTasks.filter(t => t.completed).length;
+        return { completed, total: projectTasks.length };
     };
 
     return (
@@ -58,8 +67,8 @@ const AreaDetail: React.FC<AreaDetailProps> = ({ area, projects, notes, resource
                                 className="w-full bg-background/50 border border-outline rounded-lg px-3 py-2 text-text-secondary focus:outline-none focus:ring-1 focus:ring-accent custom-scrollbar max-w-prose"
                             />
                              <div className="flex gap-2 mt-2">
-                                <button onClick={handleSave} className="px-3 py-1.5 text-sm bg-accent hover:bg-accent-hover text-accent-content transition-colors rounded-lg">Save</button>
-                                <button onClick={handleCancel} className="px-3 py-1.5 text-sm bg-secondary hover:bg-secondary-hover text-secondary-content transition-colors rounded-lg">Cancel</button>
+                                <button onClick={handleSave} className="px-3 py-1.5 text-sm bg-accent hover:bg-accent-hover text-accent-content transition-all rounded-lg active:scale-95">Save</button>
+                                <button onClick={handleCancel} className="px-3 py-1.5 text-sm bg-secondary hover:bg-secondary-hover text-secondary-content transition-all rounded-lg active:scale-95">Cancel</button>
                             </div>
                         </div>
                     ) : (
@@ -78,22 +87,32 @@ const AreaDetail: React.FC<AreaDetailProps> = ({ area, projects, notes, resource
                 </div>
             </header>
 
-            <Card icon={<ProjectIcon className="w-6 h-6 text-accent" />} title="Projects" onAdd={() => onOpenCaptureModal({ parentId: area.id, itemType: 'project' })}>
+            <Card icon={<ProjectIcon className="w-6 h-6 text-accent" />} title="Projects" onAdd={() => onOpenCaptureModal({ parentId: area.id, itemType: 'project' })} isCollapsible defaultOpen>
                 {projects.length > 0 ? (
                     <ul className="space-y-2">
-                        {projects.map(project => (
+                        {projects.map(project => {
+                            const { completed, total } = getProjectProgress(project);
+                            return (
                              <li key={project.id}>
-                                <button onClick={() => onNavigate('projects', project.id)} className="w-full text-left p-3 hover:bg-neutral rounded-lg transition-colors">
-                                    <p className="font-semibold">{project.title}</p>
-                                    <p className="text-xs text-text-secondary truncate">{project.description}</p>
+                                <button onClick={() => onNavigate('projects', project.id)} className="w-full text-left p-3 hover:bg-neutral rounded-lg transition-colors flex justify-between items-center">
+                                    <div>
+                                        <p className="font-semibold">{project.title}</p>
+                                        <p className="text-xs text-text-secondary truncate">{project.description}</p>
+                                    </div>
+                                    {total > 0 && (
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-xs font-mono text-text-tertiary">{completed}/{total}</span>
+                                            <ProgressBar completed={completed} total={total} />
+                                        </div>
+                                    )}
                                 </button>
                             </li>
-                        ))}
+                        )})}
                     </ul>
-                ) : <p className="text-text-tertiary text-sm text-center py-4">No projects in this area yet.</p>}
+                ) : <CardEmptyState>No projects in this area yet. Add one to get started!</CardEmptyState>}
             </Card>
 
-            <Card icon={<FileTextIcon className="w-6 h-6 text-accent" />} title="Notes" onAdd={() => onOpenCaptureModal({ parentId: area.id, itemType: 'note' })}>
+            <Card icon={<FileTextIcon className="w-6 h-6 text-accent" />} title="Notes" onAdd={() => onOpenCaptureModal({ parentId: area.id, itemType: 'note' })} isCollapsible defaultOpen>
                  {notes.length > 0 ? (
                     <ul className="space-y-2">
                         {notes.map(note => (
@@ -104,10 +123,10 @@ const AreaDetail: React.FC<AreaDetailProps> = ({ area, projects, notes, resource
                             </li>
                         ))}
                     </ul>
-                ) : <p className="text-text-tertiary text-sm text-center py-4">No notes in this area yet.</p>}
+                ) : <CardEmptyState>Capture notes related to this area of your life.</CardEmptyState>}
             </Card>
 
-            <Card icon={<ResourceIcon className="w-6 h-6 text-accent" />} title="Resources" onAdd={() => onOpenCaptureModal({ parentId: area.id, itemType: 'resource' })}>
+            <Card icon={<ResourceIcon className="w-6 h-6 text-accent" />} title="Resources" onAdd={() => onOpenCaptureModal({ parentId: area.id, itemType: 'resource' })} isCollapsible defaultOpen>
                  {resources.length > 0 ? (
                     <ul className="space-y-1">
                         {resources.map(resource => (
@@ -117,7 +136,7 @@ const AreaDetail: React.FC<AreaDetailProps> = ({ area, projects, notes, resource
                             </li>
                         ))}
                     </ul>
-                ) : <p className="text-text-tertiary text-sm text-center py-4">No resources in this area yet.</p>}
+                ) : <CardEmptyState>Add resources that support this long-term responsibility.</CardEmptyState>}
             </Card>
         </div>
     );

@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useReducer, useEffect } from 'react';
-import { Area, Project, Task, Note, Resource, NewItemPayload, Status, ItemType, DashboardCaptureType } from '../types';
+import { Area, Project, Task, Note, Resource, NewItemPayload, Status, ItemType } from '../types';
 import { initialAreas, initialProjects, initialTasks, initialNotes, initialResources } from '../constants';
 import { getItemTypeFromId } from '../utils';
 
@@ -15,10 +15,10 @@ interface AppState {
 // Action types
 type Action =
     | { type: 'ADD_ITEM'; payload: { itemData: NewItemPayload; itemType: ItemType; parentId: string | null } }
-    | { type: 'DASHBOARD_CAPTURE'; payload: { content: string; type: DashboardCaptureType } }
+    | { type: 'ADD_INBOX_ITEM'; payload: { content: string; type: 'note' | 'resource' } }
     | { type: 'TOGGLE_TASK'; payload: { taskId: string } }
     | { type: 'REORDER_TASKS'; payload: { sourceTaskId: string; targetTaskId: string } }
-    | { type: 'UPDATE_TASK'; payload: { taskId: string; updates: Partial<Pick<Task, 'title' | 'priority' | 'dueDate'>> } }
+    | { type: 'UPDATE_TASK'; payload: { taskId: string; updates: Partial<Task> } }
     | { type: 'UPDATE_ITEM_STATUS'; payload: { itemId: string; status: Status } }
     | { type: 'DELETE_ITEM'; payload: { itemId: string } }
     | { type: 'UPDATE_NOTE'; payload: { noteId: string; title: string; content: string } }
@@ -59,11 +59,11 @@ const dataReducer = (state: AppState, action: Action): AppState => {
                     return { ...state, notes: [...state.notes, newNote], projects: newProjects };
                 }
                 case 'task': {
-                    const newTask: Task = createNewItem('task', { title: itemData.title, projectId: parentId, completed: false, dueDate: itemData.dueDate || undefined, priority: itemData.priority || undefined });
+                    const newTask: Task = createNewItem('task', { title: itemData.title, projectId: parentId, completed: false, dueDate: itemData.dueDate || undefined, priority: itemData.priority || undefined, isMyDay: itemData.isMyDay || false });
                     const newProjects = parentId?.startsWith('proj-')
-                        ? state.projects.map(p => p.id === parentId ? { ...p, taskIds: [...p.taskIds, newTask.id] } : p)
+                        ? state.projects.map(p => p.id === parentId ? { ...p, taskIds: [newTask.id, ...p.taskIds] } : p)
                         : state.projects;
-                    return { ...state, tasks: [...state.tasks, newTask], projects: newProjects };
+                    return { ...state, tasks: [newTask, ...state.tasks], projects: newProjects };
                 }
                 case 'resource': {
                     const newResource: Resource = createNewItem('res', { title: itemData.title, type: itemData.type || 'text', content: itemData.content || '', parentIds: parentId ? [parentId] : [] });
@@ -87,21 +87,23 @@ const dataReducer = (state: AppState, action: Action): AppState => {
                     return state;
             }
         }
-        case 'DASHBOARD_CAPTURE': {
+        case 'ADD_INBOX_ITEM': {
             const { content, type } = action.payload;
             let title = content.length > 50 ? content.substring(0, 50) + '...' : content;
             if (type === 'note') {
                 const newNote: Note = createNewItem('note', { title, content: content, parentIds: [] });
                 return { ...state, notes: [...state.notes, newNote] };
-            } else if (type === 'task') {
-                const newTask: Task = createNewItem('task', { title: content, projectId: null, completed: false });
-                return { ...state, tasks: [...state.tasks, newTask] };
             } else if (type === 'resource') {
                 let resourceContent = content;
                 if (content.match(/^https?:\/\//)) {
                     try {
                         const url = new URL(content);
-                        title = url.hostname.replace('www.', '');
+                        let potentialTitle = url.hostname.replace('www.', '');
+                        const lastDotIndex = potentialTitle.lastIndexOf('.');
+                        if (lastDotIndex > 0) { // Keep single-word domains like 'localhost'
+                            potentialTitle = potentialTitle.substring(0, lastDotIndex);
+                        }
+                        title = potentialTitle.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
                     } catch {
                         title = 'Link Resource';
                     }
@@ -219,9 +221,39 @@ const dataReducer = (state: AppState, action: Action): AppState => {
             const now = new Date().toISOString();
             const itemType = getItemTypeFromId(itemId);
 
+            if (itemType === 'task') {
+                const newProjectId = newParentIds[0] || null;
+                const newTasks = state.tasks.map(t => t.id === itemId ? { ...t, projectId: newProjectId, isMyDay: false, updatedAt: now } : t);
+
+                // Remove task from any old project
+                let newProjects = state.projects.map(p => ({
+                    ...p,
+                    taskIds: p.taskIds.filter(tid => tid !== itemId)
+                }));
+
+                // Add task to new project if one is selected
+                if (newProjectId) {
+                    newProjects = newProjects.map(p => p.id === newProjectId ? { ...p, taskIds: [itemId, ...p.taskIds] } : p);
+                }
+                return { ...state, tasks: newTasks, projects: newProjects };
+            }
+
             let newNotes = state.notes;
             let newResources = state.resources;
-            let newProjects = state.projects;
+            let newProjects = [...state.projects];
+
+            // Remove item from any old parent projects
+            newProjects = newProjects.map(p => {
+                const noteIndex = p.noteIds.indexOf(itemId);
+                if (noteIndex > -1) {
+                    p.noteIds.splice(noteIndex, 1);
+                }
+                const resourceIndex = p.resourceIds.indexOf(itemId);
+                if (resourceIndex > -1) {
+                    p.resourceIds.splice(resourceIndex, 1);
+                }
+                return p;
+            });
 
             if (itemType === 'note') {
                 newNotes = state.notes.map(n => n.id === itemId ? { ...n, parentIds: newParentIds, updatedAt: now } : n);
