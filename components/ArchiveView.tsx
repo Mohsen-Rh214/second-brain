@@ -1,7 +1,6 @@
-
 import React from 'react';
 import { BaseItem } from '../types';
-import { AreaIcon, ProjectIcon, ResourceIcon, FileTextIcon, CheckSquareIcon, RotateCcwIcon, TrashIcon, ArchiveIcon } from './icons';
+import { AreaIcon, ProjectIcon, ResourceIcon, FileTextIcon, RotateCcwIcon, TrashIcon, ArchiveIcon, ListTodoIcon } from './icons';
 
 interface ArchiveViewProps {
     items: BaseItem[];
@@ -10,11 +9,11 @@ interface ArchiveViewProps {
 }
 
 const itemTypeConfig = {
-    area: { label: "Areas", icon: <AreaIcon className="w-6 h-6 text-emerald-400" /> },
-    project: { label: "Projects", icon: <ProjectIcon className="w-6 h-6 text-sky-400" /> },
-    task: { label: "Tasks", icon: <CheckSquareIcon className="w-6 h-6 text-amber-400" /> },
-    note: { label: "Notes", icon: <FileTextIcon className="w-6 h-6 text-fuchsia-400" /> },
-    resource: { label: "Resources", icon: <ResourceIcon className="w-6 h-6 text-indigo-400" /> },
+    area: { label: "Areas", icon: <AreaIcon className="w-6 h-6 text-accent" /> },
+    project: { label: "Projects", icon: <ProjectIcon className="w-6 h-6 text-accent" /> },
+    task: { label: "Tasks", icon: <ListTodoIcon className="w-6 h-6 text-accent" /> },
+    note: { label: "Notes", icon: <FileTextIcon className="w-6 h-6 text-accent" /> },
+    resource: { label: "Resources", icon: <ResourceIcon className="w-6 h-6 text-accent" /> },
 }
 
 const getItemTypeFromId = (id: string): keyof typeof itemTypeConfig | null => {
@@ -46,16 +45,16 @@ const ArchiveView: React.FC<ArchiveViewProps> = ({ items, onRestore, onDelete })
     const orderedTypes = ['area', 'project', 'task', 'note', 'resource'] as const;
 
     return (
-        <div className="p-8">
+        <div>
             <header className="mb-8">
-                <h1 className="text-3xl font-bold">Archives</h1>
-                <p className="text-slate-400">View, restore, or permanently delete archived items.</p>
+                <h1 className="text-3xl font-bold font-heading">Archives</h1>
+                <p className="text-text-secondary">View, restore, or permanently delete archived items.</p>
             </header>
 
             {archivedItems.length === 0 ? (
-                 <div className="flex flex-col items-center justify-center h-64 text-slate-500 border-2 border-dashed border-slate-700 rounded-lg">
+                 <div className="flex flex-col items-center justify-center h-64 text-text-tertiary border-2 border-dashed border-outline-dark rounded-xl bg-surface/80 backdrop-blur-xl">
                     <ArchiveIcon className="w-16 h-16 mb-4" />
-                    <h2 className="text-xl font-semibold">The Archives are Empty</h2>
+                    <h2 className="text-xl font-semibold font-heading text-text-primary">The Archives are Empty</h2>
                     <p>When you archive an item, it will appear here.</p>
                 </div>
             ) : (
@@ -66,19 +65,19 @@ const ArchiveView: React.FC<ArchiveViewProps> = ({ items, onRestore, onDelete })
                     const config = itemTypeConfig[type];
 
                     return (
-                        <div key={type} className="bg-slate-800/50 rounded-lg mb-6">
-                            <header className="flex items-center gap-3 p-4 border-b border-slate-700">
+                        <div key={type} className="bg-surface/80 backdrop-blur-xl border border-outline rounded-xl shadow-md mb-6">
+                            <header className="flex items-center gap-3 p-4 border-b border-outline-dark">
                                 {config.icon}
-                                <h3 className="font-bold text-lg">{config.label}</h3>
+                                <h3 className="font-bold text-lg font-heading">{config.label}</h3>
                             </header>
                             <div className="p-2">
                                 <ul>
                                     {group.map(item => (
-                                        <li key={item.id} className="flex items-center justify-between p-2 rounded-md hover:bg-slate-700/50">
+                                        <li key={item.id} className="flex items-center justify-between p-2 rounded-lg hover:bg-neutral">
                                             <span className="font-medium">{item.title}</span>
                                             <div className="flex gap-2">
-                                                <button onClick={() => onRestore(item.id)} aria-label={`Restore ${item.title}`} className="p-2 text-slate-400 hover:text-emerald-400 rounded-md transition-colors"><RotateCcwIcon className="w-5 h-5"/></button>
-                                                <button onClick={() => onDelete(item.id)} aria-label={`Delete ${item.title}`} className="p-2 text-slate-400 hover:text-red-400 rounded-md transition-colors"><TrashIcon className="w-5 h-5"/></button>
+                                                <button onClick={() => onRestore(item.id)} aria-label={`Restore ${item.title}`} className="p-2 text-text-secondary hover:text-accent transition-colors rounded-full"><RotateCcwIcon className="w-5 h-5"/></button>
+                                                <button onClick={() => onDelete(item.id)} aria-label={`Delete ${item.title}`} className="p-2 text-text-secondary hover:text-destructive transition-colors rounded-full"><TrashIcon className="w-5 h-5"/></button>
                                             </div>
                                         </li>
                                     ))}

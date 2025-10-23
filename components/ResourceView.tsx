@@ -1,8 +1,7 @@
-
-
 import React from 'react';
 import { Resource, Project, Area } from '../types';
-import { ResourceIcon, LinkIcon, FileTextIcon, ArchiveBoxIcon, TrashIcon, ProjectIcon, AreaIcon } from './icons';
+import { ResourceIcon, LinkIcon, FileTextIcon, ArchiveBoxIcon, TrashIcon, ProjectIcon, AreaIcon, PlusIcon } from './icons';
+import { CaptureContext } from '../App';
 
 interface ResourceViewProps {
     resources: Resource[];
@@ -10,9 +9,10 @@ interface ResourceViewProps {
     areas: Area[];
     onArchive: (itemId: string) => void;
     onDelete: (itemId: string) => void;
+    onOpenCaptureModal: (context: CaptureContext) => void;
 }
 
-const ResourceView: React.FC<ResourceViewProps> = ({ resources, projects, areas, onArchive, onDelete }) => {
+const ResourceView: React.FC<ResourceViewProps> = ({ resources, projects, areas, onArchive, onDelete, onOpenCaptureModal }) => {
     
     const getParentName = (parentId: string) => {
         const project = projects.find(p => p.id === parentId);
@@ -24,45 +24,58 @@ const ResourceView: React.FC<ResourceViewProps> = ({ resources, projects, areas,
 
     const getResourceIcon = (type: Resource['type']) => {
         switch(type) {
-            case 'link': return <LinkIcon className="w-5 h-5 text-sky-400" />;
-            case 'file': return <FileTextIcon className="w-5 h-5 text-emerald-400" />;
-            case 'text': return <FileTextIcon className="w-5 h-5 text-amber-400" />;
-            default: return <ResourceIcon className="w-5 h-5 text-slate-400" />;
+            case 'link': return <LinkIcon className="w-5 h-5 text-accent" />;
+            case 'file': return <FileTextIcon className="w-5 h-5 text-accent" />;
+            case 'text': return <FileTextIcon className="w-5 h-5 text-accent" />;
+            default: return <ResourceIcon className="w-5 h-5 text-text-secondary" />;
         }
     }
 
+    const handleAddResource = () => {
+        onOpenCaptureModal({ parentId: null, itemType: 'resource' });
+    }
+
     return (
-        <div className="p-8">
-            <header className="mb-8">
-                <h1 className="text-3xl font-bold">Resources</h1>
-                <p className="text-slate-400">Your personal library of links, files, and text snippets.</p>
+        <div>
+            <header className="mb-8 flex justify-between items-center">
+                <div>
+                    <h1 className="text-3xl font-bold font-heading">Resources</h1>
+                    <p className="text-text-secondary">Your personal library of links, files, and text snippets.</p>
+                </div>
+                 <button 
+                    onClick={handleAddResource}
+                    className="flex items-center gap-2 bg-accent hover:bg-accent-hover text-accent-content font-semibold px-4 py-2 transition-colors rounded-lg shadow-sm"
+                 >
+                    <PlusIcon className="w-5 h-5"/>
+                    Add Resource
+                </button>
             </header>
             
             {resources.length === 0 ? (
-                <div className="flex flex-col items-center justify-center h-64 text-slate-500 border-2 border-dashed border-slate-700 rounded-lg">
+                <div className="flex flex-col items-center justify-center h-64 text-text-tertiary border-2 border-dashed border-outline-dark rounded-xl bg-surface/80 backdrop-blur-xl">
                     <ResourceIcon className="w-16 h-16 mb-4" />
-                    <h2 className="text-xl font-semibold">No Resources Yet</h2>
-                    <p>Use the '+' button to capture your first resource.</p>
+                    <h2 className="text-xl font-semibold font-heading text-text-primary">No Resources Yet</h2>
+                    <p>Click "Add Resource" to capture your first item.</p>
                 </div>
             ) : (
-                <div className="bg-slate-800/50 rounded-lg">
-                    <ul className="divide-y divide-slate-700">
+                <div className="bg-surface/80 backdrop-blur-xl border border-outline rounded-xl shadow-md">
+                    <ul className="divide-y divide-outline-dark">
                         {resources.map(resource => (
-                            <li key={resource.id} className="flex items-center justify-between p-4 hover:bg-slate-700/50">
+                            <li key={resource.id} className="flex items-center justify-between p-4 hover:bg-neutral">
                                 <div className="flex items-center gap-4">
                                     {getResourceIcon(resource.type)}
                                     <div>
                                         {resource.type === 'link' ? (
-                                             <a href={resource.content} target="_blank" rel="noopener noreferrer" className="font-semibold hover:underline">{resource.title}</a>
+                                             <a href={resource.content} target="_blank" rel="noopener noreferrer" className="font-semibold hover:underline hover:text-accent">{resource.title}</a>
                                         ) : (
                                             <p className="font-semibold">{resource.title}</p>
                                         )}
-                                        <div className="flex items-center gap-2 text-xs text-slate-400 mt-1">
+                                        <div className="flex items-center gap-2 text-xs text-text-secondary mt-1">
                                             {resource.parentIds.map(pid => {
                                                 const parent = getParentName(pid);
                                                 if (!parent) return null;
                                                 return (
-                                                    <span key={pid} className="flex items-center gap-1 bg-slate-700 px-2 py-0.5 rounded-full">
+                                                    <span key={pid} className="flex items-center gap-1 bg-background/50 px-2 py-0.5 border border-outline rounded-md">
                                                         {parent.type === 'project' ? <ProjectIcon className="w-3 h-3"/> : <AreaIcon className="w-3 h-3"/>}
                                                         {parent.name}
                                                     </span>
@@ -72,8 +85,8 @@ const ResourceView: React.FC<ResourceViewProps> = ({ resources, projects, areas,
                                     </div>
                                 </div>
                                 <div className="flex gap-2">
-                                    <button onClick={() => onArchive(resource.id)} aria-label={`Archive ${resource.title}`} className="p-2 text-slate-400 hover:text-amber-400 rounded-md transition-colors"><ArchiveBoxIcon className="w-5 h-5"/></button>
-                                    <button onClick={() => onDelete(resource.id)} aria-label={`Delete ${resource.title}`} className="p-2 text-slate-400 hover:text-red-400 rounded-md transition-colors"><TrashIcon className="w-5 h-5"/></button>
+                                    <button onClick={() => onArchive(resource.id)} aria-label={`Archive ${resource.title}`} className="p-2 text-text-secondary hover:text-accent transition-colors rounded-full"><ArchiveBoxIcon className="w-5 h-5"/></button>
+                                    <button onClick={() => onDelete(resource.id)} aria-label={`Delete ${resource.title}`} className="p-2 text-text-secondary hover:text-destructive transition-colors rounded-full"><TrashIcon className="w-5 h-5"/></button>
                                 </div>
                             </li>
                         ))}

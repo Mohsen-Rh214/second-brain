@@ -28,8 +28,8 @@ export interface Project extends BaseItem {
 
 export interface Task extends BaseItem {
   completed: boolean;
-  // A task belongs to one project.
-  projectId: string;
+  // A task belongs to one project, or can be a standalone "My Day" task.
+  projectId: string | null;
   dueDate?: string; // e.g., '2024-08-15'
   priority?: 'Low' | 'Medium' | 'High';
 }

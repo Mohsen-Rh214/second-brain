@@ -1,5 +1,3 @@
-
-
 import React, { useMemo, useRef, useCallback } from 'react';
 import ForceGraph2D from 'react-force-graph-2d';
 import { Area, Project, Note, Resource, View } from '../types';
@@ -13,10 +11,10 @@ interface GraphViewProps {
 }
 
 const nodeColors: Record<string, string> = {
-    area: '#10b981',     // emerald-500
-    project: '#38bdf8',  // sky-400
-    note: '#a855f7',     // fuchsia-500
-    resource: '#6366f1', // indigo-500
+    area: '#C084FC',     // vibrant-purple
+    project: '#F1F5F9',  // text-primary
+    note: '#94A3B8',     // text-secondary
+    resource: '#64748B', // text-tertiary
 };
 
 const GraphView: React.FC<GraphViewProps> = ({ areas, projects, notes, resources, onNavigate }) => {
@@ -25,6 +23,7 @@ const GraphView: React.FC<GraphViewProps> = ({ areas, projects, notes, resources
     const graphData = useMemo(() => {
         const nodes: any[] = [];
         const links: any[] = [];
+        const linkSet = new Set(); // To avoid duplicate links
 
         // Add nodes
         areas.forEach(a => nodes.push({ id: a.id, name: a.title, type: 'area', val: 20 }));
@@ -32,16 +31,35 @@ const GraphView: React.FC<GraphViewProps> = ({ areas, projects, notes, resources
         notes.forEach(n => nodes.push({ id: n.id, name: n.title, type: 'note', val: 5 }));
         resources.forEach(r => nodes.push({ id: r.id, name: r.title, type: 'resource', val: 5 }));
 
-        // Add links
+        const addLink = (source: string, target: string) => {
+            const forward = `${source}-${target}`;
+            if (!linkSet.has(forward)) {
+                links.push({ source, target });
+                linkSet.add(forward);
+            }
+        }
+
+        // Add structural links
         projects.forEach(p => {
-            if (p.areaId) links.push({ source: p.areaId, target: p.id });
+            if (p.areaId) addLink(p.areaId, p.id);
         });
         notes.forEach(n => {
-            n.parentIds.forEach(pid => links.push({ source: pid, target: n.id }));
+            n.parentIds.forEach(pid => addLink(pid, n.id));
         });
         resources.forEach(r => {
-            r.parentIds.forEach(pid => links.push({ source: pid, target: r.id }));
+            r.parentIds.forEach(pid => addLink(pid, r.id));
         });
+        
+        // Add explicit content links from notes
+        const linkRegex = /data-link-id="([^"]+)"/g;
+        notes.forEach(n => {
+            let match;
+            while((match = linkRegex.exec(n.content)) !== null) {
+                const targetId = match[1];
+                addLink(n.id, targetId);
+            }
+        });
+
 
         return { nodes, links };
     }, [areas, projects, notes, resources]);
@@ -70,23 +88,23 @@ const GraphView: React.FC<GraphViewProps> = ({ areas, projects, notes, resources
     }, [onNavigate, notes, resources]);
 
     return (
-        <div className="w-full h-full bg-slate-900">
+        <div className="w-full h-full bg-surface/80 backdrop-blur-xl border border-outline rounded-xl shadow-md">
              <ForceGraph2D
                 ref={fgRef}
                 graphData={graphData}
                 nodeLabel="name"
-                nodeColor={(node: any) => nodeColors[node.type] || '#ffffff'}
-                linkColor={() => 'rgba(255,255,255,0.2)'}
+                nodeColor={(node: any) => nodeColors[node.type] || '#FFFFFF'}
+                linkColor={() => 'rgba(148, 163, 184, 0.3)'} /* text-secondary with transparency */
                 linkWidth={1}
                 onNodeClick={handleNodeClick}
                 nodeCanvasObject={(node: any, ctx, globalScale) => {
                     const label = node.name;
                     const fontSize = 12 / globalScale;
-                    ctx.font = `${fontSize}px Sans-Serif`;
+                    ctx.font = `${fontSize}px Inter, sans-serif`;
                     const textWidth = ctx.measureText(label).width;
-                    const bckgDimensions = [textWidth, fontSize].map(n => n + fontSize * 0.2); // some padding
+                    const bckgDimensions = [textWidth, fontSize].map(n => n + fontSize * 0.4); // some padding
 
-                    ctx.fillStyle = 'rgba(40, 40, 40, 0.7)';
+                    ctx.fillStyle = 'rgba(13, 17, 23, 0.8)'; // background color with transparency
                     ctx.fillRect(node.x - bckgDimensions[0] / 2, node.y - bckgDimensions[1] / 2, bckgDimensions[0], bckgDimensions[1]);
 
                     ctx.textAlign = 'center';

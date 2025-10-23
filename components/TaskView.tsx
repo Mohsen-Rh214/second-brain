@@ -1,5 +1,3 @@
-
-
 import React, { useState, useMemo } from 'react';
 import { Task, Project } from '../types';
 import { CheckSquareIcon, SquareIcon, ListTodoIcon, FlagIcon, CalendarIcon } from './icons';
@@ -14,11 +12,17 @@ type GroupBy = 'project' | 'dueDate' | 'priority';
 
 const priorityOrder: Record<string, number> = { High: 1, Medium: 2, Low: 3 };
 
+const priorityClasses: Record<string, { text: string, bg: string }> = {
+    High: { text: 'text-priority-high', bg: 'bg-priority-high-bg' },
+    Medium: { text: 'text-priority-medium', bg: 'bg-priority-medium-bg' },
+    Low: { text: 'text-priority-low', bg: 'bg-priority-low-bg' },
+};
+
 const TaskView: React.FC<TaskViewProps> = ({ tasks, projects, onToggleTask }) => {
     const [groupBy, setGroupBy] = useState<GroupBy>('project');
 
     const groupedTasks = useMemo(() => {
-        const activeTasks = tasks.filter(t => t.status === 'active');
+        const activeTasks = tasks.filter(t => t.status === 'active' && t.projectId);
 
         if (groupBy === 'project') {
             return activeTasks.reduce((acc, task) => {
@@ -69,28 +73,23 @@ const TaskView: React.FC<TaskViewProps> = ({ tasks, projects, onToggleTask }) =>
     }
 
     const sortedGroupKeys = getSortedGroupKeys(groupedTasks);
-    
-    const priorityColors: Record<string, string> = {
-        Low: 'text-sky-400',
-        Medium: 'text-amber-400',
-        High: 'text-red-400',
-    }
+    const activeTasks = tasks.filter(t => t.status === 'active' && t.projectId);
 
     return (
-        <div className="p-8 custom-scrollbar h-full">
+        <div className="custom-scrollbar h-full">
             <header className="mb-8">
-                <h1 className="text-3xl font-bold">My Tasks</h1>
-                <p className="text-slate-400">All your active tasks across all projects.</p>
+                <h1 className="text-3xl font-bold font-heading">All Tasks</h1>
+                <p className="text-text-secondary">All your active tasks from all projects.</p>
             </header>
 
-            <div className="mb-6 flex items-center gap-4 sticky top-0 bg-slate-900 py-4 z-10">
-                <span className="text-sm font-medium text-slate-400">Group by:</span>
+            <div className="mb-6 flex items-center gap-4 sticky top-0 bg-background/80 backdrop-blur-sm py-4 z-10">
+                <span className="text-sm font-medium text-text-secondary">Group by:</span>
                 <div className="flex gap-2">
                     {(['project', 'priority', 'dueDate'] as GroupBy[]).map(option => (
                         <button
                             key={option}
                             onClick={() => setGroupBy(option)}
-                            className={`px-3 py-1 text-sm rounded-md transition-colors ${groupBy === option ? 'bg-emerald-600 text-white' : 'bg-slate-700 hover:bg-slate-600'}`}
+                            className={`px-3 py-1 text-sm transition-colors border rounded-lg ${groupBy === option ? 'bg-accent text-accent-content border-accent' : 'bg-surface/80 border-outline-dark hover:bg-neutral'}`}
                         >
                             {option === 'dueDate' ? 'Due Date' : option.charAt(0).toUpperCase() + option.slice(1)}
                         </button>
@@ -98,36 +97,36 @@ const TaskView: React.FC<TaskViewProps> = ({ tasks, projects, onToggleTask }) =>
                 </div>
             </div>
 
-            {tasks.filter(t => t.status === 'active').length === 0 ? (
-                 <div className="flex flex-col items-center justify-center h-64 text-slate-500 border-2 border-dashed border-slate-700 rounded-lg">
+            {activeTasks.length === 0 ? (
+                 <div className="flex flex-col items-center justify-center h-64 text-text-tertiary border-2 border-dashed border-outline-dark rounded-xl bg-surface/80 backdrop-blur-xl">
                     <ListTodoIcon className="w-16 h-16 mb-4" />
-                    <h2 className="text-xl font-semibold">No Active Tasks</h2>
+                    <h2 className="text-xl font-semibold font-heading text-text-primary">No Active Tasks</h2>
                     <p>Create a new task within a project to see it here.</p>
                 </div>
             ) : (
                 <div className="space-y-6">
                     {sortedGroupKeys.map(groupKey => (
                         <section key={groupKey}>
-                            <h2 className="text-lg font-bold text-slate-300 mb-3">{groupKey}</h2>
+                            <h2 className="text-lg font-bold text-text-primary mb-3 font-heading">{groupKey}</h2>
                             <ul className="space-y-2">
                                 {groupedTasks[groupKey].map(task => (
-                                     <li key={task.id} className="flex items-center gap-3 p-3 rounded-md bg-slate-800/50">
+                                     <li key={task.id} className="flex items-center gap-3 p-3 bg-surface/80 backdrop-blur-xl border border-outline rounded-xl shadow-sm">
                                         <button onClick={() => onToggleTask(task.id)} aria-label={task.completed ? 'Mark as incomplete' : 'Mark as complete'}>
-                                            {task.completed ? <CheckSquareIcon className="w-5 h-5 text-emerald-400" /> : <SquareIcon className="w-5 h-5 text-slate-500" />}
+                                            {task.completed ? <CheckSquareIcon className="w-5 h-5 text-accent" /> : <SquareIcon className="w-5 h-5 text-text-tertiary" />}
                                         </button>
                                         <div className="flex-1">
-                                            <p className={`${task.completed ? 'line-through text-slate-500' : ''}`}>{task.title}</p>
-                                            {groupBy !== 'project' && <p className="text-xs text-slate-500">{projects.find(p => p.id === task.projectId)?.title}</p>}
+                                            <p className={`${task.completed ? 'line-through text-text-tertiary' : ''}`}>{task.title}</p>
+                                            {groupBy !== 'project' && <p className="text-xs text-text-tertiary">{projects.find(p => p.id === task.projectId)?.title}</p>}
                                         </div>
                                          {task.dueDate && groupBy !== 'dueDate' && (
-                                            <div className="flex items-center gap-1 text-xs text-slate-400">
+                                            <div className="flex items-center gap-1 text-xs text-text-secondary">
                                                 <CalendarIcon className="w-4 h-4" />
                                                 {new Date(task.dueDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
                                             </div>
                                         )}
-                                        {task.priority && groupBy !== 'priority' &&(
-                                            <div className={`flex items-center gap-1 text-xs font-semibold ${priorityColors[task.priority] || ''}`}>
-                                                <FlagIcon className="w-4 h-4" />
+                                        {task.priority && groupBy !== 'priority' && priorityClasses[task.priority] && (
+                                            <div className={`flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full ${priorityClasses[task.priority].bg} ${priorityClasses[task.priority].text}`}>
+                                                <FlagIcon className="w-3 h-3" />
                                                 {task.priority}
                                             </div>
                                         )}

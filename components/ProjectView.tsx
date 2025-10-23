@@ -1,9 +1,7 @@
-
-
-import React, { useState, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { Project, Task, Note, Resource } from '../types';
 import ProjectDetail from './ProjectDetail';
-import { ProjectIcon } from './icons';
+import { ProjectIcon, PlusIcon } from './icons';
 import { CaptureContext } from '../App';
 
 interface ProjectViewProps {
@@ -18,11 +16,12 @@ interface ProjectViewProps {
     onDelete: (itemId: string) => void;
     onSelectNote: (noteId: string) => void;
     onUpdateProject: (projectId: string, updates: { title?: string, description?: string }) => void;
-    onAddItem: (context: CaptureContext) => void;
+    onOpenCommandBar: () => void;
+    onOpenCaptureModal: (context: CaptureContext) => void;
     onUpdateTask: (taskId: string, updates: Partial<Pick<Task, 'title' | 'priority' | 'dueDate'>>) => void;
 }
 
-const ProjectView: React.FC<ProjectViewProps> = ({ projects, activeProjectId, onSelectProject, tasks, notes, resources, onToggleTask, onArchive, onDelete, onSelectNote, onUpdateProject, onAddItem, onUpdateTask }) => {
+const ProjectView: React.FC<ProjectViewProps> = ({ projects, activeProjectId, onSelectProject, tasks, notes, resources, onToggleTask, onArchive, onDelete, onSelectNote, onUpdateProject, onOpenCommandBar, onOpenCaptureModal, onUpdateTask }) => {
     
     useEffect(() => {
         // If there's no active project, or the active one is no longer in the list, select the first one.
@@ -36,24 +35,24 @@ const ProjectView: React.FC<ProjectViewProps> = ({ projects, activeProjectId, on
     const selectedProject = projects.find(p => p.id === activeProjectId) || null;
 
     return (
-        <div className="flex h-full">
-            <aside className="w-1/3 max-w-sm h-full flex flex-col border-r border-slate-800 bg-slate-950/30">
-                <header className="p-4 border-b border-slate-800 flex-shrink-0">
-                    <h2 className="text-lg font-bold">Projects</h2>
+        <div className="flex h-full gap-6">
+            <aside className="w-1/3 max-w-sm h-full flex flex-col bg-surface/80 backdrop-blur-xl border border-outline rounded-xl shadow-md">
+                <header className="p-4 border-b border-outline-dark flex-shrink-0 flex items-center justify-between">
+                    <h2 className="text-lg font-bold font-heading">Projects</h2>
                 </header>
                 <ul className="flex-1 overflow-y-auto custom-scrollbar p-2">
                     {projects.map(project => (
                         <li key={project.id}>
                             <button
                                 onClick={() => onSelectProject(project.id)}
-                                className={`w-full text-left p-3 rounded-md mb-1 transition-colors ${
+                                className={`w-full text-left p-3 mb-1 transition-all duration-200 rounded-lg ${
                                     activeProjectId === project.id 
-                                    ? 'bg-slate-700' 
-                                    : 'hover:bg-slate-800'
+                                    ? 'bg-accent/10 text-accent' 
+                                    : 'hover:bg-neutral'
                                 }`}
                             >
-                                <h3 className="font-semibold">{project.title}</h3>
-                                <p className="text-xs text-slate-400 truncate">{project.description}</p>
+                                <h3 className="font-semibold text-text-primary">{project.title}</h3>
+                                <p className="text-xs text-text-secondary truncate">{project.description || 'No description'}</p>
                             </button>
                         </li>
                     ))}
@@ -71,14 +70,21 @@ const ProjectView: React.FC<ProjectViewProps> = ({ projects, activeProjectId, on
                         onDelete={onDelete}
                         onSelectNote={onSelectNote}
                         onUpdateProject={onUpdateProject}
-                        onAddItem={onAddItem}
+                        onOpenCommandBar={onOpenCommandBar}
                         onUpdateTask={onUpdateTask}
                     />
                 ) : (
-                    <div className="flex flex-col items-center justify-center h-full text-slate-500">
+                    <div className="flex flex-col items-center justify-center h-full text-text-tertiary text-center p-8 bg-surface/80 backdrop-blur-xl border border-outline rounded-xl shadow-md">
                         <ProjectIcon className="w-16 h-16 mb-4" />
-                        <h2 className="text-xl font-semibold">No Projects</h2>
-                        <p>Select a project from the list or create a new one.</p>
+                        <h2 className="text-xl font-semibold font-heading text-text-primary">No Projects</h2>
+                        <p className="max-w-sm mb-4">Projects are short-term efforts with a defined goal. Create your first project to start organizing your tasks and notes.</p>
+                         <button 
+                            onClick={onOpenCommandBar}
+                            className="flex items-center gap-2 bg-accent hover:bg-accent-hover text-accent-content font-semibold px-4 py-2 transition-colors rounded-lg shadow-sm"
+                         >
+                            <PlusIcon className="w-5 h-5"/>
+                            Create New Project
+                        </button>
                     </div>
                 )}
             </section>
