@@ -33,9 +33,9 @@ const NavItem: React.FC<{
     <li>
         <button
             onClick={onClick}
-            className={`w-full flex items-center justify-between p-2.5 rounded-lg transition-all duration-200 text-sm font-medium ${
+            className={`w-full flex items-center justify-between p-2.5 rounded-xl transition-all duration-300 ease-soft text-sm font-medium ${
                 isActive 
-                ? 'bg-accent/10 text-accent shadow-sm' 
+                ? 'bg-accent text-accent-content shadow-sm font-semibold' 
                 : 'text-text-secondary hover:bg-neutral hover:text-text-primary'
             }`}
         >
@@ -45,7 +45,7 @@ const NavItem: React.FC<{
             </div>
             {badgeCount && badgeCount > 0 ? (
                 <span className={`px-2 py-0.5 text-xs rounded-full ${
-                    isActive ? 'bg-accent text-accent-content' : 'bg-neutral-hover text-secondary-content'
+                    isActive ? 'bg-accent-content/80 text-accent' : 'bg-neutral-hover text-secondary-content'
                 }`}>
                     {badgeCount}
                 </span>
@@ -56,10 +56,10 @@ const NavItem: React.FC<{
 
 const Sidebar: React.FC<SidebarProps> = ({ currentView, onNavigate, searchQuery, onSearchChange, inboxCount }) => {
     return (
-        <aside className="w-64 h-[calc(100vh-2rem)] m-4 flex-shrink-0 flex flex-col bg-surface/80 backdrop-blur-xl border border-outline rounded-xl shadow-md">
-            <header className="flex items-center gap-2 p-4 border-b border-outline-dark">
+        <aside className="w-72 h-[calc(100vh-2rem)] m-4 flex-shrink-0 flex flex-col bg-surface/80 backdrop-blur-xl border border-outline rounded-2xl shadow-md">
+            <header className="flex items-center gap-3 p-4 border-b border-outline-dark">
                 <BrainCircuitIcon className="w-7 h-7 text-accent" />
-                <h1 className="text-xl font-bold font-heading text-text-primary">Second Brain</h1>
+                <h1 className="text-xl font-bold font-heading text-text-primary tracking-tight">Second Brain</h1>
             </header>
 
             <div className="p-4 border-b border-outline-dark">
@@ -70,7 +70,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, onNavigate, searchQuery,
                       placeholder="Search..."
                       value={searchQuery}
                       onChange={(e) => onSearchChange(e.target.value)}
-                      className="w-full bg-background/50 border border-outline rounded-lg pl-9 pr-4 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-accent"
+                      className="w-full bg-background/50 border border-outline rounded-xl pl-9 pr-4 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-accent"
                   />
               </div>
             </div>

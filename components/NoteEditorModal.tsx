@@ -129,7 +129,7 @@ const NoteEditorModal: React.FC<NoteEditorModalProps> = ({ isOpen, onClose, onSa
 
   const modalClasses = isExpanded
     ? "w-screen h-screen max-w-full max-h-full rounded-none"
-    : "w-full max-w-4xl max-h-[90vh] rounded-xl";
+    : "w-full max-w-4xl max-h-[90vh] rounded-2xl";
 
   return (
     <div 

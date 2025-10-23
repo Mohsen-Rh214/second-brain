@@ -17,11 +17,11 @@ interface AreaDetailProps {
 }
 
 const ItemCard: React.FC<{icon: React.ReactElement, title: string, children?: React.ReactNode, onAdd?: () => void}> = ({icon, title, children, onAdd}) => (
-    <div className="bg-surface/80 backdrop-blur-xl border border-outline rounded-xl shadow-md mb-6">
+    <div className="bg-surface/80 backdrop-blur-xl border border-outline rounded-2xl shadow-md mb-6">
         <header className="flex items-center justify-between p-4 border-b border-outline-dark">
              <div className="flex items-center gap-3">
                 {icon}
-                <h3 className="font-bold text-lg font-heading">{title}</h3>
+                <h3 className="font-bold text-lg font-heading tracking-tight">{title}</h3>
             </div>
             {onAdd && (
                 <button onClick={onAdd} aria-label={`Add new ${title}`} className="p-1 text-text-secondary hover:bg-neutral hover:text-text-primary rounded-full transition-colors"><PlusIcon className="w-5 h-5"/></button>
@@ -97,7 +97,7 @@ const AreaDetail: React.FC<AreaDetailProps> = ({ area, projects, notes, resource
                                 type="text"
                                 value={editTitle}
                                 onChange={(e) => setEditTitle(e.target.value)}
-                                className="w-full bg-background/50 border border-outline rounded-lg px-3 py-2 text-3xl font-bold mb-2 text-text-primary focus:outline-none focus:ring-1 focus:ring-accent font-heading"
+                                className="w-full bg-background/50 border border-outline rounded-lg px-3 py-2 text-4xl font-bold mb-2 text-text-primary focus:outline-none focus:ring-1 focus:ring-accent font-heading tracking-tight"
                             />
                              <textarea
                                 value={editDescription}
@@ -112,7 +112,7 @@ const AreaDetail: React.FC<AreaDetailProps> = ({ area, projects, notes, resource
                         </div>
                     ) : (
                         <div>
-                            <h1 className="text-3xl font-bold mb-2 font-heading">{area.title}</h1>
+                            <h1 className="text-4xl font-bold mb-2 font-heading tracking-tight">{area.title}</h1>
                             <p className="text-text-secondary max-w-prose">{area.description}</p>
                         </div>
                     )}

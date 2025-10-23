@@ -453,14 +453,14 @@ const App: React.FC = () => {
         inboxCount={inboxItems.length}
       />
       <main className="flex-1 flex flex-col overflow-y-hidden">
-        <div className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">
+        <div className="flex-1 overflow-y-auto p-6 md:p-8">
           {renderView()}
         </div>
       </main>
 
       <button 
         onClick={() => handleOpenCaptureModal()} 
-        className="absolute bottom-8 right-8 bg-accent hover:bg-accent-hover text-accent-content p-4 rounded-full shadow-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-background focus:ring-accent-hover transition-all duration-200 group"
+        className="absolute bottom-8 right-8 bg-accent hover:bg-accent-hover text-accent-content p-4 rounded-full shadow-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-background focus:ring-accent-hover transition-transform duration-300 ease-soft animate-pulse-subtle"
         aria-label="Capture new item"
         >
         <PlusIcon className="w-6 h-6"/>
@@ -468,7 +468,7 @@ const App: React.FC = () => {
       </button>
       
       {toastMessage && (
-          <div className="absolute bottom-8 left-1/2 -translate-x-1/2 bg-surface backdrop-blur-md border border-outline px-4 py-2 rounded-xl shadow-lg text-sm text-text-primary animate-fade-in-out">
+          <div className="absolute bottom-8 left-1/2 -translate-x-1/2 bg-surface backdrop-blur-xl border border-outline px-6 py-3 rounded-xl shadow-lg text-sm text-text-primary animate-fade-in-out">
               {toastMessage}
           </div>
       )}

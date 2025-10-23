@@ -11,10 +11,10 @@ interface GraphViewProps {
 }
 
 const nodeColors: Record<string, string> = {
-    area: '#C084FC',     // vibrant-purple
-    project: '#F1F5F9',  // text-primary
-    note: '#94A3B8',     // text-secondary
-    resource: '#64748B', // text-tertiary
+    area: '#BF5AF2',     // vibrant-purple
+    project: '#F2F2F7',  // text-primary
+    note: '#8E8E93',     // text-secondary
+    resource: '#636366', // text-tertiary
 };
 
 const GraphView: React.FC<GraphViewProps> = ({ areas, projects, notes, resources, onNavigate }) => {
@@ -88,13 +88,13 @@ const GraphView: React.FC<GraphViewProps> = ({ areas, projects, notes, resources
     }, [onNavigate, notes, resources]);
 
     return (
-        <div className="w-full h-full bg-surface/80 backdrop-blur-xl border border-outline rounded-xl shadow-md">
+        <div className="w-full h-full bg-surface/80 backdrop-blur-xl border border-outline rounded-2xl shadow-md">
              <ForceGraph2D
                 ref={fgRef}
                 graphData={graphData}
                 nodeLabel="name"
                 nodeColor={(node: any) => nodeColors[node.type] || '#FFFFFF'}
-                linkColor={() => 'rgba(148, 163, 184, 0.3)'} /* text-secondary with transparency */
+                linkColor={() => 'rgba(142, 142, 147, 0.3)'} /* text-secondary with transparency */
                 linkWidth={1}
                 onNodeClick={handleNodeClick}
                 nodeCanvasObject={(node: any, ctx, globalScale) => {
@@ -104,7 +104,7 @@ const GraphView: React.FC<GraphViewProps> = ({ areas, projects, notes, resources
                     const textWidth = ctx.measureText(label).width;
                     const bckgDimensions = [textWidth, fontSize].map(n => n + fontSize * 0.4); // some padding
 
-                    ctx.fillStyle = 'rgba(13, 17, 23, 0.8)'; // background color with transparency
+                    ctx.fillStyle = 'rgba(22, 22, 24, 0.8)'; // background color with transparency
                     ctx.fillRect(node.x - bckgDimensions[0] / 2, node.y - bckgDimensions[1] / 2, bckgDimensions[0], bckgDimensions[1]);
 
                     ctx.textAlign = 'center';

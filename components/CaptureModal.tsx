@@ -97,7 +97,7 @@ const CaptureModal: React.FC<CaptureModalProps> = ({ isOpen, onClose, onSave, pr
         aria-labelledby="capture-modal-title"
     >
       <div 
-        className="bg-surface/80 backdrop-blur-xl w-full max-w-2xl max-h-[90vh] flex flex-col border border-outline rounded-xl shadow-lg"
+        className="bg-surface/80 backdrop-blur-xl w-full max-w-2xl max-h-[90vh] flex flex-col border border-outline rounded-2xl shadow-lg"
         onClick={e => e.stopPropagation()}
       >
         <header className="flex items-center justify-between p-4 border-b border-outline-dark flex-shrink-0">

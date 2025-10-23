@@ -20,17 +20,17 @@ interface DashboardProps {
 }
 
 const Widget: React.FC<{ icon: React.ReactElement; title: string; children: React.ReactNode }> = ({ icon, title, children }) => (
-  <div className="bg-surface/80 backdrop-blur-xl border border-outline rounded-xl shadow-md h-full flex flex-col">
-    <header className="flex items-center gap-3 p-4 border-b border-outline-dark">
+  <div className="bg-surface/80 backdrop-blur-xl border border-outline rounded-2xl shadow-md h-full flex flex-col">
+    <header className="flex items-center gap-3 p-5 border-b border-outline-dark">
       <div className="text-accent">{icon}</div>
-      <h2 className="font-bold text-lg font-heading text-text-primary">{title}</h2>
+      <h2 className="font-bold text-lg font-heading text-text-primary tracking-tight">{title}</h2>
     </header>
-    <div className="p-4 flex-1">{children}</div>
+    <div className="p-5 flex-1">{children}</div>
   </div>
 );
 
 const TaskItem: React.FC<{ task: Task, onToggleTask: (id: string) => void, projectName?: string }> = ({ task, onToggleTask, projectName }) => (
-    <div className="flex items-start gap-3 p-2 group hover:bg-neutral rounded-lg transition-colors">
+    <div className="flex items-start gap-3 p-2 group hover:bg-neutral rounded-xl transition-all duration-300 ease-soft hover:-translate-y-0.5">
         <button onClick={() => onToggleTask(task.id)} aria-label={task.completed ? 'Mark as incomplete' : 'Mark as complete'} className="mt-1 flex-shrink-0 text-text-secondary hover:text-accent transition-colors">
             {task.completed ? <CheckSquareIcon className="w-5 h-5 text-accent" /> : <SquareIcon className="w-5 h-5" />}
         </button>
@@ -60,15 +60,15 @@ const CaptureCard: React.FC<{ onCapture: (content: string, type: DashboardCaptur
     ];
 
     return (
-        <div className="bg-surface/80 backdrop-blur-xl border border-outline rounded-xl shadow-md p-4 h-full flex flex-col">
-             <h2 className="font-bold text-lg font-heading text-text-primary mb-3">Capture</h2>
+        <div className="bg-surface/80 backdrop-blur-xl border border-outline rounded-2xl shadow-md p-5 h-full flex flex-col">
+             <h2 className="font-bold text-lg font-heading text-text-primary mb-3 tracking-tight">Capture</h2>
              <form onSubmit={handleSubmit} className="flex-1 flex flex-col">
                 <textarea
                     value={content}
                     onChange={(e) => setContent(e.target.value)}
                     rows={3}
                     placeholder="Capture a thought, paste a link..."
-                    className="w-full flex-1 bg-background/50 border border-outline px-3 py-2 text-sm text-text-primary focus:outline-none focus:ring-1 focus:ring-accent rounded-lg mb-3 custom-scrollbar"
+                    className="w-full flex-1 bg-background/50 border border-outline px-3 py-2 text-sm text-text-primary focus:outline-none focus:ring-1 focus:ring-accent rounded-xl mb-3 custom-scrollbar"
                 />
                 <div className="flex justify-between items-center">
                     <div className="flex items-center gap-2">
@@ -77,7 +77,7 @@ const CaptureCard: React.FC<{ onCapture: (content: string, type: DashboardCaptur
                                 key={btn.id}
                                 type="button"
                                 onClick={() => setType(btn.id)}
-                                className={`px-3 py-1 text-xs font-semibold rounded-full border transition-colors ${
+                                className={`px-3 py-1 text-xs font-semibold rounded-lg border transition-colors duration-300 ease-soft ${
                                     type === btn.id 
                                     ? 'bg-accent text-accent-content border-accent' 
                                     : 'bg-transparent hover:bg-accent/10 border-outline-dark text-text-secondary hover:text-accent'
@@ -124,15 +124,15 @@ const Dashboard: React.FC<DashboardProps> = ({ projects, tasks, inboxItems, onNa
     }
 
   return (
-    <div className="custom-scrollbar space-y-6 h-full">
+    <div className="custom-scrollbar space-y-8 h-full">
       <header className="mb-4">
-        <h1 className="text-3xl font-bold text-text-primary mb-1 font-heading">Home</h1>
+        <h1 className="text-4xl font-bold text-text-primary mb-1 font-heading tracking-tight">Home</h1>
         <p className="text-text-secondary">Your command center for clarity and action.</p>
       </header>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-8">
           {/* Column 1: Capture & My Day */}
-          <div className="lg:col-span-1 xl:col-span-1 space-y-6">
+          <div className="lg:col-span-1 xl:col-span-1 space-y-8">
               <CaptureCard onCapture={onDashboardCapture} />
               
               <Widget icon={<CheckSquareIcon className="w-6 h-6" />} title="My Day">
@@ -159,13 +159,13 @@ const Dashboard: React.FC<DashboardProps> = ({ projects, tasks, inboxItems, onNa
           </div>
 
           {/* Column 2: Inbox & Upcoming */}
-          <div className="lg:col-span-1 xl:col-span-1 space-y-6">
+          <div className="lg:col-span-1 xl:col-span-1 space-y-8">
              <Widget icon={<InboxIcon className="w-6 h-6" />} title="Inbox">
                   {inboxItems.length > 0 ? (
                       <div>
                           <ul className="space-y-2 mb-4">
                               {inboxItems.slice(0, 5).map(item => (
-                                  <li key={item.id} className="flex justify-between items-center p-2 group hover:bg-neutral rounded-lg">
+                                  <li key={item.id} className="flex justify-between items-center p-2 group hover:bg-neutral rounded-xl transition-all duration-300 ease-soft">
                                       <button onClick={() => onSelectItem(item)} className="flex items-center gap-2 text-left">
                                           {item.id.startsWith('note-') ? <FileTextIcon className="w-4 h-4 text-text-tertiary" /> : <ResourceIcon className="w-4 h-4 text-text-tertiary"/>}
                                           <span className="font-medium truncate group-hover:text-accent">{item.title}</span>
@@ -192,7 +192,7 @@ const Dashboard: React.FC<DashboardProps> = ({ projects, tasks, inboxItems, onNa
                        <ul className="space-y-1">
                            {upcomingTasks.map(task => (
                                <li key={task.id}>
-                                   <div className="flex items-center justify-between p-2 rounded-lg">
+                                   <div className="flex items-center justify-between p-2 rounded-xl">
                                        <div className="flex items-center gap-3">
                                             <button onClick={() => onToggleTask(task.id)} className="text-text-secondary hover:text-accent"><SquareIcon className="w-5 h-5" /></button>
                                             <span className="flex-1">{task.title}</span>
@@ -209,13 +209,13 @@ const Dashboard: React.FC<DashboardProps> = ({ projects, tasks, inboxItems, onNa
           </div>
 
           {/* Column 3: Recent Projects */}
-          <div className="lg:col-span-2 xl:col-span-1 space-y-6">
+          <div className="lg:col-span-2 xl:col-span-1 space-y-8">
               <Widget icon={<ProjectIcon className="w-6 h-6" />} title="Recent Projects">
                   {recentProjects.length > 0 ? (
                       <ul className="space-y-2">
                           {recentProjects.map(project => (
                               <li key={project.id}>
-                                  <button onClick={() => onNavigate('projects', project.id)} className="w-full flex justify-between items-center text-left p-3 hover:bg-neutral rounded-lg transition-all duration-200">
+                                  <button onClick={() => onNavigate('projects', project.id)} className="w-full flex justify-between items-center text-left p-3 hover:bg-neutral rounded-xl transition-all duration-300 ease-soft hover:-translate-y-0.5">
                                       <div>
                                         <p className="font-semibold">{project.title}</p>
                                         <p className="text-xs text-text-secondary truncate">{projects.find(p => p.id === project.areaId)?.title || 'No Area'}</p>

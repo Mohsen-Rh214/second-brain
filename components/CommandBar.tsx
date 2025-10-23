@@ -142,7 +142,7 @@ const CommandBar: React.FC<CommandBarProps> = ({ isOpen, onClose, onCommand, are
 
   return (
     <div className="fixed inset-0 bg-black/20 z-50 flex items-start justify-center pt-24 backdrop-blur-md" onClick={onClose}>
-      <div className="bg-surface/80 backdrop-blur-xl w-full max-w-2xl border border-outline rounded-xl shadow-lg" onClick={e => e.stopPropagation()}>
+      <div className="bg-surface/80 backdrop-blur-xl w-full max-w-2xl border border-outline rounded-2xl shadow-lg" onClick={e => e.stopPropagation()}>
         <div className="flex items-center gap-4 p-4 border-b border-outline-dark">
           <SearchIcon className="w-5 h-5 text-text-secondary" />
           <input

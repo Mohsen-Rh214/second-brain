@@ -35,17 +35,17 @@ const ProjectView: React.FC<ProjectViewProps> = ({ projects, activeProjectId, on
     const selectedProject = projects.find(p => p.id === activeProjectId) || null;
 
     return (
-        <div className="flex h-full gap-6">
-            <aside className="w-1/3 max-w-sm h-full flex flex-col bg-surface/80 backdrop-blur-xl border border-outline rounded-xl shadow-md">
+        <div className="flex h-full gap-8">
+            <aside className="w-1/3 max-w-sm h-full flex flex-col bg-surface/80 backdrop-blur-xl border border-outline rounded-2xl shadow-md">
                 <header className="p-4 border-b border-outline-dark flex-shrink-0 flex items-center justify-between">
-                    <h2 className="text-lg font-bold font-heading">Projects</h2>
+                    <h2 className="text-lg font-bold font-heading tracking-tight">Projects</h2>
                 </header>
                 <ul className="flex-1 overflow-y-auto custom-scrollbar p-2">
                     {projects.map(project => (
                         <li key={project.id}>
                             <button
                                 onClick={() => onSelectProject(project.id)}
-                                className={`w-full text-left p-3 mb-1 transition-all duration-200 rounded-lg ${
+                                className={`w-full text-left p-3 mb-1 transition-all duration-200 rounded-xl ${
                                     activeProjectId === project.id 
                                     ? 'bg-accent/10 text-accent' 
                                     : 'hover:bg-neutral'
@@ -74,7 +74,7 @@ const ProjectView: React.FC<ProjectViewProps> = ({ projects, activeProjectId, on
                         onUpdateTask={onUpdateTask}
                     />
                 ) : (
-                    <div className="flex flex-col items-center justify-center h-full text-text-tertiary text-center p-8 bg-surface/80 backdrop-blur-xl border border-outline rounded-xl shadow-md">
+                    <div className="flex flex-col items-center justify-center h-full text-text-tertiary text-center p-8 bg-surface/80 backdrop-blur-xl border border-outline rounded-2xl shadow-md">
                         <ProjectIcon className="w-16 h-16 mb-4" />
                         <h2 className="text-xl font-semibold font-heading text-text-primary">No Projects</h2>
                         <p className="max-w-sm mb-4">Projects are short-term efforts with a defined goal. Create your first project to start organizing your tasks and notes.</p>
