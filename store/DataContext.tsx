@@ -22,7 +22,7 @@ type Action =
     | { type: 'UPDATE_ITEM_STATUS'; payload: { itemId: string; status: Status } }
     | { type: 'DELETE_ITEM'; payload: { itemId: string } }
     | { type: 'UPDATE_NOTE'; payload: { noteId: string; title: string; content: string } }
-    | { type: 'DRAFT_FROM_NOTE'; payload: { sourceNoteId: string, onDraftCreated: (newNoteId: string) => void } }
+    | { type: 'DRAFT_FROM_NOTE'; payload: { sourceNoteId: string, newNoteId: string } }
     | { type: 'UPDATE_RESOURCE'; payload: { resourceId: string; title: string; content: string } }
     | { type: 'UPDATE_PROJECT'; payload: { projectId: string; updates: { title?: string; description?: string } } }
     | { type: 'UPDATE_AREA'; payload: { areaId: string; updates: { title?: string; description?: string } } }
@@ -180,20 +180,22 @@ const dataReducer = (state: AppState, action: Action): AppState => {
             return { ...state, notes: state.notes.map(n => n.id === noteId ? { ...n, title, content, updatedAt: now } : n) };
         }
         case 'DRAFT_FROM_NOTE': {
-            const { sourceNoteId } = action.payload;
+            const { sourceNoteId, newNoteId } = action.payload;
             const sourceNote = state.notes.find(n => n.id === sourceNoteId);
             if (!sourceNote) return state;
 
             const linkHtml = `<a href="#" data-link-id="${sourceNote.id}" class="internal-link">${sourceNote.title}</a>`;
             const newContent = `<blockquote>${sourceNote.content}</blockquote><p><br></p><p><em>Inspired by: ${linkHtml}</em></p>`;
 
-            const newNote: Note = createNewItem('note', {
+            const newNote: Note = {
+                id: newNoteId,
                 title: `Draft: ${sourceNote.title}`,
                 content: newContent,
                 parentIds: [],
-            });
-
-            action.payload.onDraftCreated(newNote.id);
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString(),
+                status: 'active',
+            };
 
             return { ...state, notes: [...state.notes, newNote] };
         }

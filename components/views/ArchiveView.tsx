@@ -1,6 +1,7 @@
 import React from 'react';
 import { BaseItem } from '../../types';
 import { AreaIcon, ProjectIcon, ResourceIcon, FileTextIcon, RotateCcwIcon, TrashIcon, ArchiveIcon, ListTodoIcon } from '../shared/icons';
+import { getItemTypeFromId } from '../../utils';
 
 interface ArchiveViewProps {
     items: BaseItem[];
@@ -16,28 +17,16 @@ const itemTypeConfig = {
     resource: { label: "Resources", icon: <ResourceIcon className="w-6 h-6 text-accent" /> },
 }
 
-const getItemTypeFromId = (id: string): keyof typeof itemTypeConfig | null => {
-    const prefix = id.split('-')[0];
-    switch (prefix) {
-        case 'area': return 'area';
-        case 'proj': return 'project';
-        case 'task': return 'task';
-        case 'note': return 'note';
-        case 'res': return 'resource';
-        default: return null;
-    }
-}
-
 const ArchiveView: React.FC<ArchiveViewProps> = ({ items, onRestore, onDelete }) => {
     const archivedItems = items.filter(item => item.status === 'archived');
 
     const groupedItems = archivedItems.reduce((acc, item) => {
         const type = getItemTypeFromId(item.id);
         if (type) {
-            if (!acc[type]) {
-                acc[type] = [];
+            if (!acc[type as keyof typeof itemTypeConfig]) {
+                acc[type as keyof typeof itemTypeConfig] = [];
             }
-            acc[type].push(item);
+            acc[type as keyof typeof itemTypeConfig].push(item);
         }
         return acc;
     }, {} as Record<keyof typeof itemTypeConfig, BaseItem[]>);

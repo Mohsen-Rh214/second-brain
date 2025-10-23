@@ -59,3 +59,11 @@ export type NewItemPayload = {
 export type InboxItem = Note | Resource;
 
 export type View = 'dashboard' | 'inbox' | 'areas' | 'projects' | 'tasks' | 'resources' | 'archives' | 'graph' | 'review';
+
+export type ItemType = 'note' | 'task' | 'resource' | 'project' | 'area';
+export type DashboardCaptureType = 'note' | 'task' | 'resource';
+
+export type CaptureContext = {
+    parentId: string | null;
+    itemType?: ItemType;
+}

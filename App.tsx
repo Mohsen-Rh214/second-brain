@@ -97,16 +97,16 @@ const App: React.FC = () => {
   }, [dataDispatch, uiDispatch]);
 
   const handleDraftFromNote = useCallback((sourceNoteId: string) => {
+    const newNoteId = `note-${Date.now()}`;
     dataDispatch({
         type: 'DRAFT_FROM_NOTE',
         payload: {
             sourceNoteId,
-            onDraftCreated: (newNoteId) => {
-                uiDispatch({ type: 'SET_EDITING_NOTE', payload: newNoteId });
-                showToast('New draft created from note!');
-            }
+            newNoteId,
         }
     });
+    uiDispatch({ type: 'SET_EDITING_NOTE', payload: newNoteId });
+    showToast('New draft created from note!');
   }, [dataDispatch, showToast, uiDispatch]);
 
   const handleUpdateResource = useCallback((resourceId, title, content) => {

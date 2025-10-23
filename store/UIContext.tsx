@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useReducer, useCallback } from 'react';
+import React, { createContext, useContext, useReducer } from 'react';
 import { View, CaptureContext, InboxItem } from '../types';
 
 interface UIState {
@@ -43,14 +43,16 @@ const initialState: UIState = {
 
 const uiReducer = (state: UIState, action: UIAction): UIState => {
     switch (action.type) {
-        case 'SET_VIEW':
+        case 'SET_VIEW': {
+            const { view, itemId } = action.payload;
             return {
                 ...state,
-                currentView: action.payload.view,
+                currentView: view,
                 searchQuery: '',
-                activeAreaId: action.payload.view === 'areas' && action.payload.itemId ? action.payload.itemId : null,
-                activeProjectId: action.payload.view === 'projects' && action.payload.itemId ? action.payload.itemId : null,
+                activeAreaId: view === 'areas' ? (itemId || null) : null,
+                activeProjectId: view === 'projects' ? (itemId || null) : null,
             };
+        }
         case 'SET_ACTIVE_AREA':
             return { ...state, activeAreaId: action.payload };
         case 'SET_ACTIVE_PROJECT':
