@@ -1,0 +1,5 @@
+{
+  "name": "Second Brain",
+  "description": "A Personal Knowledge Management (PKM) application based on the CODE method (Capture, Organize, Distill, Express) and the PARA organization system. It helps you capture ideas, organize your knowledge for action, find the essence of what you've learned, and express your creativity.",
+  "requestFramePermissions": []
+}
