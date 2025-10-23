@@ -141,4 +141,4 @@ const TaskView: React.FC<TaskViewProps> = ({ tasks, projects, onToggleTask }) =>
     );
 };
 
-export default TaskView;
+export default React.memo(TaskView);

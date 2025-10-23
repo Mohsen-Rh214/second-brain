@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Area, Project, Task, Note, Resource, View, InboxItem } from '../types';
 import { DashboardCaptureType } from '../App';
 import { ProjectIcon, CheckSquareIcon, ArrowRightIcon, InboxIcon, FileTextIcon, SquareIcon, TrashIcon, CalendarIcon, ResourceIcon } from './icons';
@@ -19,29 +19,33 @@ interface DashboardProps {
   onSelectItem: (item: InboxItem) => void;
 }
 
-const Widget: React.FC<{ icon: React.ReactElement; title: string; children: React.ReactNode }> = ({ icon, title, children }) => (
-  <div className="bg-surface/80 backdrop-blur-xl border border-outline rounded-2xl shadow-md h-full flex flex-col">
-    <header className="flex items-center gap-3 p-5 border-b border-outline-dark">
-      <div className="text-accent">{icon}</div>
-      <h2 className="font-bold text-lg font-heading text-text-primary tracking-tight">{title}</h2>
-    </header>
-    <div className="p-5 flex-1">{children}</div>
-  </div>
-);
-
-const TaskItem: React.FC<{ task: Task, onToggleTask: (id: string) => void, projectName?: string }> = ({ task, onToggleTask, projectName }) => (
-    <div className="flex items-start gap-3 p-2 group hover:bg-neutral rounded-xl transition-all duration-300 ease-soft hover:-translate-y-0.5">
-        <button onClick={() => onToggleTask(task.id)} aria-label={task.completed ? 'Mark as incomplete' : 'Mark as complete'} className="mt-1 flex-shrink-0 text-text-secondary hover:text-accent transition-colors">
-            {task.completed ? <CheckSquareIcon className="w-5 h-5 text-accent" /> : <SquareIcon className="w-5 h-5" />}
-        </button>
-        <div className="flex-1">
-            <span className={`transition-colors ${task.completed ? 'line-through text-text-tertiary' : ''}`}>{task.title}</span>
-            {projectName && <p className="text-xs text-text-secondary">{projectName}</p>}
+const Widget = React.memo(function Widget({ icon, title, children }: { icon: React.ReactElement; title: string; children: React.ReactNode }) {
+    return (
+        <div className="bg-surface/80 backdrop-blur-xl border border-outline rounded-2xl shadow-md h-full flex flex-col">
+            <header className="flex items-center gap-3 p-5 border-b border-outline-dark">
+            <div className="text-accent">{icon}</div>
+            <h2 className="font-bold text-lg font-heading text-text-primary tracking-tight">{title}</h2>
+            </header>
+            <div className="p-5 flex-1">{children}</div>
         </div>
-    </div>
-);
+    );
+});
 
-const CaptureCard: React.FC<{ onCapture: (content: string, type: DashboardCaptureType) => void }> = ({ onCapture }) => {
+const TaskItem = React.memo(function TaskItem({ task, onToggleTask, projectName }: { task: Task, onToggleTask: (id: string) => void, projectName?: string }) {
+    return (
+        <div className="flex items-start gap-3 p-2 group hover:bg-neutral rounded-xl transition-all duration-300 ease-soft hover:-translate-y-0.5">
+            <button onClick={() => onToggleTask(task.id)} aria-label={task.completed ? 'Mark as incomplete' : 'Mark as complete'} className="mt-1 flex-shrink-0 text-text-secondary hover:text-accent transition-colors">
+                {task.completed ? <CheckSquareIcon className="w-5 h-5 text-accent" /> : <SquareIcon className="w-5 h-5" />}
+            </button>
+            <div className="flex-1">
+                <span className={`transition-colors ${task.completed ? 'line-through text-text-tertiary' : ''}`}>{task.title}</span>
+                {projectName && <p className="text-xs text-text-secondary">{projectName}</p>}
+            </div>
+        </div>
+    );
+});
+
+const CaptureCard = React.memo(function CaptureCard({ onCapture }: { onCapture: (content: string, type: DashboardCaptureType) => void }) {
     const [content, setContent] = useState('');
     const [type, setType] = useState<DashboardCaptureType>('note');
 
@@ -92,28 +96,32 @@ const CaptureCard: React.FC<{ onCapture: (content: string, type: DashboardCaptur
              </form>
         </div>
     );
-};
+});
 
 
 const Dashboard: React.FC<DashboardProps> = ({ projects, tasks, inboxItems, onNavigate, onToggleTask, onOrganizeItem, onDeleteItem, onSaveNewTask, onDashboardCapture, onSelectItem }) => {
     
     const [myDayTask, setMyDayTask] = useState('');
 
-    const today = new Date();
-    today.setHours(23, 59, 59, 999);
-    
-    const myDayTasks = tasks.filter(t => t.status === 'active' && !t.completed && (
-        (t.dueDate && new Date(t.dueDate) <= today) || t.projectId === null
-    ));
+    const { myDayTasks, upcomingTasks, recentProjects } = useMemo(() => {
+        const today = new Date();
+        today.setHours(23, 59, 59, 999);
+        
+        const myDayTasks = tasks.filter(t => t.status === 'active' && !t.completed && (
+            (t.dueDate && new Date(t.dueDate) <= today) || t.projectId === null
+        ));
 
-    const upcomingTasks = tasks.filter(t => t.status === 'active' && !t.completed && t.dueDate && new Date(t.dueDate) > today)
-        .sort((a, b) => new Date(a.dueDate!).getTime() - new Date(b.dueDate!).getTime())
-        .slice(0, 5);
+        const upcomingTasks = tasks.filter(t => t.status === 'active' && !t.completed && t.dueDate && new Date(t.dueDate) > today)
+            .sort((a, b) => new Date(a.dueDate!).getTime() - new Date(b.dueDate!).getTime())
+            .slice(0, 5);
 
-    const recentProjects = projects
-        .filter(p => p.status === 'active')
-        .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
-        .slice(0, 5);
+        const recentProjects = projects
+            .filter(p => p.status === 'active')
+            .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
+            .slice(0, 5);
+        
+        return { myDayTasks, upcomingTasks, recentProjects };
+    }, [projects, tasks]);
         
     const handleAddMyDayTask = (e: React.FormEvent) => {
         e.preventDefault();
@@ -235,4 +243,4 @@ const Dashboard: React.FC<DashboardProps> = ({ projects, tasks, inboxItems, onNa
   );
 };
 
-export default Dashboard;
+export default React.memo(Dashboard);

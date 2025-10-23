@@ -83,4 +83,4 @@ const ResourceEditorModal: React.FC<ResourceEditorModalProps> = ({ isOpen, onClo
   );
 };
 
-export default ResourceEditorModal;
+export default React.memo(ResourceEditorModal);

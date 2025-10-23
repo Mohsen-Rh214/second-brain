@@ -34,17 +34,17 @@ const AreaView: React.FC<AreaViewProps> = ({ areas, activeAreaId, onSelectArea, 
     const selectedArea = areas.find(a => a.id === activeAreaId) || null;
 
     return (
-        <div className="flex h-full gap-6">
-            <aside className="w-1/3 max-w-sm h-full flex flex-col bg-surface/80 backdrop-blur-xl border border-outline rounded-xl shadow-md">
+        <div className="flex h-full gap-8">
+            <aside className="w-1/3 max-w-sm h-full flex flex-col bg-surface/80 backdrop-blur-xl border border-outline rounded-2xl shadow-md">
                 <header className="p-4 border-b border-outline-dark flex-shrink-0 flex items-center justify-between">
-                    <h2 className="text-lg font-bold font-heading">Areas</h2>
+                    <h2 className="text-lg font-bold font-heading tracking-tight">Areas</h2>
                 </header>
                 <ul className="flex-1 overflow-y-auto custom-scrollbar p-2">
                     {areas.map(area => (
                         <li key={area.id}>
                             <button
                                 onClick={() => onSelectArea(area.id)}
-                                className={`w-full text-left p-3 mb-1 transition-all duration-200 rounded-lg ${
+                                className={`w-full text-left p-3 mb-1 transition-all duration-200 rounded-xl ${
                                     activeAreaId === area.id 
                                     ? 'bg-accent/10 text-accent' 
                                     : 'hover:bg-neutral'
@@ -72,7 +72,7 @@ const AreaView: React.FC<AreaViewProps> = ({ areas, activeAreaId, onSelectArea, 
                         onNavigate={onNavigate}
                     />
                 ) : (
-                    <div className="flex flex-col items-center justify-center h-full text-text-tertiary text-center p-8 bg-surface/80 backdrop-blur-xl border border-outline rounded-xl shadow-md">
+                    <div className="flex flex-col items-center justify-center h-full text-text-tertiary text-center p-8 bg-surface/80 backdrop-blur-xl border border-outline rounded-2xl shadow-md">
                         <AreaIcon className="w-16 h-16 mb-4" />
                         <h2 className="text-xl font-semibold font-heading text-text-primary">No Areas</h2>
                         <p className="max-w-sm mb-4">Areas are long-term responsibilities with no end date, like "Health" or "Finances".</p>
@@ -90,4 +90,4 @@ const AreaView: React.FC<AreaViewProps> = ({ areas, activeAreaId, onSelectArea, 
     );
 };
 
-export default AreaView;
+export default React.memo(AreaView);

@@ -97,4 +97,4 @@ const ResourceView: React.FC<ResourceViewProps> = ({ resources, projects, areas,
     );
 };
 
-export default ResourceView;
+export default React.memo(ResourceView);

@@ -165,4 +165,4 @@ const ReviewView: React.FC<ReviewViewProps> = ({ inboxCount, projects, areas, ta
     );
 };
 
-export default ReviewView;
+export default React.memo(ReviewView);

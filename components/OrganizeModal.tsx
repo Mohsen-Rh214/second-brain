@@ -95,4 +95,4 @@ const OrganizeModal: React.FC<OrganizeModalProps> = ({ isOpen, onClose, onSave, 
   );
 };
 
-export default OrganizeModal;
+export default React.memo(OrganizeModal);

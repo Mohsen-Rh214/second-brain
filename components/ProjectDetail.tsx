@@ -16,22 +16,24 @@ interface ProjectDetailProps {
     onUpdateTask: (taskId: string, updates: Partial<Pick<Task, 'title' | 'priority' | 'dueDate'>>) => void;
 }
 
-const ItemCard: React.FC<{icon: React.ReactElement, title: string, children?: React.ReactNode, onAdd?: () => void, addLabel?: string}> = ({icon, title, children, onAdd, addLabel}) => (
-    <div className="bg-surface/80 backdrop-blur-xl border border-outline rounded-2xl shadow-md mb-6">
-        <header className="flex items-center justify-between p-4 border-b border-outline-dark">
-            <div className="flex items-center gap-3">
-                {icon}
-                <h3 className="font-bold text-lg font-heading tracking-tight">{title}</h3>
+const ItemCard = React.memo(function ItemCard({icon, title, children, onAdd, addLabel}: {icon: React.ReactElement, title: string, children?: React.ReactNode, onAdd?: () => void, addLabel?: string}) {
+    return (
+        <div className="bg-surface/80 backdrop-blur-xl border border-outline rounded-2xl shadow-md mb-6">
+            <header className="flex items-center justify-between p-4 border-b border-outline-dark">
+                <div className="flex items-center gap-3">
+                    {icon}
+                    <h3 className="font-bold text-lg font-heading tracking-tight">{title}</h3>
+                </div>
+                {onAdd && (
+                    <button onClick={onAdd} aria-label={addLabel || `Add new ${title}`} className="p-1 text-text-secondary hover:bg-neutral hover:text-text-primary rounded-full transition-colors"><PlusIcon className="w-5 h-5"/></button>
+                )}
+            </header>
+            <div className="p-4">
+                {children}
             </div>
-            {onAdd && (
-                <button onClick={onAdd} aria-label={addLabel || `Add new ${title}`} className="p-1 text-text-secondary hover:bg-neutral hover:text-text-primary rounded-full transition-colors"><PlusIcon className="w-5 h-5"/></button>
-            )}
-        </header>
-        <div className="p-4">
-            {children}
         </div>
-    </div>
-);
+    );
+});
 
 const priorityClasses: Record<string, { text: string, bg: string }> = {
     High: { text: 'text-priority-high', bg: 'bg-priority-high-bg' },
@@ -39,7 +41,7 @@ const priorityClasses: Record<string, { text: string, bg: string }> = {
     Low: { text: 'text-priority-low', bg: 'bg-priority-low-bg' },
 };
 
-const TaskItem: React.FC<{task: Task, onToggleTask: (id: string) => void, onUpdateTask: (id: string, updates: any) => void}> = ({ task, onToggleTask, onUpdateTask }) => {
+const TaskItem = React.memo(function TaskItem({task, onToggleTask, onUpdateTask}: {task: Task, onToggleTask: (id: string) => void, onUpdateTask: (id: string, updates: any) => void}) {
     const [isEditing, setIsEditing] = useState(false);
     const [title, setTitle] = useState(task.title);
     const inputRef = useRef<HTMLInputElement>(null);
@@ -111,10 +113,10 @@ const TaskItem: React.FC<{task: Task, onToggleTask: (id: string) => void, onUpda
             )}
         </li>
     )
-}
+});
 
 
-const ActionMenu: React.FC<{ onEdit?: () => void, onArchive: () => void, onDelete: () => void }> = ({ onEdit, onArchive, onDelete }) => {
+const ActionMenu = React.memo(function ActionMenu({ onEdit, onArchive, onDelete }: { onEdit?: () => void, onArchive: () => void, onDelete: () => void }) {
     const [isOpen, setIsOpen] = useState(false);
     const menuRef = useRef<HTMLDivElement>(null);
 
@@ -144,7 +146,7 @@ const ActionMenu: React.FC<{ onEdit?: () => void, onArchive: () => void, onDelet
             )}
         </div>
     )
-}
+});
 
 const ProjectDetail: React.FC<ProjectDetailProps> = ({ project, tasks, notes, resources, onToggleTask, onArchive, onDelete, onSelectNote, onUpdateProject, onOpenCommandBar, onUpdateTask }) => {
     const [isEditing, setIsEditing] = useState(false);
@@ -248,4 +250,4 @@ const ProjectDetail: React.FC<ProjectDetailProps> = ({ project, tasks, notes, re
     );
 };
 
-export default ProjectDetail;
+export default React.memo(ProjectDetail);

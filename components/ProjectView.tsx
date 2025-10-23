@@ -92,4 +92,4 @@ const ProjectView: React.FC<ProjectViewProps> = ({ projects, activeProjectId, on
     );
 };
 
-export default ProjectView;
+export default React.memo(ProjectView);

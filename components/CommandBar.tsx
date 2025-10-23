@@ -186,4 +186,4 @@ const CommandBar: React.FC<CommandBarProps> = ({ isOpen, onClose, onCommand, are
   );
 };
 
-export default CommandBar;
+export default React.memo(CommandBar);

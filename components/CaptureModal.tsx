@@ -205,4 +205,4 @@ const CaptureModal: React.FC<CaptureModalProps> = ({ isOpen, onClose, onSave, pr
   );
 };
 
-export default CaptureModal;
+export default React.memo(CaptureModal);

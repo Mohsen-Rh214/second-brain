@@ -72,4 +72,4 @@ const InboxView: React.FC<InboxViewProps> = ({ items, onSelectItem, onOrganizeIt
     );
 };
 
-export default InboxView;
+export default React.memo(InboxView);

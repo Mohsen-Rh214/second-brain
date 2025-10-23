@@ -69,27 +69,19 @@ body {
   color: #8E8E93 !important; /* text-secondary */
 }
 .ql-active .ql-stroke {
-  stroke: #FF9F0A !important; /* accent */
+  stroke: #22D3EE !important; /* accent */
 }
 .ql-active .ql-fill {
-  fill: #FF9F0A !important; /* accent */
+  fill: #22D3EE !important; /* accent */
 }
 .ql-active .ql-picker-label {
-  color: #FF9F0A !important; /* accent */
-}
-/* Custom toolbar button for linking items */
-.ql-toolbar .ql-link-item {
-  width: 28px;
-}
-.ql-toolbar .ql-link-item svg {
-  width: 100%;
-  height: 100%;
+  color: #22D3EE !important; /* accent */
 }
 
 /* Internal link styling in the editor */
 .ql-editor a.internal-link {
-  background-color: rgba(255, 159, 10, 0.15); /* accent with alpha */
-  color: #FFB340; /* accent hover */
+  background-color: rgba(34, 211, 238, 0.15); /* accent with alpha */
+  color: #67E8F9; /* accent hover */
   padding: 2px 6px;
   border-radius: 6px;
   text-decoration: none;
@@ -97,7 +89,7 @@ body {
   transition: background-color 0.2s;
 }
 .ql-editor a.internal-link:hover {
-  background-color: rgba(255, 159, 10, 0.25);
+  background-color: rgba(34, 211, 238, 0.25);
 }
 
 /* Toast Animation */

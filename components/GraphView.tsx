@@ -124,4 +124,4 @@ const GraphView: React.FC<GraphViewProps> = ({ areas, projects, notes, resources
     );
 };
 
-export default GraphView;
+export default React.memo(GraphView);

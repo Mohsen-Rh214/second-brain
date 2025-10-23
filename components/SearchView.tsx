@@ -112,4 +112,4 @@ const SearchView: React.FC<SearchViewProps> = ({ query, areas, projects, tasks, 
     );
 };
 
-export default SearchView;
+export default React.memo(SearchView);
