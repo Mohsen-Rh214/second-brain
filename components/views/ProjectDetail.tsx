@@ -11,6 +11,7 @@ import TagList from '../shared/TagList';
 import KanbanBoard from '../kanban/KanbanBoard';
 import { useDraggableList } from '../../hooks/useDraggableList';
 import { useData } from '../../store/DataContext';
+import { stripHtml } from '../../utils';
 
 interface ProjectDetailProps {
     project: Project;
@@ -26,16 +27,19 @@ interface ProjectDetailProps {
     onUpdateProject: (projectId: string, updates: { title?: string, description?: string, tags?: string[] }) => void;
     onOpenCaptureModal: (context: CaptureContext) => void;
     onSaveNewItem: (itemData: NewItemPayload, itemType: ItemType, parentId: string | null) => void;
+    onAddSubtask: (parentTaskId: string, subtaskData: NewItemPayload) => void;
     onReparentTask: (taskId: string, newParentId: string) => void;
     onUpdateTask: (taskId: string, updates: Partial<Pick<Task, 'title' | 'priority' | 'dueDate'>>) => void;
     onUpdateTaskStage: (taskId: string, newStage: TaskStage) => void;
     onUpdateMultipleTaskStages: (taskIds: string[], newStage: TaskStage) => void;
 }
 
-const ProjectDetail: React.FC<ProjectDetailProps> = ({ project, allTasks, tasks, notes, resources, onToggleTask, onArchive, onDelete, onSelectNote, onSelectTask, onUpdateProject, onOpenCaptureModal, onSaveNewItem, onReparentTask, onUpdateTask, onUpdateTaskStage, onUpdateMultipleTaskStages }) => {
+const ProjectDetail: React.FC<ProjectDetailProps> = ({ project, allTasks, tasks, notes, resources, onToggleTask, onArchive, onDelete, onSelectNote, onSelectTask, onUpdateProject, onOpenCaptureModal, onSaveNewItem, onAddSubtask, onReparentTask, onUpdateTask, onUpdateTaskStage, onUpdateMultipleTaskStages }) => {
     
     const [isAddingTask, setIsAddingTask] = useState(false);
     const [newTaskTitle, setNewTaskTitle] = useState('');
+    const [addingSubtaskTo, setAddingSubtaskTo] = useState<string | null>(null);
+    const [newSubtaskTitle, setNewSubtaskTitle] = useState('');
     const [tags, setTags] = useState(project.tags || []);
     const [viewType, setViewType] = useState<ProjectViewType>('list');
     const [collapsedTasks, setCollapsedTasks] = useState<Set<string>>(new Set());
@@ -47,6 +51,8 @@ const ProjectDetail: React.FC<ProjectDetailProps> = ({ project, allTasks, tasks,
 
     useEffect(() => {
         setTags(project.tags || []);
+        setAddingSubtaskTo(null);
+        setIsAddingTask(false);
     }, [project]);
 
     const isEditing = titleEditor.isEditing || descriptionEditor.isEditing;
@@ -209,12 +215,28 @@ const ProjectDetail: React.FC<ProjectDetailProps> = ({ project, allTasks, tasks,
         if (newTaskTitle.trim()) {
             onSaveNewItem({ title: newTaskTitle }, 'task', project.id);
             setNewTaskTitle('');
+            // Keep input open for rapid entry by not setting isAddingTask to false
+        }
+    };
+    
+    const handleAddSubtask = (e: React.FormEvent) => {
+        e.preventDefault();
+        if (newSubtaskTitle.trim() && addingSubtaskTo) {
+            onAddSubtask(addingSubtaskTo, { title: newSubtaskTitle.trim() });
+            setNewSubtaskTitle('');
+            setAddingSubtaskTo(null);
         }
     };
 
     const handleAddTaskFormBlur = (e: React.FocusEvent<HTMLFormElement>) => {
         if (!e.currentTarget.contains(e.relatedTarget)) {
             setIsAddingTask(false);
+        }
+    }
+    
+    const handleAddSubtaskFormBlur = (e: React.FocusEvent<HTMLFormElement>) => {
+        if (!e.currentTarget.contains(e.relatedTarget)) {
+            setAddingSubtaskTo(null);
         }
     }
 
@@ -344,32 +366,51 @@ const ProjectDetail: React.FC<ProjectDetailProps> = ({ project, allTasks, tasks,
                                 )}
                                 {activeTasks.length > 0 ? (
                                     <ul className={`space-y-1 transition-all duration-200 ${
-                                        dropAction?.type === 'PROMOTE_TO_ROOT' ? 'bg-accent/10 outline-dashed outline-2 outline-offset-2 outline-accent rounded-lg p-2' : ''
+                                        dropAction?.type === 'PROMOTE_TO_ROOT' ? 'bg-accent/20 outline-dashed outline-2 outline-offset-2 outline-accent rounded-lg p-2' : ''
                                     }`} {...getContainerProps()}>
                                         {visibleTasks.map(({ task, level }, index) => (
-                                            <li 
-                                                key={task.id} 
-                                                {...getDragAndDropProps(task.id)}
-                                                className={`relative transition-all duration-200 ${draggedId === task.id ? 'opacity-30' : 'opacity-100'} ${index === 0 && !isAddingTask ? 'animate-pop-in' : ''} ${dropAction?.type === 'REPARENT' && dropAction.targetId === task.id ? 'bg-accent/20 rounded-lg' : ''}`}
-                                            >
-                                                {dropAction?.type === 'REORDER' && dropAction.targetId === task.id && (
-                                                    <div className="absolute -top-1 left-2 right-2 h-1 bg-accent rounded-full" />
+                                            <React.Fragment key={task.id}>
+                                                <li 
+                                                    {...getDragAndDropProps(task.id)}
+                                                    className={`relative transition-all duration-200 ${draggedId === task.id ? 'opacity-30' : 'opacity-100'} ${index === 0 && !isAddingTask ? 'animate-pop-in' : ''} ${dropAction?.type === 'REPARENT' && dropAction.targetId === task.id ? 'bg-accent/20 rounded-lg ring-2 ring-inset ring-accent' : ''}`}
+                                                >
+                                                    {dropAction?.type === 'REORDER' && dropAction.targetId === task.id && (
+                                                        <div className="absolute -top-4 left-0 right-0 h-8 bg-accent/20 rounded-lg border border-dashed border-accent" />
+                                                    )}
+                                                    <div style={{ paddingLeft: `${level * 12}px` }}>
+                                                        <TaskItem 
+                                                            task={task} 
+                                                            allTasks={allTasks} 
+                                                            notes={notes}
+                                                            resources={resources}
+                                                            onToggleTask={onToggleTask} 
+                                                            onUpdateTask={onUpdateTask} 
+                                                            onSelectTask={onSelectTask}
+                                                            hasSubtasks={(task.subtaskIds?.length || 0) > 0}
+                                                            isCollapsed={collapsedTasks.has(task.id)}
+                                                            onToggleCollapse={() => toggleTaskCollapse(task.id)}
+                                                            onArchive={onArchive}
+                                                            onDelete={onDelete}
+                                                            onAddSubtaskClick={() => { setAddingSubtaskTo(task.id); setNewSubtaskTitle(''); }}
+                                                        />
+                                                    </div>
+                                                </li>
+                                                {addingSubtaskTo === task.id && (
+                                                    <li style={{ paddingLeft: `${(level + 1) * 24}px` }} className="py-1 animate-pop-in">
+                                                        <form onSubmit={handleAddSubtask} onBlur={handleAddSubtaskFormBlur} className="flex gap-2">
+                                                            <input
+                                                                type="text"
+                                                                value={newSubtaskTitle}
+                                                                onChange={(e) => setNewSubtaskTitle(e.target.value)}
+                                                                onKeyDown={(e) => e.key === 'Escape' && setAddingSubtaskTo(null)}
+                                                                placeholder="Add subtask..."
+                                                                autoFocus
+                                                                className="flex-1 bg-background/50 border border-outline px-2 py-1 text-sm rounded-md focus:ring-1 focus:ring-accent focus:outline-none"
+                                                            />
+                                                        </form>
+                                                    </li>
                                                 )}
-                                                <div style={{ paddingLeft: `${level * 12}px` }}>
-                                                    <TaskItem 
-                                                        task={task} 
-                                                        allTasks={allTasks} 
-                                                        onToggleTask={onToggleTask} 
-                                                        onUpdateTask={onUpdateTask} 
-                                                        onSelectTask={onSelectTask}
-                                                        hasSubtasks={(task.subtaskIds?.length || 0) > 0}
-                                                        isCollapsed={collapsedTasks.has(task.id)}
-                                                        onToggleCollapse={() => toggleTaskCollapse(task.id)}
-                                                        onArchive={onArchive}
-                                                        onDelete={onDelete}
-                                                    />
-                                                </div>
-                                            </li>
+                                            </React.Fragment>
                                         ))}
                                     </ul>
                                 ) : <CardEmptyState>Every great project starts with a single step. Add your first task.</CardEmptyState>}
@@ -409,6 +450,7 @@ const ProjectDetail: React.FC<ProjectDetailProps> = ({ project, allTasks, tasks,
                             <li key={note.id}>
                                 <button onClick={() => onSelectNote(note.id)} className="w-full text-left p-3 hover:bg-neutral rounded-lg transition-colors">
                                     <p className="font-semibold">{note.title}</p>
+                                    <p className="text-sm text-text-secondary truncate mt-1">{stripHtml(note.content)}</p>
                                     <TagList tags={note.tags} className="mt-2" />
                                 </button>
                             </li>

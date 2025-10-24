@@ -1,6 +1,13 @@
 import React, { createContext, useContext, useReducer } from 'react';
 import { View, CaptureContext, InboxItem, Task } from '../types';
 
+interface ConfirmModalState {
+  title: string;
+  message: string;
+  onConfirm: () => void;
+  confirmLabel?: string;
+}
+
 interface UIState {
     currentView: View;
     activeAreaId: string | null;
@@ -15,6 +22,7 @@ interface UIState {
     isCommandBarOpen: boolean;
     toastMessage: string | null;
     linkingTask: Task | null;
+    confirmModal: ConfirmModalState | null;
 }
 
 type UIAction =
@@ -29,7 +37,9 @@ type UIAction =
     | { type: 'SET_LINKING_TASK'; payload: Task | null }
     | { type: 'SET_SEARCH_QUERY'; payload: string }
     | { type: 'SET_COMMAND_BAR_OPEN'; payload: boolean }
-    | { type: 'SHOW_TOAST'; payload: string | null };
+    | { type: 'SHOW_TOAST'; payload: string | null }
+    | { type: 'OPEN_CONFIRM_MODAL'; payload: ConfirmModalState }
+    | { type: 'CLOSE_CONFIRM_MODAL' };
 
 const initialState: UIState = {
     currentView: 'dashboard',
@@ -45,6 +55,7 @@ const initialState: UIState = {
     isCommandBarOpen: false,
     toastMessage: null,
     linkingTask: null,
+    confirmModal: null,
 };
 
 const uiReducer = (state: UIState, action: UIAction): UIState => {
@@ -81,6 +92,10 @@ const uiReducer = (state: UIState, action: UIAction): UIState => {
             return { ...state, isCommandBarOpen: action.payload };
         case 'SHOW_TOAST':
             return { ...state, toastMessage: action.payload };
+        case 'OPEN_CONFIRM_MODAL':
+            return { ...state, confirmModal: action.payload };
+        case 'CLOSE_CONFIRM_MODAL':
+            return { ...state, confirmModal: null };
         default:
             return state;
     }

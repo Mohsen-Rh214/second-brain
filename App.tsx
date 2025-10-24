@@ -23,6 +23,7 @@ import { useData } from './store/DataContext';
 import { useUI } from './store/UIContext';
 import { getItemTypeFromId } from './utils';
 import CalendarView from './components/views/CalendarView';
+import ConfirmModal from './components/modals/ConfirmModal';
 
 const App: React.FC = () => {
   const { state: dataState, dispatch: dataDispatch } = useData();
@@ -32,7 +33,7 @@ const App: React.FC = () => {
   const { 
     currentView, activeAreaId, activeProjectId, isCaptureModalOpen, captureContext,
     editingNoteId, editingResourceId, editingTaskId, organizingItem, searchQuery, isCommandBarOpen, toastMessage,
-    linkingTask
+    linkingTask, confirmModal
   } = uiState;
 
     const handleOpenCaptureModal = useCallback((context: CaptureContext | null = null) => {
@@ -46,7 +47,9 @@ const App: React.FC = () => {
 
           // Universal Escape handler
           if (e.key === 'Escape') {
-              if (isCommandBarOpen) {
+              if (confirmModal) {
+                  uiDispatch({ type: 'CLOSE_CONFIRM_MODAL' });
+              } else if (isCommandBarOpen) {
                   uiDispatch({ type: 'SET_COMMAND_BAR_OPEN', payload: false });
               } else if (isCaptureModalOpen) {
                   uiDispatch({ type: 'SET_CAPTURE_MODAL', payload: { isOpen: false }});
@@ -85,7 +88,7 @@ const App: React.FC = () => {
       };
       window.addEventListener('keydown', handleKeyDown);
       return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isCommandBarOpen, isCaptureModalOpen, editingNoteId, editingResourceId, editingTaskId, organizingItem, linkingTask, uiDispatch, handleOpenCaptureModal]);
+  }, [isCommandBarOpen, isCaptureModalOpen, editingNoteId, editingResourceId, editingTaskId, organizingItem, linkingTask, confirmModal, uiDispatch, handleOpenCaptureModal]);
 
   const showToast = useCallback((message: string) => {
       uiDispatch({ type: 'SHOW_TOAST', payload: message });
@@ -154,14 +157,21 @@ const App: React.FC = () => {
   const handleRestoreItem = useCallback((itemId: string) => handleUpdateItemStatus(itemId, 'active'), [handleUpdateItemStatus]);
   
   const handleDeleteItem = useCallback((itemId: string) => {
-    const itemType = getItemTypeFromId(itemId);
+    const itemType = getItemTypeFromId(itemId) || 'item';
     const message = itemType === 'task'
-        ? "Are you sure you want to delete this task? If it's a parent task, its subtasks will not be deleted but will become orphaned."
-        : "Are you sure you want to permanently delete this item? This action cannot be undone.";
-
-    if (!window.confirm(message)) return;
-    dataDispatch({ type: 'DELETE_ITEM', payload: { itemId } });
-  }, [dataDispatch]);
+        ? "If this is a parent task, its subtasks will not be deleted but will become parentless."
+        : "This action cannot be undone.";
+    
+    uiDispatch({
+        type: 'OPEN_CONFIRM_MODAL',
+        payload: {
+            title: `Delete ${itemType}?`,
+            message: `Are you sure you want to permanently delete this ${itemType}?\n\n${message}`,
+            onConfirm: () => dataDispatch({ type: 'DELETE_ITEM', payload: { itemId } }),
+            confirmLabel: 'Delete'
+        }
+    });
+  }, [dataDispatch, uiDispatch]);
 
   const handleUpdateNote = useCallback((noteId: string, title: string, content: string, tags: string[]) => {
     dataDispatch({ type: 'UPDATE_NOTE', payload: { noteId, title, content, tags } });
@@ -313,6 +323,7 @@ const App: React.FC = () => {
             onUpdateProject={handleUpdateProject}
             onOpenCaptureModal={handleOpenCaptureModal}
             onSaveNewItem={handleSaveNewItem}
+            onAddSubtask={handleAddSubtask}
             onReparentTask={handleReparentTask}
             onUpdateTask={handleUpdateTask}
             onUpdateTaskStage={handleUpdateTaskStage}
@@ -430,6 +441,16 @@ const App: React.FC = () => {
       {editingTask && <TaskDetailModal isOpen={!!editingTask} onClose={() => uiDispatch({ type: 'SET_EDITING_TASK', payload: null })} task={editingTask} onSave={handleUpdateTask} onAddSubtask={handleAddSubtask} onToggleSubtask={handleToggleTask} onDelete={handleDeleteItem} allTasks={tasks} projects={projects} notes={notes} resources={resources} />}
       {organizingItem && <OrganizeModal isOpen={!!organizingItem} onClose={() => uiDispatch({ type: 'SET_ORGANIZING_ITEM', payload: null })} item={organizingItem} projects={projects} areas={areas} onSave={handleOrganizeItem} />}
       {linkingTask && <LinkTaskModal isOpen={!!linkingTask} onClose={() => uiDispatch({ type: 'SET_LINKING_TASK', payload: null })} onLink={handleLinkTask} taskToLink={linkingTask} projects={projects} />}
+      {confirmModal && (
+        <ConfirmModal
+            isOpen={!!confirmModal}
+            onClose={() => uiDispatch({ type: 'CLOSE_CONFIRM_MODAL' })}
+            onConfirm={confirmModal.onConfirm}
+            title={confirmModal.title}
+            message={confirmModal.message}
+            confirmLabel={confirmModal.confirmLabel}
+        />
+      )}
     </div>
   );
 };

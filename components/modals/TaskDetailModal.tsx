@@ -198,15 +198,11 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ isOpen, onClose, onSa
           <footer className="p-4 bg-black/5 border-t border-outline-dark mt-auto flex-shrink-0 flex justify-between items-center">
                <button
                   type="button"
-                  onClick={() => {
-                      if (window.confirm("Are you sure you want to permanently delete this task?")) {
-                          onDelete(task.id);
-                          onClose();
-                      }
-                  }}
-                  className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-destructive-content bg-destructive/20 hover:bg-destructive/30 transition-colors rounded-lg"
+                  onClick={() => onDelete(task.id)}
+                  className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-destructive bg-destructive/20 hover:bg-destructive/30 transition-colors rounded-lg"
                 >
                     <TrashIcon className="w-4 h-4" />
+                    Delete
                 </button>
                 <div className="flex justify-end gap-3">
                     <button type="button" onClick={onClose} className="px-4 py-2 text-sm font-medium bg-secondary hover:bg-secondary-hover text-secondary-content transition-colors rounded-lg">Cancel</button>

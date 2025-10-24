@@ -48,3 +48,8 @@ export const formatRelativeTime = (dateString: string): string => {
   }
   return 'just now';
 };
+
+export const stripHtml = (html: string): string => {
+    const doc = new DOMParser().parseFromString(html, 'text/html');
+    return doc.body.textContent || "";
+};

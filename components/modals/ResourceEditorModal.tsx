@@ -67,10 +67,7 @@ const ResourceDetailModal: React.FC<ResourceDetailModalProps> = ({ isOpen, onClo
   }
 
   const handleDelete = () => {
-    if (window.confirm("Are you sure you want to permanently delete this resource?")) {
-        onDelete(resource.id);
-        onClose();
-    }
+    onDelete(resource.id);
   }
 
   const handleCancelEdit = () => {

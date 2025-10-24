@@ -115,7 +115,7 @@ const Dashboard: React.FC<DashboardProps> = ({ projects, areas, tasks, inboxItem
         const recentProjects = projects
             .filter(p => p.status === 'active')
             .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
-            .slice(0, 3);
+            .slice(0, 4);
         
         const recentAreas = areas
             .filter(p => p.status === 'active')

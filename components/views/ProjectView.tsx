@@ -25,13 +25,14 @@ interface ProjectViewProps {
     onUpdateProject: (projectId: string, updates: { title?: string, description?: string, tags?: string[] }) => void;
     onOpenCaptureModal: (context: CaptureContext) => void;
     onSaveNewItem: (itemData: NewItemPayload, itemType: ItemType, parentId: string | null) => void;
+    onAddSubtask: (parentTaskId: string, subtaskData: NewItemPayload) => void;
     onReparentTask: (taskId: string, newParentId: string) => void;
     onUpdateTask: (taskId: string, updates: Partial<Pick<Task, 'title' | 'priority' | 'dueDate'>>) => void;
     onUpdateTaskStage: (taskId: string, newStage: TaskStage) => void;
     onUpdateMultipleTaskStages: (taskIds: string[], newStage: TaskStage) => void;
 }
 
-const ProjectView: React.FC<ProjectViewProps> = ({ projects, activeProjectId, onSelectProject, allTasks, tasks, notes, resources, onToggleTask, onArchive, onDelete, onSelectNote, onSelectTask, onUpdateProject, onOpenCaptureModal, onSaveNewItem, onReparentTask, onUpdateTask, onUpdateTaskStage, onUpdateMultipleTaskStages }) => {
+const ProjectView: React.FC<ProjectViewProps> = ({ projects, activeProjectId, onSelectProject, allTasks, tasks, notes, resources, onToggleTask, onArchive, onDelete, onSelectNote, onSelectTask, onUpdateProject, onOpenCaptureModal, onSaveNewItem, onAddSubtask, onReparentTask, onUpdateTask, onUpdateTaskStage, onUpdateMultipleTaskStages }) => {
     const { dispatch } = useData();
 
     const { draggedId, dropAction, getDragAndDropProps, getContainerProps } = useDraggableList<Project>({
@@ -128,6 +129,7 @@ const ProjectView: React.FC<ProjectViewProps> = ({ projects, activeProjectId, on
                         onUpdateProject={onUpdateProject}
                         onOpenCaptureModal={onOpenCaptureModal}
                         onSaveNewItem={onSaveNewItem}
+                        onAddSubtask={onAddSubtask}
                         onReparentTask={onReparentTask}
                         onUpdateTask={onUpdateTask}
                         onUpdateTaskStage={onUpdateTaskStage}

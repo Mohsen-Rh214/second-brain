@@ -10,6 +10,7 @@ import TagInput from '../shared/TagInput';
 import TagList from '../shared/TagList';
 import { useData } from '../../store/DataContext';
 import { useDraggableList } from '../../hooks/useDraggableList';
+import { stripHtml } from '../../utils';
 
 interface AreaDetailProps {
     area: Area;
@@ -148,9 +149,9 @@ const AreaDetail: React.FC<AreaDetailProps> = ({ area, projects, tasks, notes, r
                                 {dropAction?.type === 'REORDER' && dropAction.targetId === project.id && (
                                     <div className="absolute -top-1 left-2 right-2 h-0.5 bg-accent rounded-full" />
                                 )}
-                                <button onClick={() => onNavigate('projects', project.id)} className="w-full text-left p-3 hover:bg-neutral rounded-lg transition-colors flex justify-between items-center">
-                                    <div>
-                                        <p className="font-semibold">{project.title}</p>
+                                <button onClick={() => onNavigate('projects', project.id)} className="w-full text-left p-3 hover:bg-neutral rounded-lg transition-colors flex justify-between items-center gap-4">
+                                    <div className="flex-1 min-w-0">
+                                        <p className="font-semibold truncate">{project.title}</p>
                                         <p className="text-xs text-text-secondary truncate mb-2">{project.description}</p>
                                         <TagList tags={project.tags} />
                                     </div>
@@ -174,6 +175,7 @@ const AreaDetail: React.FC<AreaDetailProps> = ({ area, projects, tasks, notes, r
                              <li key={note.id}>
                                 <button onClick={() => onSelectNote(note.id)} className="w-full text-left p-3 hover:bg-neutral rounded-lg transition-colors">
                                     <p className="font-semibold">{note.title}</p>
+                                    <p className="text-sm text-text-secondary truncate mt-1">{stripHtml(note.content)}</p>
                                     <TagList tags={note.tags} className="mt-2" />
                                 </button>
                             </li>

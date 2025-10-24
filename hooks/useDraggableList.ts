@@ -51,7 +51,7 @@ export const useDraggableList = <T extends { id: string }>({
 
     if (onReparent && isReparentAllowed(sourceItem, targetItem)) {
       const rect = e.currentTarget.getBoundingClientRect();
-      const dropZoneThreshold = rect.height * 0.4;
+      const dropZoneThreshold = rect.height * 0.25; // Use 25% for top/bottom reorder zones
       
       if (e.clientY > rect.top + dropZoneThreshold && e.clientY < rect.bottom - dropZoneThreshold) {
         setDropAction({ type: 'REPARENT', targetId });
