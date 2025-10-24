@@ -6,6 +6,7 @@ export interface BaseItem {
   createdAt: string;
   updatedAt: string;
   status: Status;
+  tags?: string[];
 }
 
 export interface Area extends BaseItem {
@@ -56,6 +57,7 @@ export type NewItemPayload = {
     dueDate?: string;
     priority?: 'Low' | 'Medium' | 'High';
     isMyDay?: boolean;
+    tags?: string[];
 };
 
 export type InboxItem = Note | Resource | Task;

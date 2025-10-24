@@ -2,6 +2,7 @@ import React, { useRef } from 'react';
 import { Task } from '../../types';
 import { CheckSquareIcon, SquareIcon, CalendarIcon, FlagIcon, LinkIcon } from './icons';
 import { useEditable } from '../../hooks/useEditable';
+import TagList from './TagList';
 
 const priorityClasses: Record<string, { text: string, bg: string }> = {
     High: { text: 'text-priority-high', bg: 'bg-priority-high-bg' },
@@ -56,7 +57,12 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, onToggleTask, onUpdateTask, p
             </button>
             <div className="flex-1" onDoubleClick={handleDoubleClick}>
                 <span className={`cursor-pointer ${isVisuallyCompleted ? 'line-through text-text-tertiary' : ''}`}>{task.title}</span>
-                {projectName && <p className="text-xs text-text-secondary">{projectName}</p>}
+                {(projectName || (task.tags && task.tags.length > 0)) && (
+                    <div className="flex items-center gap-2 mt-1">
+                        {projectName && <p className="text-xs text-text-secondary">{projectName}</p>}
+                        <TagList tags={task.tags} />
+                    </div>
+                )}
             </div>
             {task.dueDate && (
                 <div className="flex items-center gap-1 text-xs text-text-secondary">

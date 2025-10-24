@@ -3,6 +3,7 @@ import { Resource, Project, Area } from '../../types';
 import { ResourceIcon, LinkIcon, FileTextIcon, ArchiveBoxIcon, TrashIcon, ProjectIcon, AreaIcon, PlusIcon } from '../shared/icons';
 import { CaptureContext } from '../../types';
 import EmptyState from '../shared/EmptyState';
+import TagList from '../shared/TagList';
 
 interface ResourceViewProps {
     resources: Resource[];
@@ -71,17 +72,20 @@ const ResourceView: React.FC<ResourceViewProps> = ({ resources, projects, areas,
                                         ) : (
                                             <p className="font-semibold">{resource.title}</p>
                                         )}
-                                        <div className="flex items-center gap-2 text-xs text-text-secondary mt-1">
-                                            {resource.parentIds.map(pid => {
-                                                const parent = getParentName(pid);
-                                                if (!parent) return null;
-                                                return (
-                                                    <span key={pid} className="flex items-center gap-1 bg-background/50 px-2 py-0.5 border border-outline rounded-md">
-                                                        {parent.type === 'project' ? <ProjectIcon className="w-3 h-3"/> : <AreaIcon className="w-3 h-3"/>}
-                                                        {parent.name}
-                                                    </span>
-                                                )
-                                            })}
+                                        <div className="flex items-center flex-wrap gap-x-4 gap-y-1 text-xs text-text-secondary mt-1">
+                                            <div className="flex items-center gap-2">
+                                                {resource.parentIds.map(pid => {
+                                                    const parent = getParentName(pid);
+                                                    if (!parent) return null;
+                                                    return (
+                                                        <span key={pid} className="flex items-center gap-1 bg-background/50 px-2 py-0.5 border border-outline rounded-md">
+                                                            {parent.type === 'project' ? <ProjectIcon className="w-3 h-3"/> : <AreaIcon className="w-3 h-3"/>}
+                                                            {parent.name}
+                                                        </span>
+                                                    )
+                                                })}
+                                            </div>
+                                            <TagList tags={resource.tags} />
                                         </div>
                                     </div>
                                 </div>

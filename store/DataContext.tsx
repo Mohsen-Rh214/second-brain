@@ -21,13 +21,14 @@ type Action =
     | { type: 'UPDATE_TASK'; payload: { taskId: string; updates: Partial<Task> } }
     | { type: 'UPDATE_ITEM_STATUS'; payload: { itemId: string; status: Status } }
     | { type: 'DELETE_ITEM'; payload: { itemId: string } }
-    | { type: 'UPDATE_NOTE'; payload: { noteId: string; title: string; content: string } }
+    | { type: 'UPDATE_NOTE'; payload: { noteId: string; title: string; content: string; tags: string[] } }
     | { type: 'DRAFT_FROM_NOTE'; payload: { sourceNoteId: string, newNoteId: string } }
-    | { type: 'UPDATE_RESOURCE'; payload: { resourceId: string; title: string; content: string } }
-    | { type: 'UPDATE_PROJECT'; payload: { projectId: string; updates: { title?: string; description?: string } } }
-    | { type: 'UPDATE_AREA'; payload: { areaId: string; updates: { title?: string; description?: string } } }
+    | { type: 'UPDATE_RESOURCE'; payload: { resourceId: string; title: string; content: string; tags: string[] } }
+    | { type: 'UPDATE_PROJECT'; payload: { projectId: string; updates: { title?: string; description?: string, tags?: string[] } } }
+    | { type: 'UPDATE_AREA'; payload: { areaId: string; updates: { title?: string; description?: string, tags?: string[] } } }
     | { type: 'ORGANIZE_ITEM'; payload: { itemId: string; newParentIds: string[] } }
     | { type: 'MARK_REVIEWED'; payload: { itemIds: string[]; type: 'project' | 'area' } }
+    | { type: 'UPDATE_ITEM_TAGS'; payload: { itemId: string; tags: string[] } }
     | { type: 'REPLACE_STATE'; payload: AppState };
 
 
@@ -45,6 +46,7 @@ const createNewItem = (prefix: string, data: any) => ({
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
     status: 'active' as const,
+    tags: data.tags || [],
 });
 
 const dataReducer = (state: AppState, action: Action): AppState => {
@@ -55,35 +57,35 @@ const dataReducer = (state: AppState, action: Action): AppState => {
             const { itemData, itemType, parentId } = action.payload;
             switch (itemType) {
                 case 'note': {
-                    const newNote: Note = createNewItem('note', { title: itemData.title, content: itemData.content || '', parentIds: parentId ? [parentId] : [] });
+                    const newNote: Note = createNewItem('note', { ...itemData, parentIds: parentId ? [parentId] : [] });
                     const newProjects = parentId?.startsWith('proj-')
                         ? state.projects.map(p => p.id === parentId ? { ...p, noteIds: [...p.noteIds, newNote.id] } : p)
                         : state.projects;
                     return { ...state, notes: [...state.notes, newNote], projects: newProjects };
                 }
                 case 'task': {
-                    const newTask: Task = createNewItem('task', { title: itemData.title, projectId: parentId, completed: false, dueDate: itemData.dueDate || undefined, priority: itemData.priority || undefined, isMyDay: itemData.isMyDay || false });
+                    const newTask: Task = createNewItem('task', { ...itemData, projectId: parentId, completed: false });
                     const newProjects = parentId?.startsWith('proj-')
                         ? state.projects.map(p => p.id === parentId ? { ...p, taskIds: [newTask.id, ...p.taskIds] } : p)
                         : state.projects;
                     return { ...state, tasks: [newTask, ...state.tasks], projects: newProjects };
                 }
                 case 'resource': {
-                    const newResource: Resource = createNewItem('res', { title: itemData.title, type: itemData.type || 'text', content: itemData.content || '', parentIds: parentId ? [parentId] : [] });
+                    const newResource: Resource = createNewItem('res', { ...itemData, parentIds: parentId ? [parentId] : [] });
                     const newProjects = parentId?.startsWith('proj-')
                         ? state.projects.map(p => p.id === parentId ? { ...p, resourceIds: [...p.resourceIds, newResource.id] } : p)
                         : state.projects;
                     return { ...state, resources: [...state.resources, newResource], projects: newProjects };
                 }
                 case 'project': {
-                    const newProject: Project = createNewItem('proj', { title: itemData.title, description: itemData.description || '', areaId: parentId, taskIds: [], noteIds: [], resourceIds: [] });
+                    const newProject: Project = createNewItem('proj', { ...itemData, areaId: parentId, taskIds: [], noteIds: [], resourceIds: [] });
                     const newAreas = parentId?.startsWith('area-')
                         ? state.areas.map(a => a.id === parentId ? { ...a, projectIds: [...a.projectIds, newProject.id] } : a)
                         : state.areas;
                     return { ...state, projects: [...state.projects, newProject], areas: newAreas };
                 }
                 case 'area': {
-                    const newArea: Area = createNewItem('area', { title: itemData.title, description: itemData.description || '', projectIds: [] });
+                    const newArea: Area = createNewItem('area', { ...itemData, projectIds: [] });
                     return { ...state, areas: [...state.areas, newArea] };
                 }
                 default:
@@ -180,9 +182,9 @@ const dataReducer = (state: AppState, action: Action): AppState => {
             }
         }
         case 'UPDATE_NOTE': {
-            const { noteId, title, content } = action.payload;
+            const { noteId, title, content, tags } = action.payload;
             const now = new Date().toISOString();
-            return { ...state, notes: state.notes.map(n => n.id === noteId ? { ...n, title, content, updatedAt: now } : n) };
+            return { ...state, notes: state.notes.map(n => n.id === noteId ? { ...n, title, content, tags, updatedAt: now } : n) };
         }
         case 'DRAFT_FROM_NOTE': {
             const { sourceNoteId, newNoteId } = action.payload;
@@ -200,14 +202,15 @@ const dataReducer = (state: AppState, action: Action): AppState => {
                 createdAt: new Date().toISOString(),
                 updatedAt: new Date().toISOString(),
                 status: 'active',
+                tags: sourceNote.tags ? [...sourceNote.tags] : [],
             };
 
             return { ...state, notes: [...state.notes, newNote] };
         }
         case 'UPDATE_RESOURCE': {
-            const { resourceId, title, content } = action.payload;
+            const { resourceId, title, content, tags } = action.payload;
             const now = new Date().toISOString();
-            return { ...state, resources: state.resources.map(r => r.id === resourceId ? { ...r, title, content, updatedAt: now } : r) };
+            return { ...state, resources: state.resources.map(r => r.id === resourceId ? { ...r, title, content, tags, updatedAt: now } : r) };
         }
         case 'UPDATE_PROJECT': {
             const { projectId, updates } = action.payload;
@@ -288,6 +291,21 @@ const dataReducer = (state: AppState, action: Action): AppState => {
                 return { ...state, projects: state.projects.map(p => itemIds.includes(p.id) ? { ...p, lastReviewed: now, updatedAt: now } : p) };
             } else {
                 return { ...state, areas: state.areas.map(a => itemIds.includes(a.id) ? { ...a, lastReviewed: now, updatedAt: now } : a) };
+            }
+        }
+        case 'UPDATE_ITEM_TAGS': {
+            const { itemId, tags } = action.payload;
+            const now = new Date().toISOString();
+            const updater = (item: any) => item.id === itemId ? { ...item, tags, updatedAt: now } : item;
+            const itemType = getItemTypeFromId(itemId);
+
+            switch (itemType) {
+                case 'area': return { ...state, areas: state.areas.map(updater) };
+                case 'project': return { ...state, projects: state.projects.map(updater) };
+                case 'task': return { ...state, tasks: state.tasks.map(updater) };
+                case 'note': return { ...state, notes: state.notes.map(updater) };
+                case 'resource': return { ...state, resources: state.resources.map(updater) };
+                default: return state;
             }
         }
         default:

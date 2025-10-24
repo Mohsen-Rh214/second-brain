@@ -5,6 +5,7 @@ import { AreaIcon, PlusIcon } from '../shared/icons';
 import { CaptureContext } from '../../types';
 import { View } from '../../types';
 import EmptyState from '../shared/EmptyState';
+import TagList from '../shared/TagList';
 
 interface AreaViewProps {
     areas: Area[];
@@ -17,7 +18,7 @@ interface AreaViewProps {
     onArchive: (itemId: string) => void;
     onDelete: (itemId: string) => void;
     onSelectNote: (noteId: string) => void;
-    onUpdateArea: (areaId: string, updates: { title?: string, description?: string }) => void;
+    onUpdateArea: (areaId: string, updates: { title?: string, description?: string, tags?: string[] }) => void;
     onOpenCaptureModal: (context: CaptureContext) => void;
     onNavigate: (view: View, itemId: string) => void;
 }
@@ -64,6 +65,7 @@ const AreaView: React.FC<AreaViewProps> = ({ areas, activeAreaId, onSelectArea, 
                             >
                                 <h3 className="font-semibold text-text-primary">{area.title}</h3>
                                 <p className="text-xs text-text-secondary truncate">{area.description}</p>
+                                <TagList tags={area.tags} className="mt-2" />
                             </button>
                         </li>
                     ))}

@@ -3,6 +3,7 @@ import { Area, Project, Task } from '../../types';
 import { XIcon } from '../shared/icons';
 import { ItemType, CaptureContext } from '../../types';
 import { NewItemPayload } from '../../types';
+import TagInput from '../shared/TagInput';
 
 interface CaptureModalProps {
   isOpen: boolean;
@@ -29,6 +30,7 @@ const CaptureModal: React.FC<CaptureModalProps> = ({ isOpen, onClose, onSave, pr
   const [parentId, setParentId] = useState<string | null>(null);
   const [priority, setPriority] = useState<Task['priority']>('Medium');
   const [dueDate, setDueDate] = useState('');
+  const [tags, setTags] = useState<string[]>([]);
 
 
   useEffect(() => {
@@ -44,6 +46,7 @@ const CaptureModal: React.FC<CaptureModalProps> = ({ isOpen, onClose, onSave, pr
     setDescription('');
     setPriority('Medium');
     setDueDate('');
+    setTags([]);
   }, [context, isOpen]);
 
 
@@ -62,7 +65,7 @@ const CaptureModal: React.FC<CaptureModalProps> = ({ isOpen, onClose, onSave, pr
         return;
     }
     
-    const newItem: NewItemPayload = { title, content, description, priority, dueDate };
+    const newItem: NewItemPayload = { title, content, description, priority, dueDate, tags };
     onSave(newItem, activeType, parentId);
   };
 
@@ -106,8 +109,8 @@ const CaptureModal: React.FC<CaptureModalProps> = ({ isOpen, onClose, onSave, pr
         </header>
         
         <form onSubmit={handleSave} className="flex-1 flex flex-col overflow-y-hidden">
-          <div className="p-6 flex-1 overflow-y-auto custom-scrollbar">
-              <div className="mb-4">
+          <div className="p-6 flex-1 overflow-y-auto custom-scrollbar space-y-4">
+              <div>
                   <label htmlFor="item-title" className="sr-only">Title</label>
                   <input
                       id="item-title"
@@ -120,7 +123,7 @@ const CaptureModal: React.FC<CaptureModalProps> = ({ isOpen, onClose, onSave, pr
                   />
               </div>
               {(activeType === 'project' || activeType === 'area') && (
-                <div className="mb-4">
+                <div>
                     <label htmlFor="item-description" className="sr-only">Description</label>
                     <textarea
                         id="item-description"
@@ -133,7 +136,7 @@ const CaptureModal: React.FC<CaptureModalProps> = ({ isOpen, onClose, onSave, pr
                 </div>
               )}
               {(activeType === 'note' || activeType === 'resource') && (
-                <div className="mb-4">
+                <div>
                     <label htmlFor="item-content" className="sr-only">Content</label>
                     <textarea
                         id="item-content"
@@ -146,7 +149,7 @@ const CaptureModal: React.FC<CaptureModalProps> = ({ isOpen, onClose, onSave, pr
                 </div>
               )}
                {activeType === 'task' && (
-                <div className="grid grid-cols-2 gap-4 mb-4">
+                <div className="grid grid-cols-2 gap-4">
                     <div>
                          <label htmlFor="task-priority" className="block text-sm font-medium text-text-secondary mb-2">Priority</label>
                          <select
@@ -190,6 +193,10 @@ const CaptureModal: React.FC<CaptureModalProps> = ({ isOpen, onClose, onSave, pr
                     </select>
                 </div>
               )}
+              <div>
+                <label className="block text-sm font-medium text-text-secondary mb-2">Tags</label>
+                <TagInput tags={tags} onTagsChange={setTags} />
+              </div>
           </div>
           <footer className="p-4 bg-black/5 border-t border-outline-dark mt-auto flex-shrink-0">
               <div className="flex justify-end gap-3">

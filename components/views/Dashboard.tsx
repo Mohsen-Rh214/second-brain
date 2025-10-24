@@ -3,6 +3,7 @@ import { Area, Project, Task, View, InboxItem, DashboardCaptureType } from '../.
 import { ProjectIcon, CheckSquareIcon, ArrowRightIcon, InboxIcon, FileTextIcon, TrashIcon, CalendarIcon, ResourceIcon, SquareIcon, AreaIcon, ListTodoIcon } from '../shared/icons';
 import Card from '../shared/Card';
 import TaskItem from '../shared/TaskItem';
+import TagList from '../shared/TagList';
 
 interface DashboardProps {
   projects: Project[];
@@ -298,7 +299,8 @@ const Dashboard: React.FC<DashboardProps> = ({ projects, areas, tasks, inboxItem
                   <div>
                       <ul className="space-y-2 mb-4">
                           {inboxItems.map(item => (
-                              <li key={item.id} 
+                            <li
+                                key={item.id}
                                 draggable
                                 onDragStart={(e) => {
                                     e.dataTransfer.setData('text/plain', item.id);
@@ -306,16 +308,19 @@ const Dashboard: React.FC<DashboardProps> = ({ projects, areas, tasks, inboxItem
                                 }}
                                 onDragEnd={() => setDraggedInboxItemId(null)}
                                 className={`flex justify-between items-center p-2 group hover:bg-neutral rounded-xl transition-all duration-300 ease-soft cursor-grab ${draggedInboxItemId === item.id ? 'opacity-30' : ''}`}
-                              >
-                                  <button onClick={() => onSelectItem(item)} className="flex items-center gap-2 text-left">
-                                      {getItemIcon(item)}
-                                      <span className="font-medium truncate group-hover:text-accent">{item.title}</span>
-                                  </button>
-                                  <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                      <button onClick={() => onOrganizeItem(item)} className="text-sm bg-accent hover:bg-accent-hover text-accent-content font-semibold px-2 py-1 transition-colors rounded-md active:scale-95">Organize</button>
-                                      <button onClick={() => onDeleteItem(item.id)} className="p-1 text-text-secondary hover:text-destructive"><TrashIcon className="w-4 h-4"/></button>
-                                  </div>
-                              </li>
+                            >
+                                <div className="flex items-center gap-2 flex-1 min-w-0">
+                                    {getItemIcon(item)}
+                                    <div className="flex-1 min-w-0">
+                                        <button onClick={() => onSelectItem(item)} className="font-medium truncate text-left w-full block hover:text-accent">{item.title}</button>
+                                        <TagList tags={item.tags} className="mt-1" />
+                                    </div>
+                                </div>
+                                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <button onClick={() => onOrganizeItem(item)} className="text-sm bg-accent hover:bg-accent-hover text-accent-content font-semibold px-2 py-1 transition-colors rounded-md active:scale-95">Organize</button>
+                                    <button onClick={() => onDeleteItem(item.id)} className="p-1 text-text-secondary hover:text-destructive"><TrashIcon className="w-4 h-4"/></button>
+                                </div>
+                            </li>
                           ))}
                       </ul>
                       {/* {inboxItems.length > 5 &&

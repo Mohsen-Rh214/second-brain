@@ -1,6 +1,6 @@
 import React from 'react';
 import { View } from '../../types';
-import { BrainCircuitIcon, AreaIcon, ProjectIcon, ResourceIcon, ArchiveIcon, SearchIcon, GitMergeIcon, ClipboardCheckIcon, HomeIcon, SettingsIcon } from '../shared/icons';
+import { BrainIcon, AreaIcon, ProjectIcon, ResourceIcon, ArchiveIcon, SearchIcon, GitMergeIcon, ClipboardCheckIcon, HomeIcon, SettingsIcon } from '../shared/icons';
 import { useUI } from '../../store/UIContext';
 
 interface SidebarProps {
@@ -61,7 +61,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigate, inboxCount }) => {
     return (
         <aside className="w-72 h-[calc(100vh-2rem)] m-4 flex-shrink-0 flex flex-col bg-surface/80 backdrop-blur-xl border border-outline rounded-2xl shadow-md">
             <header className="flex items-center gap-3 p-4 border-b border-outline-dark">
-                <BrainCircuitIcon className="w-7 h-7 text-accent" />
+                <BrainIcon className="w-7 h-7 text-accent" />
                 <h1 className="text-xl font-bold font-heading text-text-primary tracking-tight">Second Brain</h1>
             </header>
 

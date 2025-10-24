@@ -133,8 +133,8 @@ const App: React.FC = () => {
     dataDispatch({ type: 'DELETE_ITEM', payload: { itemId } });
   }, [dataDispatch]);
 
-  const handleUpdateNote = useCallback((noteId: string, title: string, content: string) => {
-    dataDispatch({ type: 'UPDATE_NOTE', payload: { noteId, title, content } });
+  const handleUpdateNote = useCallback((noteId: string, title: string, content: string, tags: string[]) => {
+    dataDispatch({ type: 'UPDATE_NOTE', payload: { noteId, title, content, tags } });
     uiDispatch({ type: 'SET_EDITING_NOTE', payload: null });
   }, [dataDispatch, uiDispatch]);
 
@@ -151,16 +151,16 @@ const App: React.FC = () => {
     showToast('New draft created from note!');
   }, [dataDispatch, showToast, uiDispatch]);
 
-  const handleUpdateResource = useCallback((resourceId: string, title: string, content: string) => {
-    dataDispatch({ type: 'UPDATE_RESOURCE', payload: { resourceId, title, content } });
+  const handleUpdateResource = useCallback((resourceId: string, title: string, content: string, tags: string[]) => {
+    dataDispatch({ type: 'UPDATE_RESOURCE', payload: { resourceId, title, content, tags } });
     uiDispatch({ type: 'SET_EDITING_RESOURCE', payload: null });
   }, [dataDispatch, uiDispatch]);
   
-  const handleUpdateProject = useCallback((projectId: string, updates: { title?: string, description?: string }) => {
+  const handleUpdateProject = useCallback((projectId: string, updates: { title?: string, description?: string, tags?: string[] }) => {
     dataDispatch({ type: 'UPDATE_PROJECT', payload: { projectId, updates } });
   }, [dataDispatch]);
 
-  const handleUpdateArea = useCallback((areaId: string, updates: { title?: string, description?: string }) => {
+  const handleUpdateArea = useCallback((areaId: string, updates: { title?: string, description?: string, tags?: string[] }) => {
     dataDispatch({ type: 'UPDATE_AREA', payload: { areaId, updates } });
   }, [dataDispatch]);
 

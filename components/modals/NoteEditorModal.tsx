@@ -2,11 +2,12 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import ReactQuill from 'react-quill';
 import { Note, Project, Area } from '../../types';
 import { XIcon, ProjectIcon, AreaIcon, FileTextIcon, MaximizeIcon, MinimizeIcon, GitBranchIcon } from '../shared/icons';
+import TagInput from '../shared/TagInput';
 
 interface NoteEditorModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (noteId: string, title: string, content: string) => void;
+  onSave: (noteId: string, title: string, content: string, tags: string[]) => void;
   onDraftFromNote: (noteId: string) => void;
   note: Note;
   projects: Project[];
@@ -67,6 +68,7 @@ const LinkSelector: React.FC<LinkSelectorProps> = ({ items, onSelect, query, act
 const NoteEditorModal: React.FC<NoteEditorModalProps> = ({ isOpen, onClose, onSave, onDraftFromNote, note, projects, areas, allNotes }) => {
   const [title, setTitle] = useState(note.title);
   const [content, setContent] = useState(note.content);
+  const [tags, setTags] = useState(note.tags || []);
   const [isExpanded, setExpanded] = useState(false);
   const [linkSelector, setLinkSelector] = useState<{ top: number; left: number; startPos: number; } | null>(null);
   const [linkQuery, setLinkQuery] = useState('');
@@ -78,6 +80,7 @@ const NoteEditorModal: React.FC<NoteEditorModalProps> = ({ isOpen, onClose, onSa
   useEffect(() => {
     setTitle(note.title);
     setContent(note.content);
+    setTags(note.tags || []);
   }, [note]);
   
   const linkableItems: LinkableItem[] = useMemo(() => [
@@ -159,7 +162,7 @@ const NoteEditorModal: React.FC<NoteEditorModalProps> = ({ isOpen, onClose, onSa
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
     if (!title) return;
-    onSave(note.id, title, content);
+    onSave(note.id, title, content, tags);
   };
 
   const handleSelectLink = (item: LinkableItem) => {
@@ -274,6 +277,10 @@ const NoteEditorModal: React.FC<NoteEditorModalProps> = ({ isOpen, onClose, onSa
                       className="w-full bg-transparent border-none px-0 py-2 text-2xl font-bold font-heading text-text-primary focus:outline-none focus:ring-0"
                   />
               </div>
+               <div className="mb-4">
+                  <label className="block text-sm font-medium text-text-secondary mb-2">Tags</label>
+                  <TagInput tags={tags} onTagsChange={setTags} />
+               </div>
                {linkedItems.length > 0 && (
                   <div className="mb-4">
                       <label className="block text-sm font-medium text-text-secondary mb-2">Linked to</label>

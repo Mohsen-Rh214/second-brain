@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 
 export const useEditable = (initialValue: string, onSave: (newValue: string) => void) => {
     const [isEditing, setIsEditing] = useState(false);

@@ -65,7 +65,7 @@ const SearchView: React.FC<SearchViewProps> = ({ query, areas, projects, tasks, 
         }
     }
     
-    const totalResults = searchResults ? Object.values(searchResults).reduce((sum, arr) => sum + (arr as any[]).length, 0) : 0;
+    const totalResults = searchResults ? Object.values(searchResults).reduce((sum: number, arr: any[]) => sum + arr.length, 0) : 0;
 
     return (
         <div>

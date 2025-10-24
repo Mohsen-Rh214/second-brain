@@ -5,6 +5,7 @@ import { ProjectIcon, PlusIcon } from '../shared/icons';
 import ProgressBar from '../shared/ProgressBar';
 import { CaptureContext } from '../../types';
 import EmptyState from '../shared/EmptyState';
+import TagList from '../shared/TagList';
 
 interface ProjectViewProps {
     projects: Project[];
@@ -17,7 +18,7 @@ interface ProjectViewProps {
     onArchive: (itemId: string) => void;
     onDelete: (itemId: string) => void;
     onSelectNote: (noteId: string) => void;
-    onUpdateProject: (projectId: string, updates: { title?: string, description?: string }) => void;
+    onUpdateProject: (projectId: string, updates: { title?: string, description?: string, tags?: string[] }) => void;
     onOpenCaptureModal: (context: CaptureContext) => void;
     onSaveNewItem: (itemData: NewItemPayload, itemType: ItemType, parentId: string | null) => void;
     onReorderTasks: (sourceTaskId: string, targetTaskId: string) => void;
@@ -73,16 +74,17 @@ const ProjectView: React.FC<ProjectViewProps> = ({ projects, activeProjectId, on
                                         : 'hover:bg-neutral'
                                     }`}
                                 >
-                                    <div className="flex justify-between items-center">
-                                        <h3 className="font-semibold text-text-primary">{project.title}</h3>
+                                    <div className="flex justify-between items-start">
+                                        <h3 className="font-semibold text-text-primary truncate">{project.title}</h3>
                                         {total > 0 && (
-                                            <div className="flex items-center gap-2">
+                                            <div className="flex items-center gap-2 flex-shrink-0">
                                                 <span className="text-xs font-mono text-text-tertiary">{completed}/{total}</span>
                                                 <ProgressBar completed={completed} total={total} />
                                             </div>
                                         )}
                                     </div>
                                     <p className="text-xs text-text-secondary truncate mt-1">{project.description || 'No description'}</p>
+                                    <TagList tags={project.tags} className="mt-2" />
                                 </button>
                             </li>
                         )

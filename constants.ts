@@ -16,6 +16,7 @@ export const initialAreas: Area[] = [
     updatedAt: now.toISOString(),
     status: 'active',
     lastReviewed: sevenDaysAgo.toISOString(),
+    tags: ['self-improvement', 'learning', 'well-being'],
   },
 ];
 
@@ -33,6 +34,7 @@ export const initialProjects: Project[] = [
     updatedAt: now.toISOString(),
     status: 'active',
     lastReviewed: sevenDaysAgo.toISOString(),
+    tags: ['coding', 'typescript', 'learning-sprint'],
   },
   {
     id: 'proj-2',
@@ -45,6 +47,7 @@ export const initialProjects: Project[] = [
     createdAt: now.toISOString(),
     updatedAt: now.toISOString(),
     status: 'active',
+    tags: ['health', 'exercise'],
     // This one has not been reviewed to show up in the list
   },
 ];
@@ -61,6 +64,7 @@ export const initialTasks: Task[] = [
     createdAt: now.toISOString(),
     updatedAt: now.toISOString(),
     status: 'active',
+    tags: ['reading', 'deep-work'],
   },
   {
     id: 'task-2',
@@ -72,6 +76,7 @@ export const initialTasks: Task[] = [
     createdAt: now.toISOString(),
     updatedAt: now.toISOString(),
     status: 'active',
+    tags: ['coding', 'refactoring'],
   },
   {
     id: 'task-3',
@@ -82,6 +87,7 @@ export const initialTasks: Task[] = [
     createdAt: now.toISOString(),
     updatedAt: now.toISOString(),
     status: 'active',
+    tags: ['cardio'],
   },
   {
     id: 'task-4',
@@ -93,6 +99,7 @@ export const initialTasks: Task[] = [
     updatedAt: new Date(now.getTime() - 1 * 24 * 60 * 60 * 1000).toISOString(),
     status: 'active',
     isMyDay: true,
+    tags: ['writing', 'review'],
   },
 ];
 
@@ -106,6 +113,7 @@ export const initialNotes: Note[] = [
         createdAt: now.toISOString(),
         updatedAt: now.toISOString(),
         status: 'active',
+        tags: ['typescript', 'key-concepts'],
     }
 ];
 
@@ -120,5 +128,6 @@ export const initialResources: Resource[] = [
         createdAt: now.toISOString(),
         updatedAt: now.toISOString(),
         status: 'active',
+        tags: ['documentation', 'official-source'],
     }
 ];

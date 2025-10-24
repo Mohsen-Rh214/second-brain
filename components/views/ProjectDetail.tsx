@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Project, Task, Note, Resource, CaptureContext, NewItemPayload, ItemType } from '../../types';
 import { CheckSquareIcon, FileTextIcon, LinkIcon, ResourceIcon } from '../shared/icons';
 import Card from '../shared/Card';
@@ -6,6 +6,8 @@ import ActionMenu from '../shared/ActionMenu';
 import TaskItem from '../shared/TaskItem';
 import { useEditable } from '../../hooks/useEditable';
 import CardEmptyState from '../shared/CardEmptyState';
+import TagInput from '../shared/TagInput';
+import TagList from '../shared/TagList';
 
 interface ProjectDetailProps {
     project: Project;
@@ -16,7 +18,7 @@ interface ProjectDetailProps {
     onArchive: (itemId: string) => void;
     onDelete: (itemId: string) => void;
     onSelectNote: (noteId: string) => void;
-    onUpdateProject: (projectId: string, updates: { title?: string, description?: string }) => void;
+    onUpdateProject: (projectId: string, updates: { title?: string, description?: string, tags?: string[] }) => void;
     onOpenCaptureModal: (context: CaptureContext) => void;
     onSaveNewItem: (itemData: NewItemPayload, itemType: ItemType, parentId: string | null) => void;
     onReorderTasks: (sourceTaskId: string, targetTaskId: string) => void;
@@ -29,9 +31,14 @@ const ProjectDetail: React.FC<ProjectDetailProps> = ({ project, tasks, notes, re
     const [newTaskTitle, setNewTaskTitle] = useState('');
     const [draggedTaskId, setDraggedTaskId] = useState<string | null>(null);
     const [dragOverTaskId, setDragOverTaskId] = useState<string | null>(null);
+    const [tags, setTags] = useState(project.tags || []);
 
-    const titleEditor = useEditable(project.title, (newTitle) => onUpdateProject(project.id, { title: newTitle }));
-    const descriptionEditor = useEditable(project.description, (newDescription) => onUpdateProject(project.id, { description: newDescription }));
+    const titleEditor = useEditable(project.title, () => {});
+    const descriptionEditor = useEditable(project.description, () => {});
+
+    useEffect(() => {
+        setTags(project.tags || []);
+    }, [project]);
 
     const isEditing = titleEditor.isEditing || descriptionEditor.isEditing;
 
@@ -41,13 +48,23 @@ const ProjectDetail: React.FC<ProjectDetailProps> = ({ project, tasks, notes, re
     };
 
     const handleSave = () => {
-        titleEditor.handleSave();
+        const updates: { title?: string; description?: string; tags?: string[] } = {};
+        if (titleEditor.value !== project.title) updates.title = titleEditor.value;
+        if (descriptionEditor.value !== project.description) updates.description = descriptionEditor.value;
+        if (JSON.stringify(tags) !== JSON.stringify(project.tags || [])) updates.tags = tags;
+        
+        if (Object.keys(updates).length > 0) {
+            onUpdateProject(project.id, updates);
+        }
+
+        titleEditor.handleSave(); // Just sets isEditing to false
         descriptionEditor.handleSave();
     };
     
     const handleCancel = () => {
         titleEditor.handleCancel();
         descriptionEditor.handleCancel();
+        setTags(project.tags || []);
     };
     
     const handleAddTask = (e: React.FormEvent) => {
@@ -65,19 +82,31 @@ const ProjectDetail: React.FC<ProjectDetailProps> = ({ project, tasks, notes, re
             <header className="mb-8">
                 <div className="flex justify-between items-start">
                     {isEditing ? (
-                        <div className="flex-1 mr-4">
-                            <input
-                                type="text"
-                                value={titleEditor.value}
-                                onChange={(e) => titleEditor.setValue(e.target.value)}
-                                className="w-full bg-background/50 border border-outline rounded-lg px-3 py-2 text-4xl font-bold mb-2 text-text-primary focus:outline-none focus:ring-1 focus:ring-accent font-heading tracking-tight"
-                            />
-                             <textarea
-                                value={descriptionEditor.value}
-                                onChange={(e) => descriptionEditor.setValue(e.target.value)}
-                                rows={3}
-                                className="w-full bg-background/50 border border-outline rounded-lg px-3 py-2 text-text-secondary focus:outline-none focus:ring-1 focus:ring-accent custom-scrollbar max-w-prose"
-                            />
+                        <div className="flex-1 mr-4 space-y-4">
+                            <div>
+                                <label htmlFor="project-title" className="sr-only">Title</label>
+                                <input
+                                    id="project-title"
+                                    type="text"
+                                    value={titleEditor.value}
+                                    onChange={(e) => titleEditor.setValue(e.target.value)}
+                                    className="w-full bg-background/50 border border-outline rounded-lg px-3 py-2 text-4xl font-bold text-text-primary focus:outline-none focus:ring-1 focus:ring-accent font-heading tracking-tight"
+                                />
+                            </div>
+                            <div>
+                                <label htmlFor="project-description" className="sr-only">Description</label>
+                                 <textarea
+                                    id="project-description"
+                                    value={descriptionEditor.value}
+                                    onChange={(e) => descriptionEditor.setValue(e.target.value)}
+                                    rows={3}
+                                    className="w-full bg-background/50 border border-outline rounded-lg px-3 py-2 text-text-secondary focus:outline-none focus:ring-1 focus:ring-accent custom-scrollbar max-w-prose"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-text-secondary mb-2">Tags</label>
+                                <TagInput tags={tags} onTagsChange={setTags} />
+                            </div>
                              <div className="flex gap-2 mt-2">
                                 <button onClick={handleSave} className="px-3 py-1.5 text-sm bg-accent hover:bg-accent-hover text-accent-content transition-all rounded-lg active:scale-95">Save</button>
                                 <button onClick={handleCancel} className="px-3 py-1.5 text-sm bg-secondary hover:bg-secondary-hover text-secondary-content transition-all rounded-lg active:scale-95">Cancel</button>
@@ -86,7 +115,8 @@ const ProjectDetail: React.FC<ProjectDetailProps> = ({ project, tasks, notes, re
                     ) : (
                          <div>
                             <h1 className="text-4xl font-bold mb-2 font-heading tracking-tight">{project.title}</h1>
-                            <p className="text-text-secondary max-w-prose">{project.description}</p>
+                            <p className="text-text-secondary max-w-prose mb-4">{project.description}</p>
+                            <TagList tags={project.tags} />
                         </div>
                     )}
                     <div className="flex-shrink-0 ml-4">
@@ -152,6 +182,7 @@ const ProjectDetail: React.FC<ProjectDetailProps> = ({ project, tasks, notes, re
                             <li key={note.id}>
                                 <button onClick={() => onSelectNote(note.id)} className="w-full text-left p-3 hover:bg-neutral rounded-lg transition-colors">
                                     <p className="font-semibold">{note.title}</p>
+                                    <TagList tags={note.tags} className="mt-2" />
                                 </button>
                             </li>
                         ))}
@@ -163,9 +194,14 @@ const ProjectDetail: React.FC<ProjectDetailProps> = ({ project, tasks, notes, re
                  {resources.length > 0 ? (
                     <ul className="space-y-1">
                         {resources.map(resource => (
-                            <li key={resource.id} className="flex items-center gap-3 p-3 hover:bg-neutral rounded-lg transition-colors">
-                                {resource.type === 'link' ? <LinkIcon className="w-4 h-4 text-text-tertiary" /> : <ResourceIcon className="w-4 h-4 text-text-tertiary" />}
-                                <a href={resource.type === 'link' ? resource.content : undefined} target="_blank" rel="noopener noreferrer" className="hover:underline hover:text-accent">{resource.title}</a>
+                            <li key={resource.id} className="p-3 hover:bg-neutral rounded-lg transition-colors">
+                                <div className="flex items-center gap-3">
+                                    {resource.type === 'link' ? <LinkIcon className="w-4 h-4 text-text-tertiary flex-shrink-0" /> : <ResourceIcon className="w-4 h-4 text-text-tertiary flex-shrink-0" />}
+                                    <div className="flex-grow">
+                                        <a href={resource.type === 'link' ? resource.content : undefined} target="_blank" rel="noopener noreferrer" className="hover:underline hover:text-accent">{resource.title}</a>
+                                        <TagList tags={resource.tags} className="mt-1" />
+                                    </div>
+                                </div>
                             </li>
                         ))}
                     </ul>

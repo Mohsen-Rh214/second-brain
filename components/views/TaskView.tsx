@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { Task, Project } from '../../types';
 import { CheckSquareIcon, SquareIcon, ListTodoIcon, FlagIcon, CalendarIcon } from '../shared/icons';
 import EmptyState from '../shared/EmptyState';
+import TagList from '../shared/TagList';
 
 interface TaskViewProps {
     tasks: Task[];
@@ -115,26 +116,31 @@ const TaskView: React.FC<TaskViewProps> = ({ tasks, projects, onToggleTask }) =>
                             <h2 className="text-lg font-bold text-text-primary mb-3 font-heading">{groupKey}</h2>
                             <ul className="space-y-2">
                                 {groupedTasks[groupKey].map(task => (
-                                     <li key={task.id} className="flex items-center gap-3 p-3 bg-surface/80 backdrop-blur-xl border border-outline rounded-xl shadow-sm">
-                                        <button onClick={() => onToggleTask(task.id)} aria-label={task.completed ? 'Mark as incomplete' : 'Mark as complete'}>
-                                            {task.completed ? <CheckSquareIcon className="w-5 h-5 text-accent" /> : <SquareIcon className="w-5 h-5 text-text-tertiary" />}
-                                        </button>
-                                        <div className="flex-1">
-                                            <p className={`${task.completed ? 'line-through text-text-tertiary' : ''}`}>{task.title}</p>
-                                            {groupBy !== 'project' && <p className="text-xs text-text-tertiary">{projects.find(p => p.id === task.projectId)?.title || 'No Project'}</p>}
+                                     <li key={task.id} className="p-3 bg-surface/80 backdrop-blur-xl border border-outline rounded-xl shadow-sm">
+                                        <div className="flex items-center gap-3">
+                                            <button onClick={() => onToggleTask(task.id)} aria-label={task.completed ? 'Mark as incomplete' : 'Mark as complete'}>
+                                                {task.completed ? <CheckSquareIcon className="w-5 h-5 text-accent" /> : <SquareIcon className="w-5 h-5 text-text-tertiary" />}
+                                            </button>
+                                            <div className="flex-1">
+                                                <p className={`${task.completed ? 'line-through text-text-tertiary' : ''}`}>{task.title}</p>
+                                                <div className="flex items-center gap-4 mt-1">
+                                                    {groupBy !== 'project' && <p className="text-xs text-text-tertiary">{projects.find(p => p.id === task.projectId)?.title || 'No Project'}</p>}
+                                                    <TagList tags={task.tags} />
+                                                </div>
+                                            </div>
+                                            {task.dueDate && groupBy !== 'dueDate' && (
+                                                <div className="flex items-center gap-1 text-xs text-text-secondary">
+                                                    <CalendarIcon className="w-4 h-4" />
+                                                    {new Date(task.dueDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                                                </div>
+                                            )}
+                                            {task.priority && groupBy !== 'priority' && priorityClasses[task.priority] && (
+                                                <div className={`flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full ${priorityClasses[task.priority].bg} ${priorityClasses[task.priority].text}`}>
+                                                    <FlagIcon className="w-3 h-3" />
+                                                    {task.priority}
+                                                </div>
+                                            )}
                                         </div>
-                                         {task.dueDate && groupBy !== 'dueDate' && (
-                                            <div className="flex items-center gap-1 text-xs text-text-secondary">
-                                                <CalendarIcon className="w-4 h-4" />
-                                                {new Date(task.dueDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
-                                            </div>
-                                        )}
-                                        {task.priority && groupBy !== 'priority' && priorityClasses[task.priority] && (
-                                            <div className={`flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full ${priorityClasses[task.priority].bg} ${priorityClasses[task.priority].text}`}>
-                                                <FlagIcon className="w-3 h-3" />
-                                                {task.priority}
-                                            </div>
-                                        )}
                                     </li>
                                 ))}
                             </ul>
