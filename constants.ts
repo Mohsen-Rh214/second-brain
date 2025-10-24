@@ -17,6 +17,8 @@ export const initialAreas: Area[] = [
     status: 'active',
     lastReviewed: sevenDaysAgo.toISOString(),
     tags: ['self-improvement', 'learning', 'well-being'],
+    icon: 'brain',
+    color: '#22D3EE',
   },
 ];
 

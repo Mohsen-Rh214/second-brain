@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useReducer } from 'react';
-import { View, CaptureContext, InboxItem, Task } from '../types';
+import { View, CaptureContext, InboxItem, Task, ItemType } from '../types';
 
 interface ConfirmModalState {
   title: string;
@@ -23,6 +23,9 @@ interface UIState {
     toastMessage: string | null;
     linkingTask: Task | null;
     confirmModal: ConfirmModalState | null;
+    draggedItemId: string | null;
+    draggedItemType: ItemType | null;
+    isFocusMode: boolean;
 }
 
 type UIAction =
@@ -39,7 +42,9 @@ type UIAction =
     | { type: 'SET_COMMAND_BAR_OPEN'; payload: boolean }
     | { type: 'SHOW_TOAST'; payload: string | null }
     | { type: 'OPEN_CONFIRM_MODAL'; payload: ConfirmModalState }
-    | { type: 'CLOSE_CONFIRM_MODAL' };
+    | { type: 'CLOSE_CONFIRM_MODAL' }
+    | { type: 'SET_DRAGGED_ITEM'; payload: { id: string | null, type: ItemType | null } }
+    | { type: 'TOGGLE_FOCUS_MODE' };
 
 const initialState: UIState = {
     currentView: 'dashboard',
@@ -56,6 +61,9 @@ const initialState: UIState = {
     toastMessage: null,
     linkingTask: null,
     confirmModal: null,
+    draggedItemId: null,
+    draggedItemType: null,
+    isFocusMode: false,
 };
 
 const uiReducer = (state: UIState, action: UIAction): UIState => {
@@ -66,8 +74,9 @@ const uiReducer = (state: UIState, action: UIAction): UIState => {
                 ...state,
                 currentView: view,
                 searchQuery: '',
-                activeAreaId: view === 'areas' ? (itemId || null) : null,
-                activeProjectId: view === 'projects' ? (itemId || null) : null,
+                activeAreaId: view === 'areas' ? (itemId || state.activeAreaId) : null,
+                activeProjectId: view === 'projects' ? (itemId || state.activeProjectId) : null,
+                isFocusMode: view !== 'areas' ? false : state.isFocusMode, // Exit focus mode if navigating away
             };
         }
         case 'SET_ACTIVE_AREA':
@@ -96,6 +105,10 @@ const uiReducer = (state: UIState, action: UIAction): UIState => {
             return { ...state, confirmModal: action.payload };
         case 'CLOSE_CONFIRM_MODAL':
             return { ...state, confirmModal: null };
+        case 'SET_DRAGGED_ITEM':
+            return { ...state, draggedItemId: action.payload.id, draggedItemType: action.payload.type };
+        case 'TOGGLE_FOCUS_MODE':
+            return { ...state, isFocusMode: !state.isFocusMode };
         default:
             return state;
     }

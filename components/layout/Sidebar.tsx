@@ -14,8 +14,8 @@ const navItems: { view: View; label: string; icon: React.ReactElement }[] = [
 ];
 
 const libraryItems: { view: View; label: string; icon: React.ReactElement }[] = [
+    { view: 'projects', label: 'Projects', icon: <ProjectIcon className="w-5 h-5" /> },
   { view: 'areas', label: 'Areas', icon: <AreaIcon className="w-5 h-5" /> },
-  { view: 'projects', label: 'Projects', icon: <ProjectIcon className="w-5 h-5" /> },
   { view: 'calendar', label: 'Calendar', icon: <CalendarIcon className="w-5 h-5" /> },
   { view: 'resources', label: 'Resources', icon: <ResourceIcon className="w-5 h-5" /> },
   { view: 'archives', label: 'Archives', icon: <ArchiveIcon className="w-5 h-5" /> },

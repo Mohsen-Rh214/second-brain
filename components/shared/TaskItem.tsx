@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Task, Note, Resource } from '../../types';
 import { CheckSquareIcon, SquareIcon, CalendarIcon, FlagIcon, LinkIcon, FileTextIcon, ClipboardCheckIcon, ChevronDownIcon, PlusIcon, ResourceIcon } from './icons';
 import { useEditable } from '../../hooks/useEditable';
@@ -36,6 +36,7 @@ const TaskItem: React.FC<TaskItemProps> = ({
     task, allTasks = [], notes = [], resources = [], onToggleTask, onUpdateTask, onSelectTask, projectName, onLinkTask, isFadingOut,
     hasSubtasks, isCollapsed, onToggleCollapse, onArchive, onDelete, onAddSubtaskClick
 }) => {
+    const [isMenuOpen, setIsMenuOpen] = useState(false);
     const { isEditing, value, setValue, handleEdit, handleSave, handleKeyDown, inputRef } = useEditable(task.title, (newTitle) => {
       if(newTitle) onUpdateTask(task.id, { title: newTitle });
     });
@@ -160,8 +161,13 @@ const TaskItem: React.FC<TaskItemProps> = ({
                 </button>
             )}
              {(onArchive || onDelete) && (
-                <div className="opacity-0 group-hover:opacity-100 transition-opacity">
-                    <ActionMenu onArchive={handleArchive} onDelete={handleDelete} />
+                <div className={`transition-opacity ${isMenuOpen ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
+                    <ActionMenu 
+                        isOpen={isMenuOpen}
+                        onToggle={() => setIsMenuOpen(!isMenuOpen)}
+                        onArchive={handleArchive} 
+                        onDelete={handleDelete} 
+                    />
                 </div>
             )}
         </div>
