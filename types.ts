@@ -14,6 +14,8 @@ export interface Area extends BaseItem {
   // An area can have multiple projects.
   projectIds: string[];
   lastReviewed?: string;
+  icon?: string;
+  color?: string;
 }
 
 export interface Project extends BaseItem {

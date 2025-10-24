@@ -28,7 +28,7 @@ type Action =
     | { type: 'DRAFT_FROM_NOTE'; payload: { sourceNoteId: string, newNoteId: string } }
     | { type: 'UPDATE_RESOURCE'; payload: { resourceId: string; updates: Partial<Resource> } }
     | { type: 'UPDATE_PROJECT'; payload: { projectId: string; updates: { title?: string; description?: string, tags?: string[] } } }
-    | { type: 'UPDATE_AREA'; payload: { areaId: string; updates: { title?: string; description?: string, tags?: string[] } } }
+    | { type: 'UPDATE_AREA'; payload: { areaId: string; updates: Partial<Omit<Area, 'id' | 'createdAt' | 'updatedAt' | 'status' | 'projectIds'>> } }
     | { type: 'ORGANIZE_ITEM'; payload: { itemId: string; newParentIds: string[] } }
     | { type: 'MARK_REVIEWED'; payload: { itemIds: string[]; type: 'project' | 'area' } }
     | { type: 'UPDATE_ITEM_TAGS'; payload: { itemId: string; tags: string[] } }
@@ -110,7 +110,7 @@ const dataReducer = (state: AppState, action: Action): AppState => {
                     return { ...state, projects: [...state.projects, newProject], areas: newAreas };
                 }
                 case 'area': {
-                    const newArea: Area = createNewItem('area', { ...itemData, projectIds: [] });
+                    const newArea: Area = createNewItem('area', { ...itemData, projectIds: [], icon: 'area', color: '#94A3B8' });
                     return { ...state, areas: [...state.areas, newArea] };
                 }
                 default:

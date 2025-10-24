@@ -4,6 +4,8 @@ import { ProjectIcon, CheckSquareIcon, ArrowRightIcon, InboxIcon, FileTextIcon, 
 import Card from '../shared/Card';
 import TaskItem from '../shared/TaskItem';
 import TagList from '../shared/TagList';
+import { useUI } from '../../store/UIContext';
+import { getItemTypeFromId } from '../../utils';
 
 interface DashboardProps {
   projects: Project[];
@@ -91,10 +93,11 @@ const CaptureCard = React.memo(function CaptureCard({ onCapture }: { onCapture: 
 
 const Dashboard: React.FC<DashboardProps> = ({ projects, areas, tasks, inboxItems, onNavigate, onToggleTask, onOrganizeItem, onDirectOrganizeItem, onDeleteItem, onSaveNewTask, onDashboardCapture, onSelectItem, onReorderTasks, onUpdateTask, onOpenLinkTaskModal, onSelectTask }) => {
     
+    const { state: uiState, dispatch: uiDispatch } = useUI();
+    const { draggedItemId, draggedItemType } = uiState;
     const [myDayTask, setMyDayTask] = useState('');
     const [draggedTaskId, setDraggedTaskId] = useState<string | null>(null);
     const [dragOverTaskId, setDragOverTaskId] = useState<string | null>(null);
-    const [draggedInboxItemId, setDraggedInboxItemId] = useState<string | null>(null);
     const [dropTargetId, setDropTargetId] = useState<string | null>(null);
     const [isMyDayDropTarget, setIsMyDayDropTarget] = useState(false);
     const [fadingOutTaskIds, setFadingOutTaskIds] = useState<Set<string>>(new Set());
@@ -115,7 +118,7 @@ const Dashboard: React.FC<DashboardProps> = ({ projects, areas, tasks, inboxItem
         const recentProjects = projects
             .filter(p => p.status === 'active')
             .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
-            .slice(0, 4);
+            .slice(0, 3);
         
         const recentAreas = areas
             .filter(p => p.status === 'active')
@@ -175,19 +178,17 @@ const Dashboard: React.FC<DashboardProps> = ({ projects, areas, tasks, inboxItem
         <p className="text-text-secondary">Your command center for clarity and action.</p>
       </header>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-8 grid-auto-rows-[400px]">
           {/* Row 1 */}
           <div
             onDragOver={(e) => {
-                const item = inboxItems.find(i => i.id === draggedInboxItemId);
-                if (item && item.id.startsWith('task-')) {
+                if (draggedItemType === 'task') {
                     e.preventDefault();
                     e.dataTransfer.dropEffect = 'move';
                 }
             }}
             onDragEnter={(e) => {
-                const item = inboxItems.find(i => i.id === draggedInboxItemId);
-                if (item && item.id.startsWith('task-')) {
+                if (draggedItemType === 'task') {
                     e.preventDefault();
                     setIsMyDayDropTarget(true);
                 }
@@ -197,15 +198,12 @@ const Dashboard: React.FC<DashboardProps> = ({ projects, areas, tasks, inboxItem
             }}
             onDrop={(e) => {
                 e.preventDefault();
-                const itemId = e.dataTransfer.getData('text/plain');
-                const item = inboxItems.find(i => i.id === itemId);
-                if (item && item.id.startsWith('task-')) {
-                    onUpdateTask(itemId, { isMyDay: true });
+                if (draggedItemId && draggedItemType === 'task') {
+                    onUpdateTask(draggedItemId, { isMyDay: true });
                 }
                 setIsMyDayDropTarget(false);
-                setDraggedInboxItemId(null);
             }}
-            className={`min-h-[350px] rounded-2xl transition-all duration-300 ease-soft ${isMyDayDropTarget ? 'ring-2 ring-accent/80 ring-inset' : ''}`}
+            className={`rounded-2xl transition-all duration-300 ease-soft ${isMyDayDropTarget ? 'ring-2 ring-accent/80 ring-inset' : ''}`}
           >
             <Card 
                 icon={<CheckSquareIcon className="w-6 h-6" />} 
@@ -307,10 +305,11 @@ const Dashboard: React.FC<DashboardProps> = ({ projects, areas, tasks, inboxItem
                                 draggable
                                 onDragStart={(e) => {
                                     e.dataTransfer.setData('text/plain', item.id);
-                                    setDraggedInboxItemId(item.id);
+                                    const itemType = getItemTypeFromId(item.id);
+                                    uiDispatch({ type: 'SET_DRAGGED_ITEM', payload: { id: item.id, type: itemType } });
                                 }}
-                                onDragEnd={() => setDraggedInboxItemId(null)}
-                                className={`flex justify-between items-center p-2 group hover:bg-neutral rounded-xl transition-all duration-300 ease-soft cursor-grab ${draggedInboxItemId === item.id ? 'opacity-30' : ''}`}
+                                onDragEnd={() => uiDispatch({ type: 'SET_DRAGGED_ITEM', payload: { id: null, type: null } })}
+                                className={`flex justify-between items-center p-2 group hover:bg-neutral rounded-xl transition-all duration-300 ease-soft cursor-grab ${draggedItemId === item.id ? 'opacity-30' : ''}`}
                             >
                                 <div className="flex items-center gap-2 flex-1 min-w-0">
                                     {getItemIcon(item)}
@@ -363,16 +362,15 @@ const Dashboard: React.FC<DashboardProps> = ({ projects, areas, tasks, inboxItem
                   <ul className="space-y-2">
                       {recentProjects.map(project => (
                           <li key={project.id}
-                            onDragOver={(e) => { if (draggedInboxItemId) e.preventDefault(); }}
-                            onDragEnter={(e) => { if (draggedInboxItemId) { e.preventDefault(); setDropTargetId(project.id); } }}
-                            onDragLeave={() => { if (draggedInboxItemId) { setDropTargetId(null); } }}
+                            onDragOver={(e) => { if (draggedItemId) e.preventDefault(); }}
+                            onDragEnter={(e) => { if (draggedItemId) { e.preventDefault(); setDropTargetId(project.id); } }}
+                            onDragLeave={() => { if (draggedItemId) { setDropTargetId(null); } }}
                             onDrop={(e) => {
-                                if (draggedInboxItemId) {
+                                if (draggedItemId) {
                                     e.preventDefault();
                                     const itemId = e.dataTransfer.getData('text/plain');
                                     if (itemId) onDirectOrganizeItem(itemId, [project.id]);
                                     setDropTargetId(null);
-                                    setDraggedInboxItemId(null);
                                 }
                             }}
                           >
@@ -394,16 +392,15 @@ const Dashboard: React.FC<DashboardProps> = ({ projects, areas, tasks, inboxItem
                   <div className="grid grid-cols-2 gap-3">
                       {recentAreas.map(area => (
                           <div key={area.id}
-                            onDragOver={(e) => { if (draggedInboxItemId) e.preventDefault(); }}
-                            onDragEnter={(e) => { if (draggedInboxItemId) { e.preventDefault(); setDropTargetId(area.id); } }}
-                            onDragLeave={() => { if (draggedInboxItemId) { setDropTargetId(null); } }}
+                            onDragOver={(e) => { if (draggedItemId && (draggedItemType === 'note' || draggedItemType === 'resource')) e.preventDefault(); }}
+                            onDragEnter={(e) => { if (draggedItemId && (draggedItemType === 'note' || draggedItemType === 'resource')) { e.preventDefault(); setDropTargetId(area.id); } }}
+                            onDragLeave={() => { if (draggedItemId) { setDropTargetId(null); } }}
                             onDrop={(e) => {
-                                if (draggedInboxItemId) {
+                                if (draggedItemId) {
                                     e.preventDefault();
                                     const itemId = e.dataTransfer.getData('text/plain');
                                     if (itemId) onDirectOrganizeItem(itemId, [area.id]);
                                     setDropTargetId(null);
-                                    setDraggedInboxItemId(null);
                                 }
                             }}
                           >

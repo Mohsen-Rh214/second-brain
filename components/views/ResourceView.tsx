@@ -38,7 +38,6 @@ interface ResourceCardProps {
 
 const ResourceCard: React.FC<ResourceCardProps> = ({ resource, getParentName, onNavigate, onEditResource, onArchive, onDelete }) => {
     const [imageError, setImageError] = useState(false);
-    // FIX: Add state to manage the ActionMenu's visibility.
     const [isMenuOpen, setIsMenuOpen] = useState(false);
 
     useEffect(() => {

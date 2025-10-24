@@ -44,7 +44,6 @@ const ProjectDetail: React.FC<ProjectDetailProps> = ({ project, allTasks, tasks,
     const [viewType, setViewType] = useState<ProjectViewType>('list');
     const [collapsedTasks, setCollapsedTasks] = useState<Set<string>>(new Set());
     const [activeTab, setActiveTab] = useState<'active' | 'done'>('active');
-    // FIX: Add state to manage the ActionMenu's visibility.
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const { dispatch } = useData();
     const addTaskInputRef = useRef<HTMLInputElement>(null);

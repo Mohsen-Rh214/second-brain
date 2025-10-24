@@ -1,5 +1,5 @@
 import React, { useCallback, useMemo, useEffect } from 'react';
-import { View, ItemType, DashboardCaptureType, CaptureContext, InboxItem, NewItemPayload, Task, TaskStage, Resource } from './types';
+import { View, ItemType, DashboardCaptureType, CaptureContext, InboxItem, NewItemPayload, Task, TaskStage, Resource, Area } from './types';
 import Sidebar from './components/layout/Sidebar';
 import Dashboard from './components/views/Dashboard';
 import CaptureModal from './components/modals/CaptureModal';
@@ -33,7 +33,7 @@ const App: React.FC = () => {
   const { 
     currentView, activeAreaId, activeProjectId, isCaptureModalOpen, captureContext,
     editingNoteId, editingResourceId, editingTaskId, organizingItem, searchQuery, isCommandBarOpen, toastMessage,
-    linkingTask, confirmModal
+    linkingTask, confirmModal, isFocusMode
   } = uiState;
 
     const handleOpenCaptureModal = useCallback((context: CaptureContext | null = null) => {
@@ -63,6 +63,8 @@ const App: React.FC = () => {
                   uiDispatch({ type: 'SET_ORGANIZING_ITEM', payload: null });
               } else if (linkingTask) {
                   uiDispatch({ type: 'SET_LINKING_TASK', payload: null });
+              } else if (isFocusMode) {
+                  uiDispatch({ type: 'TOGGLE_FOCUS_MODE' });
               } else if (isEditingText) {
                   target.blur();
               }
@@ -88,7 +90,7 @@ const App: React.FC = () => {
       };
       window.addEventListener('keydown', handleKeyDown);
       return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isCommandBarOpen, isCaptureModalOpen, editingNoteId, editingResourceId, editingTaskId, organizingItem, linkingTask, confirmModal, uiDispatch, handleOpenCaptureModal]);
+  }, [isCommandBarOpen, isCaptureModalOpen, editingNoteId, editingResourceId, editingTaskId, organizingItem, linkingTask, confirmModal, isFocusMode, uiDispatch, handleOpenCaptureModal]);
 
   const showToast = useCallback((message: string) => {
       uiDispatch({ type: 'SHOW_TOAST', payload: message });
@@ -97,6 +99,10 @@ const App: React.FC = () => {
 
   const handleNavigate = useCallback((view: View, itemId: string | null = null) => {
     uiDispatch({ type: 'SET_VIEW', payload: { view, itemId } });
+  }, [uiDispatch]);
+
+  const handleToggleFocusMode = useCallback(() => {
+    uiDispatch({ type: 'TOGGLE_FOCUS_MODE' });
   }, [uiDispatch]);
 
   const handleSaveNewItem = useCallback((itemData: NewItemPayload, itemType: ItemType, parentId: string | null) => {
@@ -199,7 +205,7 @@ const App: React.FC = () => {
     dataDispatch({ type: 'UPDATE_PROJECT', payload: { projectId, updates } });
   }, [dataDispatch]);
 
-  const handleUpdateArea = useCallback((areaId: string, updates: { title?: string, description?: string, tags?: string[] }) => {
+  const handleUpdateArea = useCallback((areaId: string, updates: Partial<Omit<Area, 'id' | 'createdAt' | 'updatedAt' | 'status' | 'projectIds'>>) => {
     dataDispatch({ type: 'UPDATE_AREA', payload: { areaId, updates } });
   }, [dataDispatch]);
 
@@ -344,6 +350,9 @@ const App: React.FC = () => {
               onUpdateArea={handleUpdateArea}
               onOpenCaptureModal={handleOpenCaptureModal}
               onNavigate={handleNavigate}
+              onDirectOrganizeItem={handleOrganizeItem}
+              isFocusMode={isFocusMode}
+              onToggleFocusMode={handleToggleFocusMode}
           />;
       
       case 'resources':
@@ -409,12 +418,12 @@ const App: React.FC = () => {
 
   return (
     <div className="h-screen w-screen bg-transparent text-text-primary flex overflow-hidden font-sans">
-      <Sidebar 
+      {!isFocusMode && <Sidebar 
         onNavigate={handleNavigate}
         inboxCount={inboxItems.length}
-      />
-      <main className="flex-1 flex flex-col overflow-y-hidden">
-        <div className="flex-1 overflow-y-auto p-6 md:p-8">
+      />}
+      <main className={`flex-1 flex flex-col overflow-y-hidden transition-all duration-300 ease-soft ${isFocusMode ? 'p-0' : 'p-4'}`}>
+        <div className={`flex-1 overflow-y-auto ${isFocusMode ? 'p-6 md:p-8' : ''}`}>
           {renderView()}
         </div>
       </main>
