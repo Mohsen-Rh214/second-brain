@@ -38,6 +38,8 @@ interface ResourceCardProps {
 
 const ResourceCard: React.FC<ResourceCardProps> = ({ resource, getParentName, onNavigate, onEditResource, onArchive, onDelete }) => {
     const [imageError, setImageError] = useState(false);
+    // FIX: Add state to manage the ActionMenu's visibility.
+    const [isMenuOpen, setIsMenuOpen] = useState(false);
 
     useEffect(() => {
         setImageError(false);
@@ -73,7 +75,7 @@ const ResourceCard: React.FC<ResourceCardProps> = ({ resource, getParentName, on
             <div className="flex justify-between items-start gap-2">
                 <h4 className="font-semibold flex-1 clamp-2-lines">{resource.title}</h4>
                 <div className="-mr-2 -mt-2" onClick={e => e.stopPropagation()}>
-                    <ActionMenu onEdit={() => onEditResource(resource.id)} onArchive={() => onArchive(resource.id)} onDelete={() => onDelete(resource.id)} />
+                    <ActionMenu isOpen={isMenuOpen} onToggle={() => setIsMenuOpen(!isMenuOpen)} onEdit={() => onEditResource(resource.id)} onArchive={() => onArchive(resource.id)} onDelete={() => onDelete(resource.id)} />
                 </div>
             </div>
             {domain && (

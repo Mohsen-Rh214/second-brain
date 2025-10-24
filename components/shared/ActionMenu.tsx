@@ -1,36 +1,37 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { EditIcon, ArchiveBoxIcon, TrashIcon, EllipsisVerticalIcon } from './icons';
 
 interface ActionMenuProps {
     onEdit?: () => void;
     onArchive: () => void;
     onDelete: () => void;
+    isOpen: boolean;
+    onToggle: () => void;
 }
 
-const ActionMenu: React.FC<ActionMenuProps> = ({ onEdit, onArchive, onDelete }) => {
-    const [isOpen, setIsOpen] = useState(false);
+const ActionMenu: React.FC<ActionMenuProps> = ({ onEdit, onArchive, onDelete, isOpen, onToggle }) => {
     const menuRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
-            if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
-                setIsOpen(false);
+            if (isOpen && menuRef.current && !menuRef.current.contains(event.target as Node)) {
+                onToggle();
             }
         };
         document.addEventListener('mousedown', handleClickOutside);
         return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, []);
+    }, [isOpen, onToggle]);
 
     const createClickHandler = (action?: () => void) => () => {
         if (action) {
             action();
         }
-        setIsOpen(false);
+        onToggle();
     }
 
     return (
         <div className="relative" ref={menuRef}>
-            <button onClick={() => setIsOpen(!isOpen)} className="p-2 text-text-secondary hover:bg-neutral hover:text-text-primary rounded-full transition-colors">
+            <button onClick={onToggle} className="p-2 text-text-secondary hover:bg-neutral hover:text-text-primary rounded-full transition-colors">
                 <EllipsisVerticalIcon className="w-5 h-5" />
             </button>
             {isOpen && (

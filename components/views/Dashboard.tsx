@@ -175,7 +175,7 @@ const Dashboard: React.FC<DashboardProps> = ({ projects, areas, tasks, inboxItem
         <p className="text-text-secondary">Your command center for clarity and action.</p>
       </header>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-8 grid-auto-rows-[400px]">
+      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-8">
           {/* Row 1 */}
           <div
             onDragOver={(e) => {
@@ -205,7 +205,7 @@ const Dashboard: React.FC<DashboardProps> = ({ projects, areas, tasks, inboxItem
                 setIsMyDayDropTarget(false);
                 setDraggedInboxItemId(null);
             }}
-            className={`rounded-2xl transition-all duration-300 ease-soft ${isMyDayDropTarget ? 'ring-2 ring-accent/80 ring-inset' : ''}`}
+            className={`min-h-[350px] rounded-2xl transition-all duration-300 ease-soft ${isMyDayDropTarget ? 'ring-2 ring-accent/80 ring-inset' : ''}`}
           >
             <Card 
                 icon={<CheckSquareIcon className="w-6 h-6" />} 

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Project, Task, Note, Resource, CaptureContext, NewItemPayload, ItemType, TaskStage, ProjectViewType } from '../../types';
 import { CheckSquareIcon, FileTextIcon, LinkIcon, ResourceIcon, ListTodoIcon, LayoutGridIcon, PlusIcon } from '../shared/icons';
 import Card from '../shared/Card';
@@ -44,7 +44,10 @@ const ProjectDetail: React.FC<ProjectDetailProps> = ({ project, allTasks, tasks,
     const [viewType, setViewType] = useState<ProjectViewType>('list');
     const [collapsedTasks, setCollapsedTasks] = useState<Set<string>>(new Set());
     const [activeTab, setActiveTab] = useState<'active' | 'done'>('active');
+    // FIX: Add state to manage the ActionMenu's visibility.
+    const [isMenuOpen, setIsMenuOpen] = useState(false);
     const { dispatch } = useData();
+    const addTaskInputRef = useRef<HTMLInputElement>(null);
 
     const titleEditor = useEditable(project.title, () => {});
     const descriptionEditor = useEditable(project.description, () => {});
@@ -215,7 +218,7 @@ const ProjectDetail: React.FC<ProjectDetailProps> = ({ project, allTasks, tasks,
         if (newTaskTitle.trim()) {
             onSaveNewItem({ title: newTaskTitle }, 'task', project.id);
             setNewTaskTitle('');
-            // Keep input open for rapid entry by not setting isAddingTask to false
+            addTaskInputRef.current?.focus();
         }
     };
     
@@ -284,6 +287,8 @@ const ProjectDetail: React.FC<ProjectDetailProps> = ({ project, allTasks, tasks,
                     )}
                     <div className="flex-shrink-0 ml-4">
                        <ActionMenu 
+                          isOpen={isMenuOpen}
+                          onToggle={() => setIsMenuOpen(!isMenuOpen)}
                           onEdit={handleEdit}
                           onArchive={() => onArchive(project.id)}
                           onDelete={() => onDelete(project.id)}
@@ -353,6 +358,7 @@ const ProjectDetail: React.FC<ProjectDetailProps> = ({ project, allTasks, tasks,
                                 {isAddingTask && (
                                     <form onSubmit={handleAddTask} onBlur={handleAddTaskFormBlur} className="flex gap-2 mb-4 p-2 bg-background/50 rounded-lg border border-outline-dark animate-pop-in">
                                         <input
+                                            ref={addTaskInputRef}
                                             type="text"
                                             value={newTaskTitle}
                                             onChange={(e) => setNewTaskTitle(e.target.value)}

@@ -31,6 +31,8 @@ const AreaDetail: React.FC<AreaDetailProps> = ({ area, projects, tasks, notes, r
     const descriptionEditor = useEditable(area.description, (newDescription) => onUpdateArea(area.id, { description: newDescription }));
     const [tags, setTags] = useState(area.tags || []);
     const { dispatch } = useData();
+    // FIX: Add state to manage the ActionMenu's visibility.
+    const [isMenuOpen, setIsMenuOpen] = useState(false);
 
     const { draggedId, dropAction, getDragAndDropProps, getContainerProps } = useDraggableList<Project>({
         items: projects,
@@ -127,6 +129,8 @@ const AreaDetail: React.FC<AreaDetailProps> = ({ area, projects, tasks, notes, r
                     )}
                     <div className="flex-shrink-0 ml-4">
                          <ActionMenu 
+                            isOpen={isMenuOpen}
+                            onToggle={() => setIsMenuOpen(!isMenuOpen)}
                             onEdit={handleEdit}
                             onArchive={() => onArchive(area.id)}
                             onDelete={() => onDelete(area.id)}
