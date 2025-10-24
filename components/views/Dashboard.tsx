@@ -103,11 +103,11 @@ const Dashboard: React.FC<DashboardProps> = ({ projects, areas, tasks, inboxItem
         today.setHours(23, 59, 59, 999);
         
         const myDayTasks = tasks.filter(t => t.status === 'active' && (
-            (!t.completed && (t.isMyDay || (t.dueDate && new Date(t.dueDate) <= today))) ||
+            (t.stage !== 'Done' && (t.isMyDay || (t.dueDate && new Date(t.dueDate) <= today))) ||
             fadingOutTaskIds.has(t.id) // Keep item in list while fading out
         ));
 
-        const upcomingTasks = tasks.filter(t => t.status === 'active' && !t.completed && t.dueDate && new Date(t.dueDate) > today)
+        const upcomingTasks = tasks.filter(t => t.status === 'active' && t.stage !== 'Done' && t.dueDate && new Date(t.dueDate) > today)
             .sort((a, b) => new Date(a.dueDate!).getTime() - new Date(b.dueDate!).getTime())
             .slice(0, 5);
 
@@ -134,7 +134,7 @@ const Dashboard: React.FC<DashboardProps> = ({ projects, areas, tasks, inboxItem
 
     const handleToggleMyDayTask = (taskId: string) => {
         const task = myDayTasks.find(t => t.id === taskId);
-        if (task && !task.completed) {
+        if (task && task.stage !== 'Done') {
             setFadingOutTaskIds(prev => new Set(prev).add(taskId));
             setTimeout(() => {
                 onToggleTask(taskId);

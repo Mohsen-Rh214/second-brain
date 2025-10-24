@@ -1,6 +1,6 @@
 import React from 'react';
 import { View } from '../../types';
-import { BrainIcon, AreaIcon, ProjectIcon, ResourceIcon, ArchiveIcon, SearchIcon, GitMergeIcon, ClipboardCheckIcon, HomeIcon, SettingsIcon } from '../shared/icons';
+import { BrainIcon, AreaIcon, ProjectIcon, ResourceIcon, ArchiveIcon, SearchIcon, GitMergeIcon, ClipboardCheckIcon, HomeIcon, SettingsIcon, CalendarIcon } from '../shared/icons';
 import { useUI } from '../../store/UIContext';
 
 interface SidebarProps {
@@ -16,6 +16,7 @@ const navItems: { view: View; label: string; icon: React.ReactElement }[] = [
 const libraryItems: { view: View; label: string; icon: React.ReactElement }[] = [
   { view: 'areas', label: 'Areas', icon: <AreaIcon className="w-5 h-5" /> },
   { view: 'projects', label: 'Projects', icon: <ProjectIcon className="w-5 h-5" /> },
+  { view: 'calendar', label: 'Calendar', icon: <CalendarIcon className="w-5 h-5" /> },
   { view: 'resources', label: 'Resources', icon: <ResourceIcon className="w-5 h-5" /> },
   { view: 'archives', label: 'Archives', icon: <ArchiveIcon className="w-5 h-5" /> },
   { view: 'graph', label: 'Graph', icon: <GitMergeIcon className="w-5 h-5" /> },

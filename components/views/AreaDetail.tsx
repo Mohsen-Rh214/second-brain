@@ -62,7 +62,7 @@ const AreaDetail: React.FC<AreaDetailProps> = ({ area, projects, tasks, notes, r
     
     const getProjectProgress = (project: Project) => {
         const projectTasks = tasks.filter(t => project.taskIds.includes(t.id));
-        const completed = projectTasks.filter(t => t.completed).length;
+        const completed = projectTasks.filter(t => t.stage === 'Done').length;
         return { completed, total: projectTasks.length };
     };
 

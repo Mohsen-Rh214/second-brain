@@ -27,8 +27,10 @@ export interface Project extends BaseItem {
   lastReviewed?: string;
 }
 
+export type TaskStage = 'To Do' | 'In Progress' | 'Done';
+
 export interface Task extends BaseItem {
-  completed: boolean;
+  stage: TaskStage;
   // A task can belong to one project, or be unorganized (projectId is null).
   projectId: string | null;
   dueDate?: string; // e.g., '2024-08-15'
@@ -62,7 +64,7 @@ export type NewItemPayload = {
 
 export type InboxItem = Note | Resource | Task;
 
-export type View = 'dashboard' | 'inbox' | 'areas' | 'projects' | 'tasks' | 'resources' | 'archives' | 'graph' | 'review' | 'settings';
+export type View = 'dashboard' | 'inbox' | 'areas' | 'projects' | 'tasks' | 'resources' | 'archives' | 'graph' | 'review' | 'settings' | 'calendar';
 
 export type ItemType = 'note' | 'task' | 'resource' | 'project' | 'area';
 export type DashboardCaptureType = 'note' | 'task' | 'resource';
@@ -71,3 +73,5 @@ export type CaptureContext = {
     parentId: string | null;
     itemType?: ItemType;
 }
+
+export type ProjectViewType = 'list' | 'board';

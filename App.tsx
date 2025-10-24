@@ -1,5 +1,5 @@
 import React, { useCallback, useMemo, useEffect } from 'react';
-import { View, ItemType, DashboardCaptureType, CaptureContext, InboxItem, NewItemPayload, Task } from './types';
+import { View, ItemType, DashboardCaptureType, CaptureContext, InboxItem, NewItemPayload, Task, TaskStage } from './types';
 import Sidebar from './components/layout/Sidebar';
 import Dashboard from './components/views/Dashboard';
 import CaptureModal from './components/modals/CaptureModal';
@@ -21,6 +21,7 @@ import LinkTaskModal from './components/modals/LinkTaskModal';
 import { useData } from './store/DataContext';
 import { useUI } from './store/UIContext';
 import { getItemTypeFromId } from './utils';
+import CalendarView from './components/views/CalendarView';
 
 const App: React.FC = () => {
   const { state: dataState, dispatch: dataDispatch } = useData();
@@ -119,6 +120,10 @@ const App: React.FC = () => {
 
   const handleUpdateTask = useCallback((taskId: string, updates: Partial<Task>) => {
       dataDispatch({ type: 'UPDATE_TASK', payload: { taskId, updates } });
+  }, [dataDispatch]);
+
+  const handleUpdateTaskStage = useCallback((taskId: string, newStage: TaskStage) => {
+    dataDispatch({ type: 'UPDATE_TASK_STAGE', payload: { taskId, newStage } });
   }, [dataDispatch]);
   
   const handleUpdateItemStatus = useCallback((itemId: string, status: 'active' | 'archived') => {
@@ -224,7 +229,7 @@ const App: React.FC = () => {
   const inboxItems = useMemo(() => [
       ...notes.filter(n => n.status === 'active' && n.parentIds.length === 0),
       ...resources.filter(r => r.status === 'active' && r.parentIds.length === 0),
-      ...tasks.filter(t => t.status === 'active' && t.projectId === null && !t.completed && !t.isMyDay)
+      ...tasks.filter(t => t.status === 'active' && t.projectId === null && t.stage !== 'Done' && !t.isMyDay)
   ].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()), [notes, resources, tasks]);
 
   const renderView = () => {
@@ -285,6 +290,7 @@ const App: React.FC = () => {
             onSaveNewItem={handleSaveNewItem}
             onReorderTasks={handleReorderTasks}
             onUpdateTask={handleUpdateTask}
+            onUpdateTaskStage={handleUpdateTaskStage}
             />;
       case 'areas':
           return <AreaView
@@ -332,9 +338,15 @@ const App: React.FC = () => {
             inboxCount={inboxItems.length}
             projects={projects.filter(p => p.status === 'active')}
             areas={areas.filter(a => a.status === 'active')}
-            tasks={tasks.filter(t => t.status === 'active' && !t.completed)}
+            tasks={tasks.filter(t => t.status === 'active' && t.stage !== 'Done')}
             onNavigate={handleNavigate}
             onMarkReviewed={handleMarkReviewed}
+          />
+        case 'calendar':
+          return <CalendarView
+            tasks={tasks.filter(t => t.status === 'active')}
+            projects={projects.filter(p => p.status === 'active')}
+            onNavigate={handleNavigate}
           />
       case 'settings':
           return <SettingsView />;

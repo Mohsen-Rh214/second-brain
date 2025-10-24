@@ -3,6 +3,7 @@ import { Task, Project } from '../../types';
 import { CheckSquareIcon, SquareIcon, ListTodoIcon, FlagIcon, CalendarIcon } from '../shared/icons';
 import EmptyState from '../shared/EmptyState';
 import TagList from '../shared/TagList';
+import FilterSortControls from '../shared/FilterSortControls';
 
 interface TaskViewProps {
     tasks: Task[];
@@ -22,12 +23,50 @@ const priorityClasses: Record<string, { text: string, bg: string }> = {
 
 const TaskView: React.FC<TaskViewProps> = ({ tasks, projects, onToggleTask }) => {
     const [groupBy, setGroupBy] = useState<GroupBy>('project');
+    const [tagFilter, setTagFilter] = useState<string | null>(null);
+    const [sortOption, setSortOption] = useState<string>('Priority (High to Low)');
+
+    const allTags = useMemo(() => {
+        const tagSet = new Set<string>();
+        tasks.forEach(task => task.tags?.forEach(tag => tagSet.add(tag)));
+        return Array.from(tagSet).sort();
+    }, [tasks]);
 
     const activeTasks = useMemo(() => tasks.filter(t => t.status === 'active'), [tasks]);
 
+    const filteredAndSortedTasks = useMemo(() => {
+        let processedTasks = [...activeTasks];
+
+        if (tagFilter) {
+            processedTasks = processedTasks.filter(task => task.tags?.includes(tagFilter));
+        }
+
+        switch (sortOption) {
+            case 'Priority (High to Low)':
+                processedTasks.sort((a, b) => (priorityOrder[a.priority || ''] || 4) - (priorityOrder[b.priority || ''] || 4));
+                break;
+            case 'Due Date (Soonest First)':
+                processedTasks.sort((a, b) => {
+                    if (!a.dueDate && !b.dueDate) return 0;
+                    if (!a.dueDate) return 1;
+                    if (!b.dueDate) return -1;
+                    return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
+                });
+                break;
+            case 'Title (A-Z)':
+                processedTasks.sort((a, b) => a.title.localeCompare(b.title));
+                break;
+            case 'Creation Date (Newest First)':
+            default:
+                processedTasks.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+                break;
+        }
+        return processedTasks;
+    }, [activeTasks, tagFilter, sortOption]);
+
     const groupedTasks = useMemo(() => {
         if (groupBy === 'project') {
-            return activeTasks.reduce((acc, task) => {
+            return filteredAndSortedTasks.reduce((acc, task) => {
                 const project = projects.find(p => p.id === task.projectId);
                 const key = project ? project.title : 'No Project';
                 if (!acc[key]) acc[key] = [];
@@ -37,7 +76,7 @@ const TaskView: React.FC<TaskViewProps> = ({ tasks, projects, onToggleTask }) =>
         }
 
         if (groupBy === 'priority') {
-            return activeTasks.reduce((acc, task) => {
+            return filteredAndSortedTasks.reduce((acc, task) => {
                 const key = task.priority || 'No Priority';
                 if (!acc[key]) acc[key] = [];
                 acc[key].push(task);
@@ -46,7 +85,7 @@ const TaskView: React.FC<TaskViewProps> = ({ tasks, projects, onToggleTask }) =>
         }
 
         if (groupBy === 'dueDate') {
-             return activeTasks.reduce((acc, task) => {
+             return filteredAndSortedTasks.reduce((acc, task) => {
                 const key = task.dueDate ? new Date(task.dueDate).toDateString() : 'No Due Date';
                 if (!acc[key]) acc[key] = [];
                 acc[key].push(task);
@@ -55,7 +94,7 @@ const TaskView: React.FC<TaskViewProps> = ({ tasks, projects, onToggleTask }) =>
         }
 
         return {};
-    }, [activeTasks, projects, groupBy]);
+    }, [filteredAndSortedTasks, projects, groupBy]);
 
     const getSortedGroupKeys = (groups: Record<string, Task[]>) => {
         const keys = Object.keys(groups);
@@ -80,6 +119,7 @@ const TaskView: React.FC<TaskViewProps> = ({ tasks, projects, onToggleTask }) =>
     }
 
     const sortedGroupKeys = getSortedGroupKeys(groupedTasks);
+    const taskSortOptions = ['Priority (High to Low)', 'Due Date (Soonest First)', 'Creation Date (Newest First)', 'Title (A-Z)'];
 
     return (
         <div className="custom-scrollbar h-full">
@@ -88,26 +128,36 @@ const TaskView: React.FC<TaskViewProps> = ({ tasks, projects, onToggleTask }) =>
                 <p className="text-text-secondary">A complete list of all your active tasks.</p>
             </header>
 
-            <div className="mb-6 flex items-center gap-4 sticky top-0 bg-background/80 backdrop-blur-sm py-4 z-10">
-                <span className="text-sm font-medium text-text-secondary">Group by:</span>
-                <div className="flex gap-2">
-                    {(['project', 'priority', 'dueDate'] as GroupBy[]).map(option => (
-                        <button
-                            key={option}
-                            onClick={() => setGroupBy(option)}
-                            className={`px-3 py-1 text-sm transition-colors border rounded-lg ${groupBy === option ? 'bg-accent text-accent-content border-accent' : 'bg-surface/80 border-outline-dark hover:bg-neutral'}`}
-                        >
-                            {option === 'dueDate' ? 'Due Date' : option.charAt(0).toUpperCase() + option.slice(1)}
-                        </button>
-                    ))}
+            <div className="mb-6 flex items-center justify-between sticky top-0 bg-background/80 backdrop-blur-sm py-4 z-10">
+                <div className="flex items-center gap-4">
+                    <span className="text-sm font-medium text-text-secondary">Group by:</span>
+                    <div className="flex gap-2">
+                        {(['project', 'priority', 'dueDate'] as GroupBy[]).map(option => (
+                            <button
+                                key={option}
+                                onClick={() => setGroupBy(option)}
+                                className={`px-3 py-1 text-sm transition-colors border rounded-lg ${groupBy === option ? 'bg-accent text-accent-content border-accent' : 'bg-surface/80 border-outline-dark hover:bg-neutral'}`}
+                            >
+                                {option === 'dueDate' ? 'Due Date' : option.charAt(0).toUpperCase() + option.slice(1)}
+                            </button>
+                        ))}
+                    </div>
                 </div>
+                 <FilterSortControls 
+                    tags={allTags}
+                    sortOptions={taskSortOptions}
+                    tagFilter={tagFilter}
+                    onTagFilterChange={setTagFilter}
+                    sortOption={sortOption}
+                    onSortChange={setSortOption}
+                />
             </div>
 
-            {activeTasks.length === 0 ? (
+            {filteredAndSortedTasks.length === 0 ? (
                  <EmptyState
                     icon={<ListTodoIcon />}
-                    title="All Clear!"
-                    description="You have no active tasks. Enjoy the peace, or capture a new task to get things moving."
+                    title={tagFilter ? 'No Matching Tasks' : 'All Clear!'}
+                    description={tagFilter ? `No tasks found with the tag "${tagFilter}".` : "You have no active tasks. Enjoy the peace, or capture a new task to get things moving."}
                 />
             ) : (
                 <div className="space-y-6">
@@ -118,11 +168,11 @@ const TaskView: React.FC<TaskViewProps> = ({ tasks, projects, onToggleTask }) =>
                                 {groupedTasks[groupKey].map(task => (
                                      <li key={task.id} className="p-3 bg-surface/80 backdrop-blur-xl border border-outline rounded-xl shadow-sm">
                                         <div className="flex items-center gap-3">
-                                            <button onClick={() => onToggleTask(task.id)} aria-label={task.completed ? 'Mark as incomplete' : 'Mark as complete'}>
-                                                {task.completed ? <CheckSquareIcon className="w-5 h-5 text-accent" /> : <SquareIcon className="w-5 h-5 text-text-tertiary" />}
+                                            <button onClick={() => onToggleTask(task.id)} aria-label={task.stage === 'Done' ? 'Mark as incomplete' : 'Mark as complete'}>
+                                                {task.stage === 'Done' ? <CheckSquareIcon className="w-5 h-5 text-accent" /> : <SquareIcon className="w-5 h-5 text-text-tertiary" />}
                                             </button>
                                             <div className="flex-1">
-                                                <p className={`${task.completed ? 'line-through text-text-tertiary' : ''}`}>{task.title}</p>
+                                                <p className={`${task.stage === 'Done' ? 'line-through text-text-tertiary' : ''}`}>{task.title}</p>
                                                 <div className="flex items-center gap-4 mt-1">
                                                     {groupBy !== 'project' && <p className="text-xs text-text-tertiary">{projects.find(p => p.id === task.projectId)?.title || 'No Project'}</p>}
                                                     <TagList tags={task.tags} />

@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { Project, Task, Note, Resource, NewItemPayload, ItemType } from '../../types';
+import { Project, Task, Note, Resource, NewItemPayload, ItemType, TaskStage } from '../../types';
 import ProjectDetail from './ProjectDetail';
 import { ProjectIcon, PlusIcon } from '../shared/icons';
 import ProgressBar from '../shared/ProgressBar';
@@ -23,9 +23,10 @@ interface ProjectViewProps {
     onSaveNewItem: (itemData: NewItemPayload, itemType: ItemType, parentId: string | null) => void;
     onReorderTasks: (sourceTaskId: string, targetTaskId: string) => void;
     onUpdateTask: (taskId: string, updates: Partial<Pick<Task, 'title' | 'priority' | 'dueDate'>>) => void;
+    onUpdateTaskStage: (taskId: string, newStage: TaskStage) => void;
 }
 
-const ProjectView: React.FC<ProjectViewProps> = ({ projects, activeProjectId, onSelectProject, tasks, notes, resources, onToggleTask, onArchive, onDelete, onSelectNote, onUpdateProject, onOpenCaptureModal, onSaveNewItem, onReorderTasks, onUpdateTask }) => {
+const ProjectView: React.FC<ProjectViewProps> = ({ projects, activeProjectId, onSelectProject, tasks, notes, resources, onToggleTask, onArchive, onDelete, onSelectNote, onUpdateProject, onOpenCaptureModal, onSaveNewItem, onReorderTasks, onUpdateTask, onUpdateTaskStage }) => {
     
     useEffect(() => {
         // If there's no active project, or the active one is no longer in the list, select the first one.
@@ -44,7 +45,7 @@ const ProjectView: React.FC<ProjectViewProps> = ({ projects, activeProjectId, on
     
     const getProjectProgress = (project: Project) => {
         const projectTasks = tasks.filter(t => project.taskIds.includes(t.id));
-        const completed = projectTasks.filter(t => t.completed).length;
+        const completed = projectTasks.filter(t => t.stage === 'Done').length;
         return { completed, total: projectTasks.length };
     };
 
@@ -107,6 +108,7 @@ const ProjectView: React.FC<ProjectViewProps> = ({ projects, activeProjectId, on
                         onSaveNewItem={onSaveNewItem}
                         onReorderTasks={onReorderTasks}
                         onUpdateTask={onUpdateTask}
+                        onUpdateTaskStage={onUpdateTaskStage}
                     />
                 ) : (
                     <EmptyState 

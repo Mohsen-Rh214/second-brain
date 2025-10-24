@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useReducer, useEffect } from 'react';
-import { Area, Project, Task, Note, Resource, NewItemPayload, Status, ItemType } from '../types';
+import { Area, Project, Task, Note, Resource, NewItemPayload, Status, ItemType, TaskStage } from '../types';
 import { initialAreas, initialProjects, initialTasks, initialNotes, initialResources } from '../constants';
 import { getItemTypeFromId } from '../utils';
 
@@ -19,6 +19,7 @@ type Action =
     | { type: 'TOGGLE_TASK'; payload: { taskId: string } }
     | { type: 'REORDER_TASKS'; payload: { sourceTaskId: string; targetTaskId: string } }
     | { type: 'UPDATE_TASK'; payload: { taskId: string; updates: Partial<Task> } }
+    | { type: 'UPDATE_TASK_STAGE'; payload: { taskId: string; newStage: TaskStage } }
     | { type: 'UPDATE_ITEM_STATUS'; payload: { itemId: string; status: Status } }
     | { type: 'DELETE_ITEM'; payload: { itemId: string } }
     | { type: 'UPDATE_NOTE'; payload: { noteId: string; title: string; content: string; tags: string[] } }
@@ -64,7 +65,7 @@ const dataReducer = (state: AppState, action: Action): AppState => {
                     return { ...state, notes: [...state.notes, newNote], projects: newProjects };
                 }
                 case 'task': {
-                    const newTask: Task = createNewItem('task', { ...itemData, projectId: parentId, completed: false });
+                    const newTask: Task = createNewItem('task', { ...itemData, projectId: parentId, stage: 'To Do' });
                     const newProjects = parentId?.startsWith('proj-')
                         ? state.projects.map(p => p.id === parentId ? { ...p, taskIds: [newTask.id, ...p.taskIds] } : p)
                         : state.projects;
@@ -125,7 +126,7 @@ const dataReducer = (state: AppState, action: Action): AppState => {
             return {
                 ...state,
                 tasks: state.tasks.map(task =>
-                    task.id === taskId ? { ...task, completed: !task.completed, updatedAt: new Date().toISOString() } : task
+                    task.id === taskId ? { ...task, stage: task.stage === 'Done' ? 'To Do' : 'Done', updatedAt: new Date().toISOString() } : task
                 ),
             };
         }
@@ -151,6 +152,16 @@ const dataReducer = (state: AppState, action: Action): AppState => {
                 ...state,
                 tasks: state.tasks.map(task =>
                     task.id === taskId ? { ...task, ...updates, updatedAt: now } : task
+                ),
+            };
+        }
+        case 'UPDATE_TASK_STAGE': {
+            const { taskId, newStage } = action.payload;
+            const now = new Date().toISOString();
+            return {
+                ...state,
+                tasks: state.tasks.map(task =>
+                    task.id === taskId ? { ...task, stage: newStage, updatedAt: now } : task
                 ),
             };
         }

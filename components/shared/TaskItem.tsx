@@ -22,7 +22,7 @@ interface TaskItemProps {
 const TaskItem: React.FC<TaskItemProps> = ({ task, onToggleTask, onUpdateTask, projectName, onLinkTask, isFadingOut }) => {
     const inputRef = useRef<HTMLInputElement>(null);
     const titleEditor = useEditable(task.title, (newTitle) => onUpdateTask(task.id, { title: newTitle }));
-    const isVisuallyCompleted = task.completed || isFadingOut;
+    const isVisuallyCompleted = task.stage === 'Done' || isFadingOut;
 
     const handleDoubleClick = () => {
         if (!isVisuallyCompleted) {

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Project, Task, Note, Resource, CaptureContext, NewItemPayload, ItemType } from '../../types';
-import { CheckSquareIcon, FileTextIcon, LinkIcon, ResourceIcon } from '../shared/icons';
+import { Project, Task, Note, Resource, CaptureContext, NewItemPayload, ItemType, TaskStage, ProjectViewType } from '../../types';
+import { CheckSquareIcon, FileTextIcon, LinkIcon, ResourceIcon, ListTodoIcon, LayoutGridIcon, PlusIcon } from '../shared/icons';
 import Card from '../shared/Card';
 import ActionMenu from '../shared/ActionMenu';
 import TaskItem from '../shared/TaskItem';
@@ -8,6 +8,7 @@ import { useEditable } from '../../hooks/useEditable';
 import CardEmptyState from '../shared/CardEmptyState';
 import TagInput from '../shared/TagInput';
 import TagList from '../shared/TagList';
+import KanbanBoard from '../kanban/KanbanBoard';
 
 interface ProjectDetailProps {
     project: Project;
@@ -23,15 +24,17 @@ interface ProjectDetailProps {
     onSaveNewItem: (itemData: NewItemPayload, itemType: ItemType, parentId: string | null) => void;
     onReorderTasks: (sourceTaskId: string, targetTaskId: string) => void;
     onUpdateTask: (taskId: string, updates: Partial<Pick<Task, 'title' | 'priority' | 'dueDate'>>) => void;
+    onUpdateTaskStage: (taskId: string, newStage: TaskStage) => void;
 }
 
-const ProjectDetail: React.FC<ProjectDetailProps> = ({ project, tasks, notes, resources, onToggleTask, onArchive, onDelete, onSelectNote, onUpdateProject, onOpenCaptureModal, onSaveNewItem, onReorderTasks, onUpdateTask }) => {
+const ProjectDetail: React.FC<ProjectDetailProps> = ({ project, tasks, notes, resources, onToggleTask, onArchive, onDelete, onSelectNote, onUpdateProject, onOpenCaptureModal, onSaveNewItem, onReorderTasks, onUpdateTask, onUpdateTaskStage }) => {
     
     const [isAddingTask, setIsAddingTask] = useState(false);
     const [newTaskTitle, setNewTaskTitle] = useState('');
     const [draggedTaskId, setDraggedTaskId] = useState<string | null>(null);
     const [dragOverTaskId, setDragOverTaskId] = useState<string | null>(null);
     const [tags, setTags] = useState(project.tags || []);
+    const [viewType, setViewType] = useState<ProjectViewType>('list');
 
     const titleEditor = useEditable(project.title, () => {});
     const descriptionEditor = useEditable(project.description, () => {});
@@ -129,51 +132,79 @@ const ProjectDetail: React.FC<ProjectDetailProps> = ({ project, tasks, notes, re
                 </div>
             </header>
 
-            <Card icon={<CheckSquareIcon className="w-6 h-6" />} title="Tasks" onAdd={() => setIsAddingTask(true)} isCollapsible defaultOpen>
-                {isAddingTask && (
-                    <form onSubmit={handleAddTask} className="flex gap-2 mb-4 p-2 bg-background/50 rounded-lg border border-outline-dark animate-pop-in">
-                        <input
-                            type="text"
-                            value={newTaskTitle}
-                            onChange={(e) => setNewTaskTitle(e.target.value)}
-                            onKeyDown={(e) => e.key === 'Escape' && setIsAddingTask(false)}
-                            placeholder="What needs to be done?"
-                            autoFocus
-                            className="flex-1 bg-transparent border-none px-2 py-1 text-sm text-text-primary focus:outline-none"
-                        />
-                        <button type="submit" className="px-3 py-1 text-xs font-medium bg-secondary hover:bg-secondary-hover text-secondary-content transition-all rounded-md active:scale-95">Add Task</button>
-                        <button type="button" onClick={() => setIsAddingTask(false)} className="px-3 py-1 text-xs font-medium text-text-secondary hover:bg-neutral rounded-md active:scale-95">Cancel</button>
-                    </form>
-                )}
-                {tasks.length > 0 ? (
-                    <ul className="space-y-1" onDragLeave={() => setDragOverTaskId(null)}>
-                        {tasks.map((task, index) => (
-                            <li 
-                                key={task.id} 
-                                className={`relative cursor-move transition-opacity ${draggedTaskId === task.id ? 'opacity-30' : 'opacity-100'} ${index === 0 && !isAddingTask ? 'animate-pop-in' : ''}`}
-                                draggable={true}
-                                onDragStart={(e) => { e.dataTransfer.setData('text/plain', task.id); setDraggedTaskId(task.id); }}
-                                onDragEnd={() => { setDraggedTaskId(null); setDragOverTaskId(null); }}
-                                onDragOver={(e) => { e.preventDefault(); setDragOverTaskId(task.id); }}
-                                onDrop={(e) => {
-                                    e.preventDefault();
-                                    const sourceId = e.dataTransfer.getData('text/plain');
-                                    if (sourceId && task.id && sourceId !== task.id) {
-                                        onReorderTasks(sourceId, task.id);
-                                    }
-                                    setDraggedTaskId(null);
-                                    setDragOverTaskId(null);
-                                }}
-                            >
-                                {dragOverTaskId === task.id && draggedTaskId !== task.id && (
-                                    <div className="absolute -top-1 left-2 right-2 h-1 bg-accent rounded-full" />
-                                )}
-                                <TaskItem task={task} onToggleTask={onToggleTask} onUpdateTask={onUpdateTask} />
-                            </li>
-                        ))}
-                    </ul>
-                ) : <CardEmptyState>Every great project starts with a single step. Add your first task.</CardEmptyState>}
-            </Card>
+            <div className="bg-surface/80 backdrop-blur-xl border border-outline rounded-2xl shadow-md mb-6">
+                <header className="flex items-center justify-between p-4 border-b border-outline-dark">
+                    <div className="flex items-center gap-3">
+                        <div className="text-accent"><CheckSquareIcon className="w-6 h-6" /></div>
+                        <h3 className="font-bold text-lg font-heading tracking-tight text-text-primary">Tasks</h3>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <div className="flex items-center bg-background/50 border border-outline-dark rounded-lg p-1">
+                            <button onClick={() => setViewType('list')} title="List View" className={`p-1.5 rounded-md transition-colors ${viewType === 'list' ? 'bg-accent text-accent-content' : 'text-text-secondary hover:bg-neutral'}`}>
+                                <ListTodoIcon className="w-5 h-5" />
+                            </button>
+                            <button onClick={() => setViewType('board')} title="Board View" className={`p-1.5 rounded-md transition-colors ${viewType === 'board' ? 'bg-accent text-accent-content' : 'text-text-secondary hover:bg-neutral'}`}>
+                                <LayoutGridIcon className="w-5 h-5" />
+                            </button>
+                        </div>
+                        <button onClick={() => setIsAddingTask(true)} className="p-1.5 text-text-secondary hover:bg-neutral hover:text-text-primary rounded-full transition-colors">
+                            <PlusIcon className="w-5 h-5" />
+                        </button>
+                    </div>
+                </header>
+
+                <div className="p-4">
+                     {viewType === 'list' ? (
+                        <>
+                            {isAddingTask && (
+                                <form onSubmit={handleAddTask} className="flex gap-2 mb-4 p-2 bg-background/50 rounded-lg border border-outline-dark animate-pop-in">
+                                    <input
+                                        type="text"
+                                        value={newTaskTitle}
+                                        onChange={(e) => setNewTaskTitle(e.target.value)}
+                                        onKeyDown={(e) => e.key === 'Escape' && setIsAddingTask(false)}
+                                        placeholder="What needs to be done?"
+                                        autoFocus
+                                        className="flex-1 bg-transparent border-none px-2 py-1 text-sm text-text-primary focus:outline-none"
+                                    />
+                                    <button type="submit" className="px-3 py-1 text-xs font-medium bg-secondary hover:bg-secondary-hover text-secondary-content transition-all rounded-md active:scale-95">Add Task</button>
+                                    <button type="button" onClick={() => setIsAddingTask(false)} className="px-3 py-1 text-xs font-medium text-text-secondary hover:bg-neutral rounded-md active:scale-95">Cancel</button>
+                                </form>
+                            )}
+                            {tasks.length > 0 ? (
+                                <ul className="space-y-1" onDragLeave={() => setDragOverTaskId(null)}>
+                                    {tasks.map((task, index) => (
+                                        <li 
+                                            key={task.id} 
+                                            className={`relative cursor-move transition-opacity ${draggedTaskId === task.id ? 'opacity-30' : 'opacity-100'} ${index === 0 && !isAddingTask ? 'animate-pop-in' : ''}`}
+                                            draggable={true}
+                                            onDragStart={(e) => { e.dataTransfer.setData('text/plain', task.id); setDraggedTaskId(task.id); }}
+                                            onDragEnd={() => { setDraggedTaskId(null); setDragOverTaskId(null); }}
+                                            onDragOver={(e) => { e.preventDefault(); setDragOverTaskId(task.id); }}
+                                            onDrop={(e) => {
+                                                e.preventDefault();
+                                                const sourceId = e.dataTransfer.getData('text/plain');
+                                                if (sourceId && task.id && sourceId !== task.id) {
+                                                    onReorderTasks(sourceId, task.id);
+                                                }
+                                                setDraggedTaskId(null);
+                                                setDragOverTaskId(null);
+                                            }}
+                                        >
+                                            {dragOverTaskId === task.id && draggedTaskId !== task.id && (
+                                                <div className="absolute -top-1 left-2 right-2 h-1 bg-accent rounded-full" />
+                                            )}
+                                            <TaskItem task={task} onToggleTask={onToggleTask} onUpdateTask={onUpdateTask} />
+                                        </li>
+                                    ))}
+                                </ul>
+                            ) : <CardEmptyState>Every great project starts with a single step. Add your first task.</CardEmptyState>}
+                        </>
+                    ) : (
+                        <KanbanBoard tasks={tasks} onUpdateTaskStage={onUpdateTaskStage} />
+                    )}
+                </div>
+            </div>
 
             <Card icon={<FileTextIcon className="w-6 h-6" />} title="Notes" onAdd={() => onOpenCaptureModal({ parentId: project.id, itemType: 'note' })} isCollapsible defaultOpen>
                  {notes.length > 0 ? (
