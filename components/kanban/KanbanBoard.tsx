@@ -4,12 +4,15 @@ import KanbanColumn from './KanbanColumn';
 
 interface KanbanBoardProps {
   tasks: Task[];
+  allTasks: Task[];
   onUpdateTaskStage: (taskId: string, newStage: TaskStage) => void;
+  onUpdateMultipleTaskStages: (taskIds: string[], newStage: TaskStage) => void;
+  onSelectTask: (taskId: string) => void;
 }
 
 const STAGES: TaskStage[] = ['To Do', 'In Progress', 'Done'];
 
-const KanbanBoard: React.FC<KanbanBoardProps> = ({ tasks, onUpdateTaskStage }) => {
+const KanbanBoard: React.FC<KanbanBoardProps> = ({ tasks, allTasks, onUpdateTaskStage, onUpdateMultipleTaskStages, onSelectTask }) => {
   const tasksByStage = STAGES.reduce((acc, stage) => {
     acc[stage] = tasks.filter(task => task.stage === stage);
     return acc;
@@ -28,7 +31,10 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ tasks, onUpdateTaskStage }) =
           key={stage}
           stage={stage}
           tasks={tasksByStage[stage]}
-          onTaskDrop={onUpdateTaskStage}
+          allTasks={allTasks}
+          onUpdateTaskStage={onUpdateTaskStage}
+          onUpdateMultipleTaskStages={onUpdateMultipleTaskStages}
+          onSelectTask={onSelectTask}
         />
       ))}
     </div>

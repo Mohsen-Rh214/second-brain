@@ -31,11 +31,18 @@ export type TaskStage = 'To Do' | 'In Progress' | 'Done';
 
 export interface Task extends BaseItem {
   stage: TaskStage;
+  description: string;
   // A task can belong to one project, or be unorganized (projectId is null).
   projectId: string | null;
   dueDate?: string; // e.g., '2024-08-15'
   priority?: 'Low' | 'Medium' | 'High';
   isMyDay?: boolean; // True if explicitly added to My Day, not just by due date
+  // For sub-tasking
+  subtaskIds: string[];
+  parentId: string | null;
+  // For linking to other items
+  noteIds: string[];
+  resourceIds: string[];
 }
 
 export interface Note extends BaseItem {
@@ -60,6 +67,8 @@ export type NewItemPayload = {
     priority?: 'Low' | 'Medium' | 'High';
     isMyDay?: boolean;
     tags?: string[];
+    noteIds?: string[];
+    resourceIds?: string[];
 };
 
 export type InboxItem = Note | Resource | Task;

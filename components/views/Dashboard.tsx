@@ -21,6 +21,7 @@ interface DashboardProps {
   onReorderTasks: (sourceTaskId: string, targetTaskId: string) => void;
   onUpdateTask: (taskId: string, updates: Partial<Task>) => void;
   onOpenLinkTaskModal: (taskId: string) => void;
+  onSelectTask: (taskId: string) => void;
 }
 
 const CaptureCard = React.memo(function CaptureCard({ onCapture }: { onCapture: (content: string, type: DashboardCaptureType) => void }) {
@@ -88,7 +89,7 @@ const CaptureCard = React.memo(function CaptureCard({ onCapture }: { onCapture: 
     );
 });
 
-const Dashboard: React.FC<DashboardProps> = ({ projects, areas, tasks, inboxItems, onNavigate, onToggleTask, onOrganizeItem, onDirectOrganizeItem, onDeleteItem, onSaveNewTask, onDashboardCapture, onSelectItem, onReorderTasks, onUpdateTask, onOpenLinkTaskModal }) => {
+const Dashboard: React.FC<DashboardProps> = ({ projects, areas, tasks, inboxItems, onNavigate, onToggleTask, onOrganizeItem, onDirectOrganizeItem, onDeleteItem, onSaveNewTask, onDashboardCapture, onSelectItem, onReorderTasks, onUpdateTask, onOpenLinkTaskModal, onSelectTask }) => {
     
     const [myDayTask, setMyDayTask] = useState('');
     const [draggedTaskId, setDraggedTaskId] = useState<string | null>(null);
@@ -222,11 +223,11 @@ const Dashboard: React.FC<DashboardProps> = ({ projects, areas, tasks, inboxItem
                             onDrop={handleInputDrop}
                         />
                         <button type="submit" className="px-4 py-2 text-sm font-medium bg-secondary hover:bg-secondary-hover text-secondary-content transition-colors rounded-lg active:scale-95">Add</button>
-                    </form>
+                </form>
                 {myDayTasks.length > 0 ? (
                     <>
-                        <ul className="space-y-1 max-h-[220px] overflow-hidden" onDragLeave={() => setDragOverTaskId(null)}>
-                            {myDayTasks.slice(0,5).map(task => {
+                        <ul className="flex-auto space-y-1 max-h-[220px] overflow-y-scroll overflow-x-clip custom-scrollbar" onDragLeave={() => setDragOverTaskId(null)}>
+                            {myDayTasks.slice(0,10).map(task => {
                                 const isFading = fadingOutTaskIds.has(task.id);
                                 return (
                                     <li 
@@ -268,7 +269,9 @@ const Dashboard: React.FC<DashboardProps> = ({ projects, areas, tasks, inboxItem
                                         )}
                                         <TaskItem 
                                             task={task} 
+                                            allTasks={tasks}
                                             onToggleTask={handleToggleMyDayTask} 
+                                            onSelectTask={onSelectTask}
                                             projectName={task.projectId ? projects.find(p=>p.id === task.projectId)?.title : undefined}
                                             onUpdateTask={onUpdateTask}
                                             onLinkTask={onOpenLinkTaskModal}
@@ -279,7 +282,7 @@ const Dashboard: React.FC<DashboardProps> = ({ projects, areas, tasks, inboxItem
                             })}
                         </ul>
                         {myDayTasks.length > 5 ? 
-                        <div className="mt-4 pt-2 text-center">
+                        <div className="flex-none mt-4 pt-2 text-center">
                             <button onClick={() => onNavigate('tasks')} className="text-sm font-semibold text-accent hover:underline">
                                 View All Tasks &rarr;
                             </button>

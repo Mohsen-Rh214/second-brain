@@ -11,6 +11,7 @@ interface ProjectViewProps {
     projects: Project[];
     activeProjectId: string | null;
     onSelectProject: (id: string | null) => void;
+    allTasks: Task[];
     tasks: Task[];
     notes: Note[];
     resources: Resource[];
@@ -18,15 +19,18 @@ interface ProjectViewProps {
     onArchive: (itemId: string) => void;
     onDelete: (itemId: string) => void;
     onSelectNote: (noteId: string) => void;
+    onSelectTask: (taskId: string) => void;
     onUpdateProject: (projectId: string, updates: { title?: string, description?: string, tags?: string[] }) => void;
     onOpenCaptureModal: (context: CaptureContext) => void;
     onSaveNewItem: (itemData: NewItemPayload, itemType: ItemType, parentId: string | null) => void;
     onReorderTasks: (sourceTaskId: string, targetTaskId: string) => void;
+    onReparentTask: (taskId: string, newParentId: string) => void;
     onUpdateTask: (taskId: string, updates: Partial<Pick<Task, 'title' | 'priority' | 'dueDate'>>) => void;
     onUpdateTaskStage: (taskId: string, newStage: TaskStage) => void;
+    onUpdateMultipleTaskStages: (taskIds: string[], newStage: TaskStage) => void;
 }
 
-const ProjectView: React.FC<ProjectViewProps> = ({ projects, activeProjectId, onSelectProject, tasks, notes, resources, onToggleTask, onArchive, onDelete, onSelectNote, onUpdateProject, onOpenCaptureModal, onSaveNewItem, onReorderTasks, onUpdateTask, onUpdateTaskStage }) => {
+const ProjectView: React.FC<ProjectViewProps> = ({ projects, activeProjectId, onSelectProject, allTasks, tasks, notes, resources, onToggleTask, onArchive, onDelete, onSelectNote, onSelectTask, onUpdateProject, onOpenCaptureModal, onSaveNewItem, onReorderTasks, onReparentTask, onUpdateTask, onUpdateTaskStage, onUpdateMultipleTaskStages }) => {
     
     useEffect(() => {
         // If there's no active project, or the active one is no longer in the list, select the first one.
@@ -96,6 +100,7 @@ const ProjectView: React.FC<ProjectViewProps> = ({ projects, activeProjectId, on
                 {selectedProject ? (
                     <ProjectDetail 
                         project={selectedProject}
+                        allTasks={allTasks}
                         tasks={tasks.filter(t => selectedProject.taskIds.includes(t.id))}
                         notes={notes.filter(n => selectedProject.noteIds.includes(n.id) || n.parentIds.includes(selectedProject.id))}
                         resources={resources.filter(r => selectedProject.resourceIds.includes(r.id) || r.parentIds.includes(selectedProject.id))}
@@ -103,12 +108,15 @@ const ProjectView: React.FC<ProjectViewProps> = ({ projects, activeProjectId, on
                         onArchive={onArchive}
                         onDelete={onDelete}
                         onSelectNote={onSelectNote}
+                        onSelectTask={onSelectTask}
                         onUpdateProject={onUpdateProject}
                         onOpenCaptureModal={onOpenCaptureModal}
                         onSaveNewItem={onSaveNewItem}
                         onReorderTasks={onReorderTasks}
+                        onReparentTask={onReparentTask}
                         onUpdateTask={onUpdateTask}
                         onUpdateTaskStage={onUpdateTaskStage}
+                        onUpdateMultipleTaskStages={onUpdateMultipleTaskStages}
                     />
                 ) : (
                     <EmptyState 

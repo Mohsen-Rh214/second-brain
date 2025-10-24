@@ -122,7 +122,7 @@ const CaptureModal: React.FC<CaptureModalProps> = ({ isOpen, onClose, onSave, pr
                       className="w-full bg-background/50 border border-outline rounded-lg px-3 py-2 text-text-primary focus:outline-none focus:ring-1 focus:ring-accent"
                   />
               </div>
-              {(activeType === 'project' || activeType === 'area') && (
+              {(activeType === 'project' || activeType === 'area' || activeType === 'task') && (
                 <div>
                     <label htmlFor="item-description" className="sr-only">Description</label>
                     <textarea
@@ -130,7 +130,7 @@ const CaptureModal: React.FC<CaptureModalProps> = ({ isOpen, onClose, onSave, pr
                         value={description}
                         onChange={(e) => setDescription(e.target.value)}
                         rows={3}
-                        placeholder={`Enter ${activeType} description...`}
+                        placeholder={`Enter ${activeType} description... (Optional)`}
                         className="w-full bg-background/50 border border-outline rounded-lg px-3 py-2 text-text-primary focus:outline-none focus:ring-1 focus:ring-accent custom-scrollbar"
                     />
                 </div>

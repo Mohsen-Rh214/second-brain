@@ -1,5 +1,5 @@
 import React, { useCallback, useMemo, useEffect } from 'react';
-import { View, ItemType, DashboardCaptureType, CaptureContext, InboxItem, NewItemPayload, Task, TaskStage } from './types';
+import { View, ItemType, DashboardCaptureType, CaptureContext, InboxItem, NewItemPayload, Task, TaskStage, Resource } from './types';
 import Sidebar from './components/layout/Sidebar';
 import Dashboard from './components/views/Dashboard';
 import CaptureModal from './components/modals/CaptureModal';
@@ -18,6 +18,7 @@ import GraphView from './components/views/GraphView';
 import SettingsView from './components/views/SettingsView';
 import CommandBar from './components/modals/CommandBar';
 import LinkTaskModal from './components/modals/LinkTaskModal';
+import TaskDetailModal from './components/modals/TaskDetailModal';
 import { useData } from './store/DataContext';
 import { useUI } from './store/UIContext';
 import { getItemTypeFromId } from './utils';
@@ -30,7 +31,7 @@ const App: React.FC = () => {
   const { state: uiState, dispatch: uiDispatch } = useUI();
   const { 
     currentView, activeAreaId, activeProjectId, isCaptureModalOpen, captureContext,
-    editingNoteId, editingResourceId, organizingItem, searchQuery, isCommandBarOpen, toastMessage,
+    editingNoteId, editingResourceId, editingTaskId, organizingItem, searchQuery, isCommandBarOpen, toastMessage,
     linkingTask
   } = uiState;
 
@@ -51,6 +52,8 @@ const App: React.FC = () => {
                   uiDispatch({ type: 'SET_CAPTURE_MODAL', payload: { isOpen: false }});
               } else if (editingNoteId) {
                   uiDispatch({ type: 'SET_EDITING_NOTE', payload: null });
+              } else if (editingTaskId) {
+                  uiDispatch({ type: 'SET_EDITING_TASK', payload: null });
               } else if (editingResourceId) {
                   uiDispatch({ type: 'SET_EDITING_RESOURCE', payload: null });
               } else if (organizingItem) {
@@ -82,7 +85,7 @@ const App: React.FC = () => {
       };
       window.addEventListener('keydown', handleKeyDown);
       return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isCommandBarOpen, isCaptureModalOpen, editingNoteId, editingResourceId, organizingItem, linkingTask, uiDispatch, handleOpenCaptureModal]);
+  }, [isCommandBarOpen, isCaptureModalOpen, editingNoteId, editingResourceId, editingTaskId, organizingItem, linkingTask, uiDispatch, handleOpenCaptureModal]);
 
   const showToast = useCallback((message: string) => {
       uiDispatch({ type: 'SHOW_TOAST', payload: message });
@@ -101,6 +104,15 @@ const App: React.FC = () => {
       }
   }, [dataDispatch, uiDispatch, isCaptureModalOpen]);
 
+  const handleCreateTaskFromNote = useCallback((itemData: NewItemPayload, parentId: string | null) => {
+      dataDispatch({ type: 'ADD_ITEM', payload: { itemData, itemType: 'task', parentId } });
+      showToast('Task created and linked!');
+  }, [dataDispatch, showToast]);
+  
+  const handleAddSubtask = useCallback((parentTaskId: string, subtaskData: NewItemPayload) => {
+    dataDispatch({ type: 'ADD_SUBTASK', payload: { parentTaskId, subtaskData } });
+  }, [dataDispatch]);
+
   const handleDashboardCapture = useCallback((content: string, type: DashboardCaptureType) => {
     if (type === 'task') {
         handleSaveNewItem({ title: content, isMyDay: false }, 'task', null);
@@ -117,6 +129,10 @@ const App: React.FC = () => {
   const handleReorderTasks = useCallback((sourceTaskId: string, targetTaskId: string) => {
       dataDispatch({ type: 'REORDER_TASKS', payload: { sourceTaskId, targetTaskId } });
   }, [dataDispatch]);
+  
+  const handleReparentTask = useCallback((taskId: string, newParentId: string) => {
+      dataDispatch({ type: 'REPARENT_TASK', payload: { taskId, newParentId } });
+  }, [dataDispatch]);
 
   const handleUpdateTask = useCallback((taskId: string, updates: Partial<Task>) => {
       dataDispatch({ type: 'UPDATE_TASK', payload: { taskId, updates } });
@@ -126,6 +142,10 @@ const App: React.FC = () => {
     dataDispatch({ type: 'UPDATE_TASK_STAGE', payload: { taskId, newStage } });
   }, [dataDispatch]);
   
+  const handleUpdateMultipleTaskStages = useCallback((taskIds: string[], newStage: TaskStage) => {
+    dataDispatch({ type: 'UPDATE_MULTIPLE_TASK_STAGES', payload: { taskIds, newStage } });
+  }, [dataDispatch]);
+
   const handleUpdateItemStatus = useCallback((itemId: string, status: 'active' | 'archived') => {
       dataDispatch({ type: 'UPDATE_ITEM_STATUS', payload: { itemId, status } });
   }, [dataDispatch]);
@@ -134,7 +154,12 @@ const App: React.FC = () => {
   const handleRestoreItem = useCallback((itemId: string) => handleUpdateItemStatus(itemId, 'active'), [handleUpdateItemStatus]);
   
   const handleDeleteItem = useCallback((itemId: string) => {
-    if (!window.confirm("Are you sure you want to permanently delete this item? This action cannot be undone.")) return;
+    const itemType = getItemTypeFromId(itemId);
+    const message = itemType === 'task'
+        ? "Are you sure you want to delete this task? If it's a parent task, its subtasks will not be deleted but will become orphaned."
+        : "Are you sure you want to permanently delete this item? This action cannot be undone.";
+
+    if (!window.confirm(message)) return;
     dataDispatch({ type: 'DELETE_ITEM', payload: { itemId } });
   }, [dataDispatch]);
 
@@ -184,6 +209,8 @@ const App: React.FC = () => {
         uiDispatch({ type: 'SET_EDITING_NOTE', payload: item.id });
     } else if (item.id.startsWith('res-')) {
         uiDispatch({ type: 'SET_EDITING_RESOURCE', payload: item.id });
+    } else if (item.id.startsWith('task-')) {
+        uiDispatch({ type: 'SET_EDITING_TASK', payload: item.id });
     }
   }, [uiDispatch]);
   
@@ -214,17 +241,12 @@ const App: React.FC = () => {
         switch (itemType) {
             case 'area': handleNavigate('areas', command.id); break;
             case 'project': handleNavigate('projects', command.id); break;
-            case 'task': {
-                const task = tasks.find(t => t.id === command.id);
-                if (task?.projectId) handleNavigate('projects', task.projectId);
-                else handleNavigate('dashboard');
-                break;
-            }
+            case 'task': uiDispatch({ type: 'SET_EDITING_TASK', payload: command.id }); break;
             case 'note': uiDispatch({ type: 'SET_EDITING_NOTE', payload: command.id }); break;
             case 'resource': uiDispatch({ type: 'SET_EDITING_RESOURCE', payload: command.id }); break;
         }
     }
-  }, [tasks, handleOpenCaptureModal, handleNavigate, uiDispatch]);
+  }, [handleOpenCaptureModal, handleNavigate, uiDispatch]);
 
   const inboxItems = useMemo(() => [
       ...notes.filter(n => n.status === 'active' && n.parentIds.length === 0),
@@ -264,6 +286,7 @@ const App: React.FC = () => {
             onReorderTasks={handleReorderTasks}
             onUpdateTask={handleUpdateTask}
             onOpenLinkTaskModal={handleOpenLinkTaskModal}
+            onSelectTask={(id) => uiDispatch({ type: 'SET_EDITING_TASK', payload: id })}
         />;
       
       case 'tasks':
@@ -271,6 +294,7 @@ const App: React.FC = () => {
             tasks={tasks.filter(t => t.status === 'active')}
             projects={projects}
             onToggleTask={handleToggleTask}
+            onSelectTask={(id) => uiDispatch({ type: 'SET_EDITING_TASK', payload: id })}
         />;
       
       case 'projects':
@@ -278,6 +302,7 @@ const App: React.FC = () => {
             projects={projects.filter(p => p.status === 'active')} 
             activeProjectId={activeProjectId} 
             onSelectProject={(id) => uiDispatch({ type: 'SET_ACTIVE_PROJECT', payload: id })}
+            allTasks={tasks}
             tasks={tasks.filter(t => t.status === 'active')}
             notes={notes.filter(n => n.status === 'active')}
             resources={resources.filter(r => r.status === 'active')}
@@ -285,12 +310,15 @@ const App: React.FC = () => {
             onArchive={handleArchiveItem}
             onDelete={handleDeleteItem}
             onSelectNote={(id) => uiDispatch({ type: 'SET_EDITING_NOTE', payload: id })}
+            onSelectTask={(id) => uiDispatch({ type: 'SET_EDITING_TASK', payload: id })}
             onUpdateProject={handleUpdateProject}
             onOpenCaptureModal={handleOpenCaptureModal}
             onSaveNewItem={handleSaveNewItem}
             onReorderTasks={handleReorderTasks}
+            onReparentTask={handleReparentTask}
             onUpdateTask={handleUpdateTask}
             onUpdateTaskStage={handleUpdateTaskStage}
+            onUpdateMultipleTaskStages={handleUpdateMultipleTaskStages}
             />;
       case 'areas':
           return <AreaView
@@ -357,6 +385,16 @@ const App: React.FC = () => {
   
   const editingNote = notes.find(n => n.id === editingNoteId);
   const editingResource = resources.find(r => r.id === editingResourceId);
+  const editingTask = tasks.find(t => t.id === editingTaskId);
+
+  const handleSelectTaskFromModal = useCallback((taskId: string) => {
+    // Close any other open item modal before opening the task modal
+    if (editingNoteId) uiDispatch({ type: 'SET_EDITING_NOTE', payload: null });
+    if (editingResourceId) uiDispatch({ type: 'SET_EDITING_RESOURCE', payload: null });
+    
+    uiDispatch({ type: 'SET_EDITING_TASK', payload: taskId });
+  }, [editingNoteId, editingResourceId, uiDispatch]);
+
 
   return (
     <div className="h-screen w-screen bg-transparent text-text-primary flex overflow-hidden font-sans">
@@ -387,8 +425,9 @@ const App: React.FC = () => {
 
       {isCommandBarOpen && <CommandBar isOpen={isCommandBarOpen} onClose={() => uiDispatch({ type: 'SET_COMMAND_BAR_OPEN', payload: false })} onCommand={handleCommand} areas={areas} projects={projects} notes={notes} resources={resources} tasks={tasks}/>}
       {isCaptureModalOpen && <CaptureModal isOpen={isCaptureModalOpen} onClose={() => uiDispatch({ type: 'SET_CAPTURE_MODAL', payload: { isOpen: false }})} onSave={handleSaveNewItem} projects={projects} areas={areas} context={captureContext}/>}
-      {editingNote && <NoteEditorModal isOpen={!!editingNote} onClose={() => uiDispatch({ type: 'SET_EDITING_NOTE', payload: null })} note={editingNote} onSave={handleUpdateNote} onDraftFromNote={handleDraftFromNote} projects={projects} areas={areas} allNotes={notes} />}
-      {editingResource && <ResourceEditorModal isOpen={!!editingResource} onClose={() => uiDispatch({ type: 'SET_EDITING_RESOURCE', payload: null })} resource={editingResource} onSave={handleUpdateResource} />}
+      {editingNote && <NoteEditorModal isOpen={!!editingNote} onClose={() => uiDispatch({ type: 'SET_EDITING_NOTE', payload: null })} note={editingNote} onSave={handleUpdateNote} onDraftFromNote={handleDraftFromNote} onSaveNewItem={handleCreateTaskFromNote} projects={projects} areas={areas} allNotes={notes} allTasks={tasks} onSelectTask={handleSelectTaskFromModal} />}
+      {editingResource && <ResourceEditorModal isOpen={!!editingResource} onClose={() => uiDispatch({ type: 'SET_EDITING_RESOURCE', payload: null })} resource={editingResource} onSave={handleUpdateResource} allTasks={tasks} onSelectTask={handleSelectTaskFromModal} />}
+      {editingTask && <TaskDetailModal isOpen={!!editingTask} onClose={() => uiDispatch({ type: 'SET_EDITING_TASK', payload: null })} task={editingTask} onSave={handleUpdateTask} onAddSubtask={handleAddSubtask} onToggleSubtask={handleToggleTask} onDelete={handleDeleteItem} allTasks={tasks} projects={projects} notes={notes} resources={resources} />}
       {organizingItem && <OrganizeModal isOpen={!!organizingItem} onClose={() => uiDispatch({ type: 'SET_ORGANIZING_ITEM', payload: null })} item={organizingItem} projects={projects} areas={areas} onSave={handleOrganizeItem} />}
       {linkingTask && <LinkTaskModal isOpen={!!linkingTask} onClose={() => uiDispatch({ type: 'SET_LINKING_TASK', payload: null })} onLink={handleLinkTask} taskToLink={linkingTask} projects={projects} />}
     </div>

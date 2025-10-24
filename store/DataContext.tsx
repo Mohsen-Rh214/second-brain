@@ -15,11 +15,14 @@ interface AppState {
 // Action types
 type Action =
     | { type: 'ADD_ITEM'; payload: { itemData: NewItemPayload; itemType: ItemType; parentId: string | null } }
+    | { type: 'ADD_SUBTASK'; payload: { parentTaskId: string; subtaskData: NewItemPayload } }
     | { type: 'ADD_INBOX_ITEM'; payload: { content: string; type: 'note' | 'resource' } }
     | { type: 'TOGGLE_TASK'; payload: { taskId: string } }
     | { type: 'REORDER_TASKS'; payload: { sourceTaskId: string; targetTaskId: string } }
+    | { type: 'REPARENT_TASK'; payload: { taskId: string; newParentId: string } }
     | { type: 'UPDATE_TASK'; payload: { taskId: string; updates: Partial<Task> } }
     | { type: 'UPDATE_TASK_STAGE'; payload: { taskId: string; newStage: TaskStage } }
+    | { type: 'UPDATE_MULTIPLE_TASK_STAGES'; payload: { taskIds: string[]; newStage: TaskStage } }
     | { type: 'UPDATE_ITEM_STATUS'; payload: { itemId: string; status: Status } }
     | { type: 'DELETE_ITEM'; payload: { itemId: string } }
     | { type: 'UPDATE_NOTE'; payload: { noteId: string; title: string; content: string; tags: string[] } }
@@ -65,7 +68,16 @@ const dataReducer = (state: AppState, action: Action): AppState => {
                     return { ...state, notes: [...state.notes, newNote], projects: newProjects };
                 }
                 case 'task': {
-                    const newTask: Task = createNewItem('task', { ...itemData, projectId: parentId, stage: 'To Do' });
+                    const newTask: Task = createNewItem('task', {
+                        ...itemData,
+                        projectId: parentId,
+                        stage: 'To Do',
+                        description: itemData.description || '',
+                        subtaskIds: [],
+                        parentId: null,
+                        noteIds: itemData.noteIds || [],
+                        resourceIds: itemData.resourceIds || [],
+                    });
                     const newProjects = parentId?.startsWith('proj-')
                         ? state.projects.map(p => p.id === parentId ? { ...p, taskIds: [newTask.id, ...p.taskIds] } : p)
                         : state.projects;
@@ -92,6 +104,31 @@ const dataReducer = (state: AppState, action: Action): AppState => {
                 default:
                     return state;
             }
+        }
+        case 'ADD_SUBTASK': {
+            const { parentTaskId, subtaskData } = action.payload;
+            const parentTask = state.tasks.find(t => t.id === parentTaskId);
+            if (!parentTask) return state;
+
+            const newSubtask: Task = createNewItem('task', {
+                ...subtaskData,
+                projectId: parentTask.projectId,
+                stage: 'To Do',
+                description: subtaskData.description || '',
+                subtaskIds: [],
+                parentId: parentTaskId,
+                noteIds: [],
+                resourceIds: [],
+            });
+            
+            return {
+                ...state,
+                tasks: state.tasks.map(task =>
+                    task.id === parentTaskId
+                        ? { ...task, subtaskIds: [...task.subtaskIds, newSubtask.id] }
+                        : task
+                ).concat(newSubtask)
+            };
         }
         case 'ADD_INBOX_ITEM': {
             const { content, type } = action.payload;
@@ -145,6 +182,50 @@ const dataReducer = (state: AppState, action: Action): AppState => {
 
             return { ...state, tasks: tasksCopy };
         }
+        case 'REPARENT_TASK': {
+            const { taskId, newParentId } = action.payload;
+            const taskToMove = state.tasks.find(t => t.id === taskId);
+            const newParentTask = state.tasks.find(t => t.id === newParentId);
+
+            if (!taskToMove || !newParentTask) return state;
+
+            const oldParentId = taskToMove.parentId;
+
+            let newTasks = [...state.tasks];
+
+            // 1. Update old parent (if one existed)
+            if (oldParentId) {
+                newTasks = newTasks.map(t =>
+                    t.id === oldParentId
+                        ? { ...t, subtaskIds: t.subtaskIds.filter(id => id !== taskId) }
+                        : t
+                );
+            }
+
+            // 2. Update new parent
+            newTasks = newTasks.map(t =>
+                t.id === newParentId
+                    ? { ...t, subtaskIds: [...t.subtaskIds, taskId] }
+                    : t
+            );
+
+            // 3. Update the task itself
+            newTasks = newTasks.map(t =>
+                t.id === taskId
+                    ? { ...t, parentId: newParentId, projectId: newParentTask.projectId, updatedAt: new Date().toISOString() }
+                    : t
+            );
+
+            // 4. If task was a top-level task, remove it from its project's taskIds
+            const newProjects = state.projects.map(p => {
+                if (p.taskIds.includes(taskId)) {
+                    return { ...p, taskIds: p.taskIds.filter(id => id !== taskId) };
+                }
+                return p;
+            });
+
+            return { ...state, tasks: newTasks, projects: newProjects };
+        }
         case 'UPDATE_TASK': {
             const { taskId, updates } = action.payload;
             const now = new Date().toISOString();
@@ -162,6 +243,19 @@ const dataReducer = (state: AppState, action: Action): AppState => {
                 ...state,
                 tasks: state.tasks.map(task =>
                     task.id === taskId ? { ...task, stage: newStage, updatedAt: now } : task
+                ),
+            };
+        }
+        case 'UPDATE_MULTIPLE_TASK_STAGES': {
+            const { taskIds, newStage } = action.payload;
+            const now = new Date().toISOString();
+            const taskIdsSet = new Set(taskIds);
+            return {
+                ...state,
+                tasks: state.tasks.map(task =>
+                    taskIdsSet.has(task.id)
+                        ? { ...task, stage: newStage, updatedAt: now }
+                        : task
                 ),
             };
         }

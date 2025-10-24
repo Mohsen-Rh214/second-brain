@@ -9,6 +9,7 @@ interface UIState {
     captureContext: CaptureContext | null;
     editingNoteId: string | null;
     editingResourceId: string | null;
+    editingTaskId: string | null;
     organizingItem: InboxItem | null;
     searchQuery: string;
     isCommandBarOpen: boolean;
@@ -23,6 +24,7 @@ type UIAction =
     | { type: 'SET_CAPTURE_MODAL'; payload: { isOpen: boolean; context?: CaptureContext | null } }
     | { type: 'SET_EDITING_NOTE'; payload: string | null }
     | { type: 'SET_EDITING_RESOURCE'; payload: string | null }
+    | { type: 'SET_EDITING_TASK'; payload: string | null }
     | { type: 'SET_ORGANIZING_ITEM'; payload: InboxItem | null }
     | { type: 'SET_LINKING_TASK'; payload: Task | null }
     | { type: 'SET_SEARCH_QUERY'; payload: string }
@@ -37,6 +39,7 @@ const initialState: UIState = {
     captureContext: null,
     editingNoteId: null,
     editingResourceId: null,
+    editingTaskId: null,
     organizingItem: null,
     searchQuery: '',
     isCommandBarOpen: false,
@@ -66,6 +69,8 @@ const uiReducer = (state: UIState, action: UIAction): UIState => {
             return { ...state, editingNoteId: action.payload };
         case 'SET_EDITING_RESOURCE':
             return { ...state, editingResourceId: action.payload };
+        case 'SET_EDITING_TASK':
+            return { ...state, editingTaskId: action.payload };
         case 'SET_ORGANIZING_ITEM':
             return { ...state, organizingItem: action.payload };
         case 'SET_LINKING_TASK':

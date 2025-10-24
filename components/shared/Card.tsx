@@ -57,11 +57,18 @@ const Card: React.FC<CardProps> = ({
 
     return (
         <div className={`bg-surface/80 backdrop-blur-xl border border-outline rounded-2xl shadow-md h-full flex flex-col ${className}`}>
-            <header className={`flex items-center justify-between ${headerPadding} ${isOpen && isCollapsible ? 'border-b border-outline-dark' : ''}`}>
+            <header className={`flex items-center justify-between ${headerPadding} ${isOpen && children ? 'border-b border-outline-dark' : ''}`}>
                 {isCollapsible ? (
-                     <button onClick={() => setIsOpen(!isOpen)} className="w-full">
+                    <div
+                        role="button"
+                        tabIndex={0}
+                        onClick={() => setIsOpen(!isOpen)}
+                        onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && setIsOpen(!isOpen)}
+                        aria-expanded={isOpen}
+                        className="w-full cursor-pointer"
+                    >
                         <HeaderContent />
-                    </button>
+                    </div>
                 ) : (
                     <HeaderContent />
                 )}

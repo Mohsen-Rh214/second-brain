@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import ReactQuill from 'react-quill';
-import { Note, Project, Area } from '../../types';
-import { XIcon, ProjectIcon, AreaIcon, FileTextIcon, MaximizeIcon, MinimizeIcon, GitBranchIcon } from '../shared/icons';
+import { Note, Project, Area, Task, NewItemPayload, ItemType } from '../../types';
+import { XIcon, ProjectIcon, AreaIcon, FileTextIcon, MaximizeIcon, MinimizeIcon, GitBranchIcon, ListTodoIcon } from '../shared/icons';
 import TagInput from '../shared/TagInput';
 
 interface NoteEditorModalProps {
@@ -9,10 +9,13 @@ interface NoteEditorModalProps {
   onClose: () => void;
   onSave: (noteId: string, title: string, content: string, tags: string[]) => void;
   onDraftFromNote: (noteId: string) => void;
+  onSaveNewItem: (itemData: NewItemPayload, parentId: string | null) => void;
   note: Note;
   projects: Project[];
   areas: Area[];
   allNotes: Note[];
+  allTasks: Task[];
+  onSelectTask: (taskId: string) => void;
 }
 
 interface LinkableItem {
@@ -65,7 +68,7 @@ const LinkSelector: React.FC<LinkSelectorProps> = ({ items, onSelect, query, act
     )
 }
 
-const NoteEditorModal: React.FC<NoteEditorModalProps> = ({ isOpen, onClose, onSave, onDraftFromNote, note, projects, areas, allNotes }) => {
+const NoteEditorModal: React.FC<NoteEditorModalProps> = ({ isOpen, onClose, onSave, onDraftFromNote, onSaveNewItem, note, projects, areas, allNotes, allTasks, onSelectTask }) => {
   const [title, setTitle] = useState(note.title);
   const [content, setContent] = useState(note.content);
   const [tags, setTags] = useState(note.tags || []);
@@ -73,6 +76,7 @@ const NoteEditorModal: React.FC<NoteEditorModalProps> = ({ isOpen, onClose, onSa
   const [linkSelector, setLinkSelector] = useState<{ top: number; left: number; startPos: number; } | null>(null);
   const [linkQuery, setLinkQuery] = useState('');
   const [linkSelectorActiveIndex, setLinkSelectorActiveIndex] = useState(0);
+  const [selectionToolbar, setSelectionToolbar] = useState<{ top: number; left: number; text: string } | null>(null);
 
   const quillRef = useRef<ReactQuill>(null);
   const linkSelectorRef = useRef<HTMLDivElement>(null);
@@ -99,50 +103,60 @@ const NoteEditorModal: React.FC<NoteEditorModalProps> = ({ isOpen, onClose, onSa
 
   useEffect(() => {
     const quill = quillRef.current?.getEditor();
-    if (!quill || !linkSelector) return;
+    if (!quill) return;
 
-    const handleTextChange = () => {
-        const selection = quill.getSelection();
-        if (!selection || selection.index < linkSelector.startPos) {
-            setLinkSelector(null);
-            return;
-        }
-        
-        const text = quill.getText(linkSelector.startPos, selection.index - linkSelector.startPos);
+    const handleSelectionChange = (range: any, oldRange: any, source: string) => {
+        if (source === 'user' && range && range.length > 0) {
+            const selectedText = quill.getText(range.index, range.length);
+            if (selectedText.trim()) {
+                const bounds = quill.getBounds(range.index, range.length);
+                const editorContainer = quill.container;
+                const editorRect = editorContainer.getBoundingClientRect();
 
-        if (!text.startsWith('/')) {
-            setLinkSelector(null);
-        } else {
-            setLinkQuery(text.substring(1));
-        }
-    };
-
-    quill.on('text-change', handleTextChange);
-    return () => { quill.off('text-change', handleTextChange); };
-  }, [linkSelector]);
-
-  useEffect(() => {
-    if (!linkSelector) return;
-
-    const handleKeyDown = (e: KeyboardEvent) => {
-        if (e.key === 'ArrowDown') {
-            e.preventDefault();
-            setLinkSelectorActiveIndex(prev => (prev + 1) % (filteredLinkableItems.length || 1));
-        } else if (e.key === 'ArrowUp') {
-            e.preventDefault();
-            setLinkSelectorActiveIndex(prev => (prev - 1 + (filteredLinkableItems.length || 1)) % (filteredLinkableItems.length || 1));
-        } else if (e.key === 'Enter') {
-            e.preventDefault();
-            const selectedItem = filteredLinkableItems[linkSelectorActiveIndex];
-            if (selectedItem) {
-                handleSelectLink(selectedItem);
+                setSelectionToolbar({
+                    top: bounds.top + editorRect.top - 45,
+                    left: bounds.left + editorRect.left + (bounds.width / 2),
+                    text: selectedText,
+                });
             }
-        } else if (e.key === 'Escape') {
-            e.preventDefault();
-            setLinkSelector(null);
+        } else if (source === 'user') {
+            setSelectionToolbar(null);
         }
     };
     
+    quill.on('selection-change', handleSelectionChange);
+    
+    const handleTextChange = (delta: any, oldDelta: any, source: string) => {
+        if (source === 'user' && linkSelector) {
+            const selection = quill.getSelection();
+            if (!selection || selection.index < linkSelector.startPos) {
+                setLinkSelector(null);
+                return;
+            }
+            const text = quill.getText(linkSelector.startPos, selection.index - linkSelector.startPos);
+            if (!text.startsWith('/')) {
+                setLinkSelector(null);
+            } else {
+                setLinkQuery(text.substring(1));
+            }
+        }
+    };
+    quill.on('text-change', handleTextChange);
+
+    return () => { 
+        quill.off('selection-change', handleSelectionChange);
+        quill.off('text-change', handleTextChange);
+    };
+  }, [quillRef, linkSelector]);
+
+  useEffect(() => {
+    if (!linkSelector) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+        if (e.key === 'ArrowDown') { e.preventDefault(); setLinkSelectorActiveIndex(prev => (prev + 1) % (filteredLinkableItems.length || 1)); } 
+        else if (e.key === 'ArrowUp') { e.preventDefault(); setLinkSelectorActiveIndex(prev => (prev - 1 + (filteredLinkableItems.length || 1)) % (filteredLinkableItems.length || 1)); } 
+        else if (e.key === 'Enter') { e.preventDefault(); const selectedItem = filteredLinkableItems[linkSelectorActiveIndex]; if (selectedItem) handleSelectLink(selectedItem); }
+        else if (e.key === 'Escape') { e.preventDefault(); setLinkSelector(null); }
+    };
     document.addEventListener('keydown', handleKeyDown, true);
     return () => document.removeEventListener('keydown', handleKeyDown, true);
   }, [linkSelector, linkSelectorActiveIndex, filteredLinkableItems]);
@@ -163,6 +177,21 @@ const NoteEditorModal: React.FC<NoteEditorModalProps> = ({ isOpen, onClose, onSa
     e.preventDefault();
     if (!title) return;
     onSave(note.id, title, content, tags);
+  };
+  
+  const handleCreateTaskFromSelection = () => {
+    if (selectionToolbar && selectionToolbar.text) {
+      const parentProjectId = note.parentIds.find(id => id.startsWith('proj-')) || null;
+      onSaveNewItem(
+        { title: selectionToolbar.text, noteIds: [note.id] },
+        parentProjectId
+      );
+      const quill = quillRef.current?.getEditor();
+      if (quill) {
+        quill.setSelection(quill.getSelection()!.index, 0);
+      }
+      setSelectionToolbar(null);
+    }
   };
 
   const handleSelectLink = (item: LinkableItem) => {
@@ -199,16 +228,10 @@ const NoteEditorModal: React.FC<NoteEditorModalProps> = ({ isOpen, onClose, onSa
                     if (!quill) return true;
                     
                     const textBefore = quill.getText(range.index - 1, 1);
-                    if (range.index > 0 && textBefore.trim().length > 0) {
-                        return true;
-                    }
+                    if (range.index > 0 && textBefore.trim().length > 0) { return true; }
 
                     const bounds = quill.getBounds(range.index);
-                    setLinkSelector({
-                        top: bounds.bottom + 5,
-                        left: bounds.left,
-                        startPos: range.index,
-                    });
+                    setLinkSelector({ top: bounds.bottom + 5, left: bounds.left, startPos: range.index });
                     setLinkQuery('');
                     return true;
                 }
@@ -233,6 +256,10 @@ const NoteEditorModal: React.FC<NoteEditorModalProps> = ({ isOpen, onClose, onSa
       return links;
   }, [allNotes, note.id]);
 
+  const backlinkedTasks = useMemo(() => {
+    return allTasks.filter(task => (task.noteIds || []).includes(note.id) && task.status === 'active');
+  }, [allTasks, note.id]);
+
   if (!isOpen) return null;
 
   const modalClasses = isExpanded
@@ -240,114 +267,168 @@ const NoteEditorModal: React.FC<NoteEditorModalProps> = ({ isOpen, onClose, onSa
     : "w-full max-w-4xl max-h-[90vh] rounded-2xl";
 
   return (
-    <div 
-        className="fixed inset-0 bg-black/20 z-50 flex items-center justify-center p-4 backdrop-blur-md"
-        onClick={onClose}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="note-editor-title"
-    >
+    <>
       <div 
-        className={`bg-surface/80 backdrop-blur-xl flex flex-col border border-outline shadow-lg transition-all duration-300 ${modalClasses}`}
-        onClick={e => e.stopPropagation()}
+          className="fixed inset-0 bg-black/20 z-50 flex items-center justify-center p-4 backdrop-blur-md"
+          onClick={onClose}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="note-editor-title"
       >
-        <header className="flex items-center justify-between p-4 border-b border-outline-dark flex-shrink-0">
-          <h2 id="note-editor-title" className="text-xl font-bold font-heading">Edit Note</h2>
-          <div className="flex items-center gap-2">
-            <button onClick={() => setExpanded(!isExpanded)} aria-label={isExpanded ? "Contract" : "Expand"} className="text-text-secondary hover:text-text-primary">
-                {isExpanded ? <MinimizeIcon className="w-5 h-5" /> : <MaximizeIcon className="w-5 h-5" />}
-            </button>
-            <button onClick={onClose} aria-label="Close" className="text-text-secondary hover:text-text-primary">
-              <XIcon className="w-6 h-6" />
-            </button>
-          </div>
-        </header>
-        
-        <form onSubmit={handleSave} className="flex-1 flex flex-col overflow-y-hidden">
-          <div className="p-6 flex-1 overflow-y-auto custom-scrollbar">
-              <div className="mb-4">
-                  <label htmlFor="note-title" className="sr-only">Title</label>
-                  <input
-                      id="note-title"
-                      type="text"
-                      value={title}
-                      onChange={(e) => setTitle(e.target.value)}
-                      placeholder="Enter note title..."
-                      required
-                      className="w-full bg-transparent border-none px-0 py-2 text-2xl font-bold font-heading text-text-primary focus:outline-none focus:ring-0"
-                  />
-              </div>
-               <div className="mb-4">
-                  <label className="block text-sm font-medium text-text-secondary mb-2">Tags</label>
-                  <TagInput tags={tags} onTagsChange={setTags} />
-               </div>
-               {linkedItems.length > 0 && (
-                  <div className="mb-4">
-                      <label className="block text-sm font-medium text-text-secondary mb-2">Linked to</label>
-                      <div className="flex flex-wrap gap-2">
-                          {linkedItems.map(item => (
-                              <span key={item.id} className="flex items-center gap-2 bg-background/50 px-2 py-1 border border-outline rounded-md text-sm">
-                                  {item.id.startsWith('proj-') ? <ProjectIcon className="w-4 h-4 text-text-secondary"/> : <AreaIcon className="w-4 h-4 text-text-secondary"/>}
-                                  {item.title}
-                              </span>
-                          ))}
-                      </div>
-                  </div>
-              )}
-              <div className="relative">
-                  <ReactQuill
-                    ref={quillRef}
-                    theme="snow"
-                    value={content}
-                    onChange={setContent}
-                    modules={quillModules}
-                    placeholder="Distill your thoughts... Type '/' to link to other items."
-                  />
-                  {linkSelector && (
-                      <div 
-                        ref={linkSelectorRef}
-                        className="absolute z-20" 
-                        style={{ top: linkSelector.top, left: linkSelector.left }}
-                        onMouseDown={e => e.preventDefault()}
-                      >
-                          <LinkSelector items={filteredLinkableItems} onSelect={handleSelectLink} query={linkQuery} activeIndex={linkSelectorActiveIndex} setActiveIndex={setLinkSelectorActiveIndex} />
-                      </div>
-                  )}
-              </div>
-              {backlinks.length > 0 && (
-                <div className="mt-8">
-                    <h3 className="text-lg font-semibold font-heading mb-3 border-b border-outline-dark pb-2">Linked References</h3>
-                    <ul className="space-y-3">
-                        {backlinks.map(link => (
-                            <li key={link.sourceNoteId} className="bg-background/30 border border-outline rounded-lg p-3">
-                                <p className="font-semibold text-accent text-sm mb-1">{link.sourceNoteTitle}</p>
-                                <p className="text-sm text-text-secondary italic">"{link.context}"</p>
-                            </li>
-                        ))}
-                    </ul>
+        <div 
+          className={`bg-surface/80 backdrop-blur-xl flex flex-col border border-outline shadow-lg transition-all duration-300 ${modalClasses}`}
+          onClick={e => e.stopPropagation()}
+        >
+          <header className="flex items-center justify-between p-4 border-b border-outline-dark flex-shrink-0">
+            <h2 id="note-editor-title" className="text-xl font-bold font-heading">Edit Note</h2>
+            <div className="flex items-center gap-2">
+              <button onClick={() => setExpanded(!isExpanded)} aria-label={isExpanded ? "Contract" : "Expand"} className="text-text-secondary hover:text-text-primary">
+                  {isExpanded ? <MinimizeIcon className="w-5 h-5" /> : <MaximizeIcon className="w-5 h-5" />}
+              </button>
+              <button onClick={onClose} aria-label="Close" className="text-text-secondary hover:text-text-primary">
+                <XIcon className="w-6 h-6" />
+              </button>
+            </div>
+          </header>
+          
+          <form onSubmit={handleSave} className="flex-1 flex flex-col overflow-y-hidden">
+            <div className="p-6 flex-1 overflow-y-auto custom-scrollbar">
+                <div className="mb-4">
+                    <label htmlFor="note-title" className="sr-only">Title</label>
+                    <input
+                        id="note-title"
+                        type="text"
+                        value={title}
+                        onChange={(e) => setTitle(e.target.value)}
+                        placeholder="Enter note title..."
+                        required
+                        className="w-full bg-transparent border-none px-0 py-2 text-2xl font-bold font-heading text-text-primary focus:outline-none focus:ring-0"
+                    />
                 </div>
-              )}
-          </div>
-          <footer className="p-4 bg-black/5 border-t border-outline-dark mt-auto flex-shrink-0">
-              <div className="flex justify-between items-center">
-                  <button
-                    type="button"
-                    onClick={() => onDraftFromNote(note.id)}
-                    className="flex items-center gap-2 px-4 py-2 text-sm font-medium bg-secondary hover:bg-secondary-hover text-secondary-content transition-colors rounded-lg"
-                    title="Create a new draft based on this note"
-                  >
-                      <GitBranchIcon className="w-4 h-4" />
-                      <span>Draft from Note</span>
-                  </button>
-                  <div className="flex justify-end gap-3">
-                      <button type="button" onClick={onClose} className="px-4 py-2 text-sm font-medium bg-secondary hover:bg-secondary-hover text-secondary-content transition-colors rounded-lg">Cancel</button>
-                      <button type="submit" className="px-4 py-2 text-sm font-medium bg-accent hover:bg-accent-hover text-accent-content transition-colors rounded-lg">Save Changes</button>
+                 <div className="mb-4">
+                    <label className="block text-sm font-medium text-text-secondary mb-2">Tags</label>
+                    <TagInput tags={tags} onTagsChange={setTags} />
+                 </div>
+                 {linkedItems.length > 0 && (
+                    <div className="mb-4">
+                        <label className="block text-sm font-medium text-text-secondary mb-2">Linked to</label>
+                        <div className="flex flex-wrap gap-2">
+                            {linkedItems.map(item => (
+                                <span key={item.id} className="flex items-center gap-2 bg-background/50 px-2 py-1 border border-outline rounded-md text-sm">
+                                    {item.id.startsWith('proj-') ? <ProjectIcon className="w-4 h-4 text-text-secondary"/> : <AreaIcon className="w-4 h-4 text-text-secondary"/>}
+                                    {item.title}
+                                </span>
+                            ))}
+                        </div>
+                    </div>
+                )}
+                <div className="relative">
+                    <ReactQuill
+                      ref={quillRef}
+                      theme="snow"
+                      value={content}
+                      onChange={setContent}
+                      modules={quillModules}
+                      placeholder="Distill your thoughts... Type '/' to link to other items."
+                    />
+                    {linkSelector && (
+                        <div 
+                          ref={linkSelectorRef}
+                          className="absolute z-20" 
+                          style={{ top: linkSelector.top, left: linkSelector.left }}
+                          onMouseDown={e => e.preventDefault()}
+                        >
+                            <LinkSelector items={filteredLinkableItems} onSelect={handleSelectLink} query={linkQuery} activeIndex={linkSelectorActiveIndex} setActiveIndex={setLinkSelectorActiveIndex} />
+                        </div>
+                    )}
+                </div>
+                
+                {(backlinks.length > 0 || backlinkedTasks.length > 0) && (
+                  <div className="mt-8">
+                    <h3 className="text-lg font-semibold font-heading mb-3 border-b border-outline-dark pb-2">Connections</h3>
+                    {backlinks.length > 0 && (
+                      <div className="mb-6">
+                          <h4 className="font-semibold text-accent text-sm mb-2">Linked References</h4>
+                          <ul className="space-y-3">
+                              {backlinks.map(link => (
+                                  <li key={link.sourceNoteId} className="bg-background/30 border border-outline rounded-lg p-3">
+                                      <p className="font-semibold text-accent text-sm mb-1">{link.sourceNoteTitle}</p>
+                                      <p className="text-sm text-text-secondary italic">"{link.context}"</p>
+                                  </li>
+                              ))}
+                          </ul>
+                      </div>
+                    )}
+                     {backlinkedTasks.length > 0 && (
+                      <div>
+                          <h4 className="font-semibold text-accent text-sm mb-2 flex items-center gap-2">
+                              <ListTodoIcon className="w-4 h-4"/>
+                              Linked Tasks
+                          </h4>
+                          <ul className="space-y-2">
+                              {backlinkedTasks.map(task => (
+                                  <li key={task.id}>
+                                      <button 
+                                          onClick={() => onSelectTask(task.id)}
+                                          className="w-full text-left p-3 bg-background/30 border border-outline rounded-lg hover:bg-neutral transition-colors"
+                                      >
+                                          <p className="font-semibold text-text-primary text-sm">{task.title}</p>
+                                          {task.projectId && (
+                                              <p className="text-xs text-text-secondary mt-1">
+                                                  Project: {projects.find(p => p.id === task.projectId)?.title}
+                                              </p>
+                                          )}
+                                      </button>
+                                  </li>
+                              ))}
+                          </ul>
+                      </div>
+                    )}
                   </div>
-              </div>
-          </footer>
-        </form>
+                )}
+            </div>
+            <footer className="p-4 bg-black/5 border-t border-outline-dark mt-auto flex-shrink-0">
+                <div className="flex justify-between items-center">
+                    <button
+                      type="button"
+                      onClick={() => onDraftFromNote(note.id)}
+                      className="flex items-center gap-2 px-4 py-2 text-sm font-medium bg-secondary hover:bg-secondary-hover text-secondary-content transition-colors rounded-lg"
+                      title="Create a new draft based on this note"
+                    >
+                        <GitBranchIcon className="w-4 h-4" />
+                        <span>Draft from Note</span>
+                    </button>
+                    <div className="flex justify-end gap-3">
+                        <button type="button" onClick={onClose} className="px-4 py-2 text-sm font-medium bg-secondary hover:bg-secondary-hover text-secondary-content transition-colors rounded-lg">Cancel</button>
+                        <button type="submit" className="px-4 py-2 text-sm font-medium bg-accent hover:bg-accent-hover text-accent-content transition-colors rounded-lg">Save Changes</button>
+                    </div>
+                </div>
+            </footer>
+          </form>
+        </div>
       </div>
-    </div>
+      {selectionToolbar && (
+        <div
+          style={{ 
+            position: 'fixed', 
+            top: selectionToolbar.top,
+            left: selectionToolbar.left,
+            transform: 'translateX(-50%)',
+            zIndex: 60
+          }}
+          className="bg-background border border-outline rounded-lg shadow-lg p-1 flex items-center"
+        >
+          <button 
+            onClick={handleCreateTaskFromSelection}
+            onMouseDown={(e) => e.preventDefault()}
+            className="flex items-center gap-2 px-2 py-1 text-sm bg-secondary hover:bg-secondary-hover text-secondary-content transition-colors rounded-md"
+          >
+            <ListTodoIcon className="w-4 h-4" />
+            Create Task
+          </button>
+        </div>
+      )}
+    </>
   );
 };
 

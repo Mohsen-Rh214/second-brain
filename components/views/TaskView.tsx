@@ -9,6 +9,7 @@ interface TaskViewProps {
     tasks: Task[];
     projects: Project[];
     onToggleTask: (taskId: string) => void;
+    onSelectTask: (taskId: string) => void;
 }
 
 type GroupBy = 'project' | 'dueDate' | 'priority';
@@ -21,7 +22,7 @@ const priorityClasses: Record<string, { text: string, bg: string }> = {
     Low: { text: 'text-priority-low', bg: 'bg-priority-low-bg' },
 };
 
-const TaskView: React.FC<TaskViewProps> = ({ tasks, projects, onToggleTask }) => {
+const TaskView: React.FC<TaskViewProps> = ({ tasks, projects, onToggleTask, onSelectTask }) => {
     const [groupBy, setGroupBy] = useState<GroupBy>('project');
     const [tagFilter, setTagFilter] = useState<string | null>(null);
     const [sortOption, setSortOption] = useState<string>('Priority (High to Low)');
@@ -171,7 +172,7 @@ const TaskView: React.FC<TaskViewProps> = ({ tasks, projects, onToggleTask }) =>
                                             <button onClick={() => onToggleTask(task.id)} aria-label={task.stage === 'Done' ? 'Mark as incomplete' : 'Mark as complete'}>
                                                 {task.stage === 'Done' ? <CheckSquareIcon className="w-5 h-5 text-accent" /> : <SquareIcon className="w-5 h-5 text-text-tertiary" />}
                                             </button>
-                                            <div className="flex-1">
+                                            <div className="flex-1" role="button" onClick={() => onSelectTask(task.id)}>
                                                 <p className={`${task.stage === 'Done' ? 'line-through text-text-tertiary' : ''}`}>{task.title}</p>
                                                 <div className="flex items-center gap-4 mt-1">
                                                     {groupBy !== 'project' && <p className="text-xs text-text-tertiary">{projects.find(p => p.id === task.projectId)?.title || 'No Project'}</p>}

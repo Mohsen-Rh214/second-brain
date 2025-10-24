@@ -5,10 +5,13 @@ import KanbanCard from './KanbanCard';
 interface KanbanColumnProps {
   stage: TaskStage;
   tasks: Task[];
-  onTaskDrop: (taskId: string, stage: TaskStage) => void;
+  allTasks: Task[];
+  onUpdateTaskStage: (taskId: string, stage: TaskStage) => void;
+  onUpdateMultipleTaskStages: (taskIds: string[], newStage: TaskStage) => void;
+  onSelectTask: (taskId: string) => void;
 }
 
-const KanbanColumn: React.FC<KanbanColumnProps> = ({ stage, tasks, onTaskDrop }) => {
+const KanbanColumn: React.FC<KanbanColumnProps> = ({ stage, tasks, allTasks, onUpdateTaskStage, onUpdateMultipleTaskStages, onSelectTask }) => {
   const [isDragOver, setIsDragOver] = useState(false);
 
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
@@ -24,14 +27,39 @@ const KanbanColumn: React.FC<KanbanColumnProps> = ({ stage, tasks, onTaskDrop })
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     const taskId = e.dataTransfer.getData('taskId');
-    const task = tasks.find(t => t.id === taskId);
+    const droppedTask = allTasks.find(t => t.id === taskId);
 
-    // Only update if the task is not already in this column
-    if (taskId && (!task || task.stage !== stage)) {
-        onTaskDrop(taskId, stage);
+    if (!droppedTask || droppedTask.stage === stage) {
+        setIsDragOver(false);
+        return;
     }
+
+    if (stage === 'Done' && (droppedTask.subtaskIds?.length || 0) > 0) {
+        const incompleteSubtasks = (droppedTask.subtaskIds || [])
+            .map(id => allTasks.find(t => t.id === id))
+            .filter((t): t is Task => !!t && t.stage !== 'Done');
+
+        if (incompleteSubtasks.length > 0) {
+            const userConfirmed = window.confirm(
+                `This task has ${incompleteSubtasks.length} incomplete subtask(s). Do you want to mark them as complete as well?`
+            );
+
+            if (userConfirmed) {
+                const taskIdsToUpdate = [taskId, ...incompleteSubtasks.map(t => t.id)];
+                onUpdateMultipleTaskStages(taskIdsToUpdate, 'Done');
+            } else {
+                onUpdateTaskStage(taskId, stage);
+            }
+        } else {
+            onUpdateTaskStage(taskId, stage);
+        }
+    } else {
+        onUpdateTaskStage(taskId, stage);
+    }
+
     setIsDragOver(false);
   };
+
 
   return (
     <div
@@ -46,7 +74,7 @@ const KanbanColumn: React.FC<KanbanColumnProps> = ({ stage, tasks, onTaskDrop })
       </header>
       <div className="flex-1 p-4 space-y-4 overflow-y-auto custom-scrollbar">
         {tasks.map(task => (
-          <KanbanCard key={task.id} task={task} onDoubleClick={() => { /* TODO: Open task editor */ }} />
+          <KanbanCard key={task.id} task={task} onSelectTask={onSelectTask} subtaskCount={task.subtaskIds?.length || 0} />
         ))}
       </div>
     </div>

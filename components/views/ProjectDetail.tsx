@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Project, Task, Note, Resource, CaptureContext, NewItemPayload, ItemType, TaskStage, ProjectViewType } from '../../types';
 import { CheckSquareIcon, FileTextIcon, LinkIcon, ResourceIcon, ListTodoIcon, LayoutGridIcon, PlusIcon } from '../shared/icons';
 import Card from '../shared/Card';
@@ -12,6 +12,7 @@ import KanbanBoard from '../kanban/KanbanBoard';
 
 interface ProjectDetailProps {
     project: Project;
+    allTasks: Task[];
     tasks: Task[];
     notes: Note[];
     resources: Resource[];
@@ -19,20 +20,24 @@ interface ProjectDetailProps {
     onArchive: (itemId: string) => void;
     onDelete: (itemId: string) => void;
     onSelectNote: (noteId: string) => void;
+    onSelectTask: (taskId: string) => void;
     onUpdateProject: (projectId: string, updates: { title?: string, description?: string, tags?: string[] }) => void;
     onOpenCaptureModal: (context: CaptureContext) => void;
     onSaveNewItem: (itemData: NewItemPayload, itemType: ItemType, parentId: string | null) => void;
     onReorderTasks: (sourceTaskId: string, targetTaskId: string) => void;
+    onReparentTask: (taskId: string, newParentId: string) => void;
     onUpdateTask: (taskId: string, updates: Partial<Pick<Task, 'title' | 'priority' | 'dueDate'>>) => void;
     onUpdateTaskStage: (taskId: string, newStage: TaskStage) => void;
+    onUpdateMultipleTaskStages: (taskIds: string[], newStage: TaskStage) => void;
 }
 
-const ProjectDetail: React.FC<ProjectDetailProps> = ({ project, tasks, notes, resources, onToggleTask, onArchive, onDelete, onSelectNote, onUpdateProject, onOpenCaptureModal, onSaveNewItem, onReorderTasks, onUpdateTask, onUpdateTaskStage }) => {
+const ProjectDetail: React.FC<ProjectDetailProps> = ({ project, allTasks, tasks, notes, resources, onToggleTask, onArchive, onDelete, onSelectNote, onSelectTask, onUpdateProject, onOpenCaptureModal, onSaveNewItem, onReorderTasks, onReparentTask, onUpdateTask, onUpdateTaskStage, onUpdateMultipleTaskStages }) => {
     
     const [isAddingTask, setIsAddingTask] = useState(false);
     const [newTaskTitle, setNewTaskTitle] = useState('');
     const [draggedTaskId, setDraggedTaskId] = useState<string | null>(null);
     const [dragOverTaskId, setDragOverTaskId] = useState<string | null>(null);
+    const [reparentTargetId, setReparentTargetId] = useState<string | null>(null);
     const [tags, setTags] = useState(project.tags || []);
     const [viewType, setViewType] = useState<ProjectViewType>('list');
 
@@ -44,6 +49,44 @@ const ProjectDetail: React.FC<ProjectDetailProps> = ({ project, tasks, notes, re
     }, [project]);
 
     const isEditing = titleEditor.isEditing || descriptionEditor.isEditing;
+
+    const hierarchicalTasks = useMemo(() => {
+        const taskMap = new Map(allTasks.map(t => [t.id, t]));
+        const getLevel = (taskId: string | null, level = 0): number => {
+            if (!taskId) return 0;
+            const task = taskMap.get(taskId);
+            if (task?.parentId && taskMap.has(task.parentId)) {
+                return getLevel(task.parentId, level + 1);
+            }
+            return level;
+        };
+
+        const topLevelTasks = tasks.filter(t => !t.parentId || !tasks.some(parent => parent.id === t.parentId)).sort((a,b) => tasks.indexOf(a) - tasks.indexOf(b));
+        const taskTree: { task: Task; level: number }[] = [];
+        const processedIds = new Set<string>();
+
+        const buildTree = (task: Task, level: number) => {
+            if (processedIds.has(task.id)) return;
+            taskTree.push({ task, level });
+            processedIds.add(task.id);
+            
+            const subtasks = tasks.filter(t => t.parentId === task.id).sort((a,b) => tasks.indexOf(a) - tasks.indexOf(b));
+            subtasks.forEach(sub => buildTree(sub, level + 1));
+        };
+
+        topLevelTasks.forEach(task => buildTree(task, 0));
+        
+        // Add any orphaned tasks that might have been missed
+        tasks.forEach(task => {
+            if(!processedIds.has(task.id)) {
+                 taskTree.push({ task, level: getLevel(task.parentId) });
+                 processedIds.add(task.id);
+            }
+        });
+
+        return taskTree;
+    }, [tasks, allTasks]);
+
 
     const handleEdit = () => {
         titleEditor.handleEdit();
@@ -79,6 +122,67 @@ const ProjectDetail: React.FC<ProjectDetailProps> = ({ project, tasks, notes, re
         }
     };
 
+    const isReorderAllowed = (sourceId: string, targetId: string) => {
+        const sourceTask = allTasks.find(t => t.id === sourceId);
+        const targetTask = allTasks.find(t => t.id === targetId);
+        return sourceTask && targetTask && sourceTask.parentId === targetTask.parentId;
+    };
+    
+    const isReparentAllowed = (sourceId: string, targetId: string) => {
+        if (sourceId === targetId) return false;
+
+        const isDescendant = (childId: string, parentId: string): boolean => {
+            const parent = allTasks.find(t => t.id === parentId);
+            if (!parent) return false;
+            if (parent.subtaskIds.includes(childId)) return true;
+            for (const subtaskId of parent.subtaskIds) {
+                if (isDescendant(childId, subtaskId)) return true;
+            }
+            return false;
+        };
+
+        return !isDescendant(targetId, sourceId);
+    };
+
+    const handleDragEnd = () => {
+        setDraggedTaskId(null);
+        setDragOverTaskId(null);
+        setReparentTargetId(null);
+    };
+
+    const handleDragOver = (e: React.DragEvent<HTMLLIElement>, task: Task) => {
+        if (!draggedTaskId || draggedTaskId === task.id) return;
+        
+        e.preventDefault();
+        const rect = e.currentTarget.getBoundingClientRect();
+        const threshold = rect.height * 0.4;
+
+        if (e.clientY < rect.top + threshold || e.clientY > rect.bottom - threshold) {
+            if (isReorderAllowed(draggedTaskId, task.id)) {
+                setDragOverTaskId(task.id);
+                setReparentTargetId(null);
+            }
+        } else {
+            if (isReparentAllowed(draggedTaskId, task.id)) {
+                setReparentTargetId(task.id);
+                setDragOverTaskId(null);
+            }
+        }
+    };
+
+    const handleDrop = (e: React.DragEvent<HTMLLIElement>) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const sourceId = e.dataTransfer.getData('text/plain');
+
+        if (reparentTargetId && sourceId) {
+            onReparentTask(sourceId, reparentTargetId);
+        } else if (dragOverTaskId && sourceId) {
+            onReorderTasks(sourceId, dragOverTaskId);
+        }
+
+        handleDragEnd();
+    };
 
     return (
         <div>
@@ -172,36 +276,30 @@ const ProjectDetail: React.FC<ProjectDetailProps> = ({ project, tasks, notes, re
                                 </form>
                             )}
                             {tasks.length > 0 ? (
-                                <ul className="space-y-1" onDragLeave={() => setDragOverTaskId(null)}>
-                                    {tasks.map((task, index) => (
+                                <ul className="space-y-1" onDragLeave={handleDragEnd}>
+                                    {hierarchicalTasks.map(({ task, level }, index) => (
                                         <li 
                                             key={task.id} 
-                                            className={`relative cursor-move transition-opacity ${draggedTaskId === task.id ? 'opacity-30' : 'opacity-100'} ${index === 0 && !isAddingTask ? 'animate-pop-in' : ''}`}
+                                            className={`relative transition-all duration-200 ${draggedTaskId === task.id ? 'opacity-30' : 'opacity-100'} ${index === 0 && !isAddingTask ? 'animate-pop-in' : ''} ${reparentTargetId === task.id ? 'bg-accent/20 rounded-lg' : ''}`}
                                             draggable={true}
                                             onDragStart={(e) => { e.dataTransfer.setData('text/plain', task.id); setDraggedTaskId(task.id); }}
-                                            onDragEnd={() => { setDraggedTaskId(null); setDragOverTaskId(null); }}
-                                            onDragOver={(e) => { e.preventDefault(); setDragOverTaskId(task.id); }}
-                                            onDrop={(e) => {
-                                                e.preventDefault();
-                                                const sourceId = e.dataTransfer.getData('text/plain');
-                                                if (sourceId && task.id && sourceId !== task.id) {
-                                                    onReorderTasks(sourceId, task.id);
-                                                }
-                                                setDraggedTaskId(null);
-                                                setDragOverTaskId(null);
-                                            }}
+                                            onDragEnd={handleDragEnd}
+                                            onDragOver={(e) => handleDragOver(e, task)}
+                                            onDrop={handleDrop}
                                         >
                                             {dragOverTaskId === task.id && draggedTaskId !== task.id && (
                                                 <div className="absolute -top-1 left-2 right-2 h-1 bg-accent rounded-full" />
                                             )}
-                                            <TaskItem task={task} onToggleTask={onToggleTask} onUpdateTask={onUpdateTask} />
+                                            <div style={{ paddingLeft: `${level * 24}px` }}>
+                                                <TaskItem task={task} allTasks={allTasks} onToggleTask={onToggleTask} onUpdateTask={onUpdateTask} onSelectTask={onSelectTask} />
+                                            </div>
                                         </li>
                                     ))}
                                 </ul>
                             ) : <CardEmptyState>Every great project starts with a single step. Add your first task.</CardEmptyState>}
                         </>
                     ) : (
-                        <KanbanBoard tasks={tasks} onUpdateTaskStage={onUpdateTaskStage} />
+                        <KanbanBoard tasks={tasks} allTasks={allTasks} onUpdateTaskStage={onUpdateTaskStage} onSelectTask={onSelectTask} onUpdateMultipleTaskStages={onUpdateMultipleTaskStages} />
                     )}
                 </div>
             </div>

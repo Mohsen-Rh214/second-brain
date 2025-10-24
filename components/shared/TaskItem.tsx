@@ -1,6 +1,6 @@
-import React, { useRef } from 'react';
+import React, { useRef, useMemo } from 'react';
 import { Task } from '../../types';
-import { CheckSquareIcon, SquareIcon, CalendarIcon, FlagIcon, LinkIcon } from './icons';
+import { CheckSquareIcon, SquareIcon, CalendarIcon, FlagIcon, LinkIcon, FileTextIcon, ClipboardCheckIcon } from './icons';
 import { useEditable } from '../../hooks/useEditable';
 import TagList from './TagList';
 
@@ -12,24 +12,33 @@ const priorityClasses: Record<string, { text: string, bg: string }> = {
 
 interface TaskItemProps {
     task: Task;
+    allTasks?: Task[];
     onToggleTask: (id: string) => void;
     onUpdateTask: (id: string, updates: Partial<Pick<Task, 'title' | 'priority' | 'dueDate'>>) => void;
+    onSelectTask?: (id: string) => void;
     projectName?: string;
     onLinkTask?: (id: string) => void;
     isFadingOut?: boolean;
 }
 
-const TaskItem: React.FC<TaskItemProps> = ({ task, onToggleTask, onUpdateTask, projectName, onLinkTask, isFadingOut }) => {
+const TaskItem: React.FC<TaskItemProps> = ({ task, allTasks = [], onToggleTask, onUpdateTask, onSelectTask, projectName, onLinkTask, isFadingOut }) => {
     const inputRef = useRef<HTMLInputElement>(null);
     const titleEditor = useEditable(task.title, (newTitle) => onUpdateTask(task.id, { title: newTitle }));
     const isVisuallyCompleted = task.stage === 'Done' || isFadingOut;
 
-    const handleDoubleClick = () => {
-        if (!isVisuallyCompleted) {
-            titleEditor.handleEdit();
-            setTimeout(() => inputRef.current?.focus(), 0);
-        }
-    };
+    const subtaskProgress = useMemo(() => {
+        if (!task.subtaskIds || task.subtaskIds.length === 0) return null;
+        const completed = task.subtaskIds.filter(id => allTasks.find(t => t.id === id)?.stage === 'Done').length;
+        return { completed, total: task.subtaskIds.length };
+    }, [task.subtaskIds, allTasks]);
+
+    const hasLinkedItems = (task.noteIds?.length || 0) > 0 || (task.resourceIds?.length || 0) > 0;
+
+    const handleTitleClick = (e: React.MouseEvent) => {
+        // Prevent modal from opening if we're clicking a link or other interactive element inside
+        if ((e.target as HTMLElement).closest('a, button')) return;
+        onSelectTask?.(task.id);
+    }
 
     if (titleEditor.isEditing) {
         return (
@@ -55,14 +64,15 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, onToggleTask, onUpdateTask, p
             <button onClick={() => onToggleTask(task.id)} aria-label={isVisuallyCompleted ? 'Mark as incomplete' : 'Mark as complete'} className="flex-shrink-0 text-text-secondary hover:text-accent">
                 {isVisuallyCompleted ? <CheckSquareIcon className="w-5 h-5 text-accent" /> : <SquareIcon className="w-5 h-5" />}
             </button>
-            <div className="flex-1" onDoubleClick={handleDoubleClick}>
+            <div className="flex-1 min-w-0" onClick={handleTitleClick} role="button" tabIndex={0} onKeyDown={(e) => e.key === 'Enter' && onSelectTask?.(task.id)}>
                 <span className={`cursor-pointer ${isVisuallyCompleted ? 'line-through text-text-tertiary' : ''}`}>{task.title}</span>
-                {(projectName || (task.tags && task.tags.length > 0)) && (
-                    <div className="flex items-center gap-2 mt-1">
-                        {projectName && <p className="text-xs text-text-secondary">{projectName}</p>}
-                        <TagList tags={task.tags} />
-                    </div>
-                )}
+                <div className="flex items-center flex-wrap gap-x-3 gap-y-1 mt-1 text-xs text-text-tertiary">
+                    {projectName && <p className="text-xs text-text-secondary">{projectName}</p>}
+                    <TagList tags={task.tags} />
+                    {task.description && <FileTextIcon className="w-3.5 h-3.5" title="Has description" />}
+                    {subtaskProgress && <span className="flex items-center gap-1" title="Subtasks"><ClipboardCheckIcon className="w-3.5 h-3.5" /> {subtaskProgress.completed}/{subtaskProgress.total}</span>}
+                    {hasLinkedItems && <LinkIcon className="w-3.5 h-3.5" title="Has linked items" />}
+                </div>
             </div>
             {task.dueDate && (
                 <div className="flex items-center gap-1 text-xs text-text-secondary">
