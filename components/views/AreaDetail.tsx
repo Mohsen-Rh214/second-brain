@@ -8,6 +8,8 @@ import { useEditable } from '../../hooks/useEditable';
 import CardEmptyState from '../shared/CardEmptyState';
 import TagInput from '../shared/TagInput';
 import TagList from '../shared/TagList';
+import { useData } from '../../store/DataContext';
+import { useDraggableList } from '../../hooks/useDraggableList';
 
 interface AreaDetailProps {
     area: Area;
@@ -27,6 +29,20 @@ const AreaDetail: React.FC<AreaDetailProps> = ({ area, projects, tasks, notes, r
     const titleEditor = useEditable(area.title, (newTitle) => onUpdateArea(area.id, { title: newTitle }));
     const descriptionEditor = useEditable(area.description, (newDescription) => onUpdateArea(area.id, { description: newDescription }));
     const [tags, setTags] = useState(area.tags || []);
+    const { dispatch } = useData();
+
+    const { draggedId, dropAction, getDragAndDropProps, getContainerProps } = useDraggableList<Project>({
+        items: projects,
+        onReorder: (sourceId, targetId) => {
+            dispatch({ type: 'REORDER_CHILD_LIST', payload: {
+                parentListKey: 'areas',
+                parentId: area.id,
+                childIdListKey: 'projectIds',
+                sourceId,
+                targetId,
+            }});
+        }
+    });
 
     useEffect(() => {
         setTags(area.tags || []);
@@ -120,11 +136,18 @@ const AreaDetail: React.FC<AreaDetailProps> = ({ area, projects, tasks, notes, r
 
             <Card icon={<ProjectIcon className="w-6 h-6 text-accent" />} title="Projects" onAdd={() => onOpenCaptureModal({ parentId: area.id, itemType: 'project' })} isCollapsible defaultOpen>
                 {projects.length > 0 ? (
-                    <ul className="space-y-2">
+                    <ul className="space-y-2" {...getContainerProps()}>
                         {projects.map(project => {
                             const { completed, total } = getProjectProgress(project);
                             return (
-                             <li key={project.id}>
+                             <li 
+                                key={project.id}
+                                {...getDragAndDropProps(project.id)}
+                                className={`relative cursor-grab rounded-lg ${draggedId === project.id ? 'opacity-30' : ''}`}
+                             >
+                                {dropAction?.type === 'REORDER' && dropAction.targetId === project.id && (
+                                    <div className="absolute -top-1 left-2 right-2 h-0.5 bg-accent rounded-full" />
+                                )}
                                 <button onClick={() => onNavigate('projects', project.id)} className="w-full text-left p-3 hover:bg-neutral rounded-lg transition-colors flex justify-between items-center">
                                     <div>
                                         <p className="font-semibold">{project.title}</p>

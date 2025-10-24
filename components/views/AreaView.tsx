@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { Area, Project, Note, Resource, Task } from '../../types';
 import AreaDetail from './AreaDetail';
 import { AreaIcon, PlusIcon } from '../shared/icons';
@@ -6,6 +6,8 @@ import { CaptureContext } from '../../types';
 import { View } from '../../types';
 import EmptyState from '../shared/EmptyState';
 import TagList from '../shared/TagList';
+import { useData } from '../../store/DataContext';
+import { useDraggableList } from '../../hooks/useDraggableList';
 
 interface AreaViewProps {
     areas: Area[];
@@ -24,6 +26,14 @@ interface AreaViewProps {
 }
 
 const AreaView: React.FC<AreaViewProps> = ({ areas, activeAreaId, onSelectArea, projects, tasks, notes, resources, onArchive, onDelete, onSelectNote, onUpdateArea, onOpenCaptureModal, onNavigate }) => {
+    const { dispatch } = useData();
+
+    const { draggedId, dropAction, getDragAndDropProps, getContainerProps } = useDraggableList<Area>({
+        items: areas,
+        onReorder: (sourceId, targetId) => {
+            dispatch({ type: 'REORDER_LIST', payload: { listKey: 'areas', sourceId, targetId } });
+        }
+    });
     
     useEffect(() => {
         if (areas.length > 0 && (!activeAreaId || !areas.some(a => a.id === activeAreaId))) {
@@ -34,6 +44,13 @@ const AreaView: React.FC<AreaViewProps> = ({ areas, activeAreaId, onSelectArea, 
     }, [areas, activeAreaId, onSelectArea]);
 
     const selectedArea = areas.find(a => a.id === activeAreaId) || null;
+
+    const orderedProjects = useMemo(() => {
+        if (!selectedArea) return [];
+        return selectedArea.projectIds
+            .map(id => projects.find(p => p.id === id))
+            .filter((p): p is Project => !!p && p.status === 'active');
+    }, [selectedArea, projects]);
 
     const handleAddNewArea = () => {
         onOpenCaptureModal({ parentId: null, itemType: 'area' });
@@ -52,9 +69,16 @@ const AreaView: React.FC<AreaViewProps> = ({ areas, activeAreaId, onSelectArea, 
                         <PlusIcon className="w-5 h-5"/>
                     </button>
                 </header>
-                <ul className="flex-1 overflow-y-auto custom-scrollbar p-2">
+                <ul className="flex-1 overflow-y-auto custom-scrollbar p-2" {...getContainerProps()}>
                     {areas.map(area => (
-                        <li key={area.id}>
+                        <li 
+                            key={area.id}
+                            {...getDragAndDropProps(area.id)}
+                            className={`relative cursor-grab rounded-xl ${draggedId === area.id ? 'opacity-30' : ''}`}
+                        >
+                            {dropAction?.type === 'REORDER' && dropAction.targetId === area.id && (
+                                <div className="absolute -top-1 left-2 right-2 h-0.5 bg-accent rounded-full" />
+                            )}
                             <button
                                 onClick={() => onSelectArea(area.id)}
                                 className={`w-full text-left p-3 mb-1 transition-all duration-200 rounded-xl ${
@@ -75,7 +99,7 @@ const AreaView: React.FC<AreaViewProps> = ({ areas, activeAreaId, onSelectArea, 
                 {selectedArea ? (
                     <AreaDetail
                         area={selectedArea}
-                        projects={projects.filter(p => selectedArea.projectIds.includes(p.id))}
+                        projects={orderedProjects}
                         tasks={tasks}
                         notes={notes.filter(n => n.parentIds.includes(selectedArea.id))}
                         resources={resources.filter(r => r.parentIds.includes(selectedArea.id))}

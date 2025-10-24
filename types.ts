@@ -43,6 +43,7 @@ export interface Task extends BaseItem {
   // For linking to other items
   noteIds: string[];
   resourceIds: string[];
+  completedAt?: string;
 }
 
 export interface Note extends BaseItem {

@@ -153,7 +153,6 @@ const ResourceView: React.FC<ResourceViewProps> = ({ resources, projects, areas,
     const getParentName = (parentId: string) => {
         const project = projects.find(p => p.id === parentId);
         if (project) return { name: project.title, type: 'project' as const };
-        // FIX: Changed p.id to a.id to correctly reference the parameter of the arrow function.
         const area = areas.find(a => a.id === parentId);
         if (area) return { name: area.title, type: 'area' as const };
         return null;

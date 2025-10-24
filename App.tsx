@@ -127,7 +127,7 @@ const App: React.FC = () => {
   }, [dataDispatch]);
 
   const handleReorderTasks = useCallback((sourceTaskId: string, targetTaskId: string) => {
-      dataDispatch({ type: 'REORDER_TASKS', payload: { sourceTaskId, targetTaskId } });
+      dataDispatch({ type: 'REORDER_LIST', payload: { listKey: 'tasks', sourceId: sourceTaskId, targetId: targetTaskId } });
   }, [dataDispatch]);
   
   const handleReparentTask = useCallback((taskId: string, newParentId: string) => {
@@ -313,7 +313,6 @@ const App: React.FC = () => {
             onUpdateProject={handleUpdateProject}
             onOpenCaptureModal={handleOpenCaptureModal}
             onSaveNewItem={handleSaveNewItem}
-            onReorderTasks={handleReorderTasks}
             onReparentTask={handleReparentTask}
             onUpdateTask={handleUpdateTask}
             onUpdateTaskStage={handleUpdateTaskStage}

@@ -102,6 +102,7 @@ export const initialTasks: Task[] = [
     createdAt: now.toISOString(),
     updatedAt: now.toISOString(),
     status: 'active',
+    completedAt: now.toISOString(),
     tags: ['cardio'],
   },
   {

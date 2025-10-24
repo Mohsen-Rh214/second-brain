@@ -27,8 +27,14 @@ const Card: React.FC<CardProps> = ({
     defaultOpen = true,
 }) => {
     const [isOpen, setIsOpen] = useState(defaultOpen);
+    
+    // Allow custom header content via slot pattern
+    const childrenArray = React.Children.toArray(children);
+    const headerSlot = childrenArray.find(child => React.isValidElement(child) && (child.props as any).slot === 'header-content');
+    const bodyContent = childrenArray.filter(child => !React.isValidElement(child) || (child.props as any).slot !== 'header-content');
 
-    const HeaderContent = () => (
+
+    const DefaultHeaderContent = () => (
         <div className="flex items-center justify-between w-full">
             <div className="flex items-center gap-3">
                 <div className="text-accent">{icon}</div>
@@ -57,7 +63,7 @@ const Card: React.FC<CardProps> = ({
 
     return (
         <div className={`bg-surface/80 backdrop-blur-xl border border-outline rounded-2xl shadow-md h-full flex flex-col ${className}`}>
-            <header className={`flex items-center justify-between ${headerPadding} ${isOpen && children ? 'border-b border-outline-dark' : ''}`}>
+            <header className={`flex items-center justify-between ${headerPadding} ${isOpen && bodyContent.length > 0 ? 'border-b border-outline-dark' : ''}`}>
                 {isCollapsible ? (
                     <div
                         role="button"
@@ -67,15 +73,15 @@ const Card: React.FC<CardProps> = ({
                         aria-expanded={isOpen}
                         className="w-full cursor-pointer"
                     >
-                        <HeaderContent />
+                        {headerSlot || <DefaultHeaderContent />}
                     </div>
                 ) : (
-                    <HeaderContent />
+                    headerSlot || <DefaultHeaderContent />
                 )}
             </header>
             {isOpen && (
                 <div className={`${bodyPadding} flex-1 overflow-y-auto custom-scrollbar`}>
-                    {children}
+                    {bodyContent}
                 </div>
             )}
         </div>

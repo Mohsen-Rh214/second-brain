@@ -6,6 +6,8 @@ import ProgressBar from '../shared/ProgressBar';
 import { CaptureContext } from '../../types';
 import EmptyState from '../shared/EmptyState';
 import TagList from '../shared/TagList';
+import { useData } from '../../store/DataContext';
+import { useDraggableList } from '../../hooks/useDraggableList';
 
 interface ProjectViewProps {
     projects: Project[];
@@ -23,15 +25,22 @@ interface ProjectViewProps {
     onUpdateProject: (projectId: string, updates: { title?: string, description?: string, tags?: string[] }) => void;
     onOpenCaptureModal: (context: CaptureContext) => void;
     onSaveNewItem: (itemData: NewItemPayload, itemType: ItemType, parentId: string | null) => void;
-    onReorderTasks: (sourceTaskId: string, targetTaskId: string) => void;
     onReparentTask: (taskId: string, newParentId: string) => void;
     onUpdateTask: (taskId: string, updates: Partial<Pick<Task, 'title' | 'priority' | 'dueDate'>>) => void;
     onUpdateTaskStage: (taskId: string, newStage: TaskStage) => void;
     onUpdateMultipleTaskStages: (taskIds: string[], newStage: TaskStage) => void;
 }
 
-const ProjectView: React.FC<ProjectViewProps> = ({ projects, activeProjectId, onSelectProject, allTasks, tasks, notes, resources, onToggleTask, onArchive, onDelete, onSelectNote, onSelectTask, onUpdateProject, onOpenCaptureModal, onSaveNewItem, onReorderTasks, onReparentTask, onUpdateTask, onUpdateTaskStage, onUpdateMultipleTaskStages }) => {
-    
+const ProjectView: React.FC<ProjectViewProps> = ({ projects, activeProjectId, onSelectProject, allTasks, tasks, notes, resources, onToggleTask, onArchive, onDelete, onSelectNote, onSelectTask, onUpdateProject, onOpenCaptureModal, onSaveNewItem, onReparentTask, onUpdateTask, onUpdateTaskStage, onUpdateMultipleTaskStages }) => {
+    const { dispatch } = useData();
+
+    const { draggedId, dropAction, getDragAndDropProps, getContainerProps } = useDraggableList<Project>({
+        items: projects,
+        onReorder: (sourceId, targetId) => {
+            dispatch({ type: 'REORDER_LIST', payload: { listKey: 'projects', sourceId, targetId } });
+        }
+    });
+
     useEffect(() => {
         // If there's no active project, or the active one is no longer in the list, select the first one.
         if (projects.length > 0 && (!activeProjectId || !projects.some(p => p.id === activeProjectId))) {
@@ -66,11 +75,18 @@ const ProjectView: React.FC<ProjectViewProps> = ({ projects, activeProjectId, on
                         <PlusIcon className="w-5 h-5"/>
                     </button>
                 </header>
-                <ul className="flex-1 overflow-y-auto custom-scrollbar p-2">
+                <ul className="flex-1 overflow-y-auto custom-scrollbar p-2" {...getContainerProps()}>
                     {projects.map(project => {
                         const { completed, total } = getProjectProgress(project);
                         return (
-                            <li key={project.id}>
+                            <li 
+                                key={project.id}
+                                {...getDragAndDropProps(project.id)}
+                                className={`relative cursor-grab rounded-xl ${draggedId === project.id ? 'opacity-30' : ''}`}
+                            >
+                                {dropAction?.type === 'REORDER' && dropAction.targetId === project.id && (
+                                    <div className="absolute -top-1 left-2 right-2 h-0.5 bg-accent rounded-full" />
+                                )}
                                 <button
                                     onClick={() => onSelectProject(project.id)}
                                     className={`w-full text-left p-3 mb-1 transition-all duration-200 rounded-xl ${
@@ -101,7 +117,7 @@ const ProjectView: React.FC<ProjectViewProps> = ({ projects, activeProjectId, on
                     <ProjectDetail 
                         project={selectedProject}
                         allTasks={allTasks}
-                        tasks={tasks.filter(t => selectedProject.taskIds.includes(t.id))}
+                        tasks={tasks.filter(t => t.projectId === selectedProject.id)}
                         notes={notes.filter(n => selectedProject.noteIds.includes(n.id) || n.parentIds.includes(selectedProject.id))}
                         resources={resources.filter(r => selectedProject.resourceIds.includes(r.id) || r.parentIds.includes(selectedProject.id))}
                         onToggleTask={onToggleTask}
@@ -112,7 +128,6 @@ const ProjectView: React.FC<ProjectViewProps> = ({ projects, activeProjectId, on
                         onUpdateProject={onUpdateProject}
                         onOpenCaptureModal={onOpenCaptureModal}
                         onSaveNewItem={onSaveNewItem}
-                        onReorderTasks={onReorderTasks}
                         onReparentTask={onReparentTask}
                         onUpdateTask={onUpdateTask}
                         onUpdateTaskStage={onUpdateTaskStage}

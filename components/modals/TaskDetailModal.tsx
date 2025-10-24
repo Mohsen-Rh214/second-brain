@@ -154,10 +154,7 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ isOpen, onClose, onSa
 
               <div>
                   <label className="text-sm font-semibold text-text-secondary mb-2 flex items-center gap-2"><ClipboardCheckIcon className="w-4 h-4" /> Subtasks</label>
-                  <div className="space-y-1">
-                      {subtasks.map(sub => <TaskItem key={sub.id} task={sub} onToggleTask={onToggleSubtask} onUpdateTask={() => {}} />)}
-                  </div>
-                   <form onSubmit={handleAddSubtask} className="flex gap-2 mt-2">
+                  <form onSubmit={handleAddSubtask} className="flex gap-2 mb-2">
                       <input
                           type="text"
                           value={newSubtaskTitle}
@@ -167,6 +164,9 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ isOpen, onClose, onSa
                       />
                       <button type="submit" className="px-3 py-1.5 text-sm bg-secondary hover:bg-secondary-hover rounded-lg"><PlusIcon className="w-4 h-4" /></button>
                   </form>
+                  <div className="space-y-1">
+                      {subtasks.map(sub => <TaskItem key={sub.id} task={sub} onToggleTask={onToggleSubtask} onUpdateTask={onSave} allTasks={allTasks} />)}
+                  </div>
               </div>
               
               <div>

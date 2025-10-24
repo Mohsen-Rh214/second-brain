@@ -18,7 +18,6 @@ type Action =
     | { type: 'ADD_SUBTASK'; payload: { parentTaskId: string; subtaskData: NewItemPayload } }
     | { type: 'ADD_INBOX_ITEM'; payload: { content: string; type: 'note' | 'resource' } }
     | { type: 'TOGGLE_TASK'; payload: { taskId: string } }
-    | { type: 'REORDER_TASKS'; payload: { sourceTaskId: string; targetTaskId: string } }
     | { type: 'REPARENT_TASK'; payload: { taskId: string; newParentId: string } }
     | { type: 'UPDATE_TASK'; payload: { taskId: string; updates: Partial<Task> } }
     | { type: 'UPDATE_TASK_STAGE'; payload: { taskId: string; newStage: TaskStage } }
@@ -33,7 +32,20 @@ type Action =
     | { type: 'ORGANIZE_ITEM'; payload: { itemId: string; newParentIds: string[] } }
     | { type: 'MARK_REVIEWED'; payload: { itemIds: string[]; type: 'project' | 'area' } }
     | { type: 'UPDATE_ITEM_TAGS'; payload: { itemId: string; tags: string[] } }
-    | { type: 'REPLACE_STATE'; payload: AppState };
+    | { type: 'REPLACE_STATE'; payload: AppState }
+    | { type: 'REORDER_LIST'; payload: {
+        listKey: 'areas' | 'projects' | 'tasks';
+        sourceId: string;
+        targetId: string;
+      } }
+    | { type: 'REORDER_CHILD_LIST'; payload: {
+        parentListKey: 'areas' | 'projects' | 'tasks';
+        parentId: string;
+        childIdListKey: 'projectIds' | 'taskIds' | 'subtaskIds';
+        sourceId: string;
+        targetId: string;
+      } }
+    | { type: 'PROMOTE_SUBTASK'; payload: { taskId: string } };
 
 
 const initialState: AppState = {
@@ -121,13 +133,24 @@ const dataReducer = (state: AppState, action: Action): AppState => {
                 resourceIds: [],
             });
             
+            const updatedTasks = state.tasks.map(task =>
+                task.id === parentTaskId
+                    ? { ...task, subtaskIds: [...task.subtaskIds, newSubtask.id] }
+                    : task
+            ).concat(newSubtask);
+            
+            const updatedProjects = parentTask.projectId 
+                ? state.projects.map(project => 
+                    project.id === parentTask.projectId 
+                        ? { ...project, taskIds: [...project.taskIds, newSubtask.id] }
+                        : project
+                  )
+                : state.projects;
+
             return {
                 ...state,
-                tasks: state.tasks.map(task =>
-                    task.id === parentTaskId
-                        ? { ...task, subtaskIds: [...task.subtaskIds, newSubtask.id] }
-                        : task
-                ).concat(newSubtask)
+                tasks: updatedTasks,
+                projects: updatedProjects
             };
         }
         case 'ADD_INBOX_ITEM': {
@@ -165,24 +188,50 @@ const dataReducer = (state: AppState, action: Action): AppState => {
             return {
                 ...state,
                 tasks: state.tasks.map(task =>
-                    task.id === taskId ? { ...task, stage: task.stage === 'Done' ? 'To Do' : 'Done', updatedAt: new Date().toISOString() } : task
+                    task.id === taskId ? { 
+                        ...task, 
+                        stage: task.stage === 'Done' ? 'To Do' : 'Done', 
+                        updatedAt: new Date().toISOString(),
+                        completedAt: task.stage !== 'Done' ? new Date().toISOString() : undefined
+                    } : task
                 ),
             };
         }
-        case 'REORDER_TASKS': {
-            const { sourceTaskId, targetTaskId } = action.payload;
-            const tasksCopy = [...state.tasks];
-            const sourceIndex = tasksCopy.findIndex(t => t.id === sourceTaskId);
-            const targetIndex = tasksCopy.findIndex(t => t.id === targetTaskId);
+        case 'REORDER_LIST': {
+            const { listKey, sourceId, targetId } = action.payload;
+            const list = state[listKey];
 
-            if (sourceIndex === -1 || targetIndex === -1 || sourceIndex === targetIndex) {
-                return state;
-            }
+            const sourceIndex = list.findIndex(item => item.id === sourceId);
+            const targetIndex = list.findIndex(item => item.id === targetId);
 
-            const [movedTask] = tasksCopy.splice(sourceIndex, 1);
-            tasksCopy.splice(targetIndex, 0, movedTask);
+            if (sourceIndex === -1 || targetIndex === -1) return state;
 
-            return { ...state, tasks: tasksCopy };
+            const newList = [...list];
+            const [movedItem] = newList.splice(sourceIndex, 1);
+            newList.splice(targetIndex, 0, movedItem);
+
+            return { ...state, [listKey]: newList };
+        }
+        case 'REORDER_CHILD_LIST': {
+            const { parentListKey, parentId, childIdListKey, sourceId, targetId } = action.payload;
+            
+            const newParentList = (state[parentListKey] as any[]).map(parent => {
+                if (parent.id === parentId) {
+                    const childIds = [...(parent[childIdListKey] || [])];
+                    const sourceIndex = childIds.indexOf(sourceId);
+                    const targetIndex = childIds.indexOf(targetId);
+
+                    if (sourceIndex === -1 || targetIndex === -1) return parent;
+
+                    const [movedId] = childIds.splice(sourceIndex, 1);
+                    childIds.splice(targetIndex, 0, movedId);
+
+                    return { ...parent, [childIdListKey]: childIds };
+                }
+                return parent;
+            });
+
+            return { ...state, [parentListKey]: newParentList as any };
         }
         case 'REPARENT_TASK': {
             const { taskId, newParentId } = action.payload;
@@ -228,6 +277,35 @@ const dataReducer = (state: AppState, action: Action): AppState => {
 
             return { ...state, tasks: newTasks, projects: newProjects };
         }
+        case 'PROMOTE_SUBTASK': {
+            const { taskId } = action.payload;
+            const taskToPromote = state.tasks.find(t => t.id === taskId);
+            if (!taskToPromote || !taskToPromote.parentId || !taskToPromote.projectId) {
+                return state;
+            }
+            
+            const { parentId: oldParentId, projectId } = taskToPromote;
+
+            const newTasks = state.tasks.map(task => {
+                if (task.id === oldParentId) {
+                    return { ...task, subtaskIds: task.subtaskIds.filter(id => id !== taskId) };
+                }
+                if (task.id === taskId) {
+                    return { ...task, parentId: null, updatedAt: new Date().toISOString() };
+                }
+                return task;
+            });
+
+            const newProjects = state.projects.map(project => {
+                if (project.id === projectId) {
+                    if (project.taskIds.includes(taskId)) return project;
+                    return { ...project, taskIds: [taskId, ...project.taskIds] };
+                }
+                return project;
+            });
+
+            return { ...state, tasks: newTasks, projects: newProjects };
+        }
         case 'UPDATE_TASK': {
             const { taskId, updates } = action.payload;
             const now = new Date().toISOString();
@@ -244,7 +322,12 @@ const dataReducer = (state: AppState, action: Action): AppState => {
             return {
                 ...state,
                 tasks: state.tasks.map(task =>
-                    task.id === taskId ? { ...task, stage: newStage, updatedAt: now } : task
+                    task.id === taskId ? { 
+                        ...task, 
+                        stage: newStage, 
+                        updatedAt: now,
+                        completedAt: newStage === 'Done' ? now : undefined
+                    } : task
                 ),
             };
         }
@@ -256,7 +339,12 @@ const dataReducer = (state: AppState, action: Action): AppState => {
                 ...state,
                 tasks: state.tasks.map(task =>
                     taskIdsSet.has(task.id)
-                        ? { ...task, stage: newStage, updatedAt: now }
+                        ? { 
+                            ...task, 
+                            stage: newStage, 
+                            updatedAt: now,
+                            completedAt: newStage === 'Done' ? now : undefined
+                          }
                         : task
                 ),
             };

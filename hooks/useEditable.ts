@@ -1,12 +1,20 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 
 export const useEditable = (initialValue: string, onSave: (newValue: string) => void) => {
     const [isEditing, setIsEditing] = useState(false);
     const [value, setValue] = useState(initialValue);
+    const inputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
         setValue(initialValue);
     }, [initialValue]);
+
+    useEffect(() => {
+        if (isEditing) {
+            inputRef.current?.focus();
+            inputRef.current?.select();
+        }
+    }, [isEditing]);
 
     const handleEdit = useCallback(() => {
         setIsEditing(true);
@@ -15,6 +23,8 @@ export const useEditable = (initialValue: string, onSave: (newValue: string) => 
     const handleSave = useCallback(() => {
         if (value.trim() && value.trim() !== initialValue) {
             onSave(value.trim());
+        } else {
+            setValue(initialValue);
         }
         setIsEditing(false);
     }, [value, initialValue, onSave]);
@@ -24,8 +34,9 @@ export const useEditable = (initialValue: string, onSave: (newValue: string) => 
         setIsEditing(false);
     }, [initialValue]);
     
-    const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
+    const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
         if (e.key === 'Enter') {
+            e.preventDefault();
             handleSave();
         } else if (e.key === 'Escape') {
             handleCancel();
@@ -40,5 +51,6 @@ export const useEditable = (initialValue: string, onSave: (newValue: string) => 
         handleSave,
         handleCancel,
         handleKeyDown,
+        inputRef,
     };
 };

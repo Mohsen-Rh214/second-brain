@@ -1,8 +1,10 @@
-import React, { useRef, useMemo } from 'react';
+import React, { useMemo } from 'react';
 import { Task } from '../../types';
-import { CheckSquareIcon, SquareIcon, CalendarIcon, FlagIcon, LinkIcon, FileTextIcon, ClipboardCheckIcon } from './icons';
+import { CheckSquareIcon, SquareIcon, CalendarIcon, FlagIcon, LinkIcon, FileTextIcon, ClipboardCheckIcon, ChevronDownIcon } from './icons';
 import { useEditable } from '../../hooks/useEditable';
 import TagList from './TagList';
+import ActionMenu from './ActionMenu';
+import { formatRelativeTime } from '../../utils';
 
 const priorityClasses: Record<string, { text: string, bg: string }> = {
     High: { text: 'text-priority-high', bg: 'bg-priority-high-bg' },
@@ -19,11 +21,21 @@ interface TaskItemProps {
     projectName?: string;
     onLinkTask?: (id: string) => void;
     isFadingOut?: boolean;
+    // New props for project view enhancements
+    hasSubtasks?: boolean;
+    isCollapsed?: boolean;
+    onToggleCollapse?: () => void;
+    onArchive?: (id: string) => void;
+    onDelete?: (id: string) => void;
 }
 
-const TaskItem: React.FC<TaskItemProps> = ({ task, allTasks = [], onToggleTask, onUpdateTask, onSelectTask, projectName, onLinkTask, isFadingOut }) => {
-    const inputRef = useRef<HTMLInputElement>(null);
-    const titleEditor = useEditable(task.title, (newTitle) => onUpdateTask(task.id, { title: newTitle }));
+const TaskItem: React.FC<TaskItemProps> = ({ 
+    task, allTasks = [], onToggleTask, onUpdateTask, onSelectTask, projectName, onLinkTask, isFadingOut,
+    hasSubtasks, isCollapsed, onToggleCollapse, onArchive, onDelete 
+}) => {
+    const { isEditing, value, setValue, handleEdit, handleSave, handleKeyDown, inputRef } = useEditable(task.title, (newTitle) => {
+      if(newTitle) onUpdateTask(task.id, { title: newTitle });
+    });
     const isVisuallyCompleted = task.stage === 'Done' || isFadingOut;
 
     const subtaskProgress = useMemo(() => {
@@ -39,20 +51,23 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, allTasks = [], onToggleTask, 
         if ((e.target as HTMLElement).closest('a, button')) return;
         onSelectTask?.(task.id);
     }
+    
+    const handleArchive = () => onArchive?.(task.id);
+    const handleDelete = () => onDelete?.(task.id);
 
-    if (titleEditor.isEditing) {
+    if (isEditing) {
         return (
-            <div className="flex items-center gap-3 p-2 rounded-lg">
+            <div className="flex items-center gap-3 p-2 rounded-lg bg-background/50">
                 <button onClick={() => onToggleTask(task.id)} aria-label={isVisuallyCompleted ? 'Mark as incomplete' : 'Mark as complete'}>
                     {isVisuallyCompleted ? <CheckSquareIcon className="w-5 h-5 text-accent" /> : <SquareIcon className="w-5 h-5 text-text-tertiary" />}
                 </button>
                 <input
                     ref={inputRef}
                     type="text"
-                    value={titleEditor.value}
-                    onChange={(e) => titleEditor.setValue(e.target.value)}
-                    onBlur={titleEditor.handleSave}
-                    onKeyDown={titleEditor.handleKeyDown}
+                    value={value}
+                    onChange={(e) => setValue(e.target.value)}
+                    onBlur={handleSave}
+                    onKeyDown={handleKeyDown}
                     className="flex-1 bg-background/50 border border-outline px-2 py-1 text-sm rounded-md focus:ring-1 focus:ring-accent focus:outline-none"
                 />
             </div>
@@ -61,10 +76,17 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, allTasks = [], onToggleTask, 
 
     return (
         <div className="flex items-center gap-3 p-2 group hover:bg-neutral rounded-lg transition-all duration-300 ease-soft">
+            {hasSubtasks && onToggleCollapse ? (
+                <button onClick={onToggleCollapse} className="p-1 rounded-full hover:bg-neutral-hover text-text-secondary">
+                    <ChevronDownIcon className={`w-4 h-4 transition-transform duration-200 ${isCollapsed ? '-rotate-90' : ''}`} />
+                </button>
+            ) : (
+                <div className="w-6 h-6 flex-shrink-0"></div> // Placeholder for alignment
+            )}
             <button onClick={() => onToggleTask(task.id)} aria-label={isVisuallyCompleted ? 'Mark as incomplete' : 'Mark as complete'} className="flex-shrink-0 text-text-secondary hover:text-accent">
                 {isVisuallyCompleted ? <CheckSquareIcon className="w-5 h-5 text-accent" /> : <SquareIcon className="w-5 h-5" />}
             </button>
-            <div className="flex-1 min-w-0" onClick={handleTitleClick} role="button" tabIndex={0} onKeyDown={(e) => e.key === 'Enter' && onSelectTask?.(task.id)}>
+            <div onDoubleClick={handleEdit} className="flex-1 min-w-0" onClick={handleTitleClick} role="button" tabIndex={0} onKeyDown={(e) => e.key === 'Enter' && onSelectTask?.(task.id)}>
                 <span className={`cursor-pointer ${isVisuallyCompleted ? 'line-through text-text-tertiary' : ''}`}>{task.title}</span>
                 <div className="flex items-center flex-wrap gap-x-3 gap-y-1 mt-1 text-xs text-text-tertiary">
                     {projectName && <p className="text-xs text-text-secondary">{projectName}</p>}
@@ -74,18 +96,31 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, allTasks = [], onToggleTask, 
                     {hasLinkedItems && <LinkIcon className="w-3.5 h-3.5" title="Has linked items" />}
                 </div>
             </div>
-            {task.dueDate && (
-                <div className="flex items-center gap-1 text-xs text-text-secondary">
-                    <CalendarIcon className="w-4 h-4" />
-                    {new Date(task.dueDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+            
+            {task.stage === 'Done' && task.completedAt ? (
+                 <div 
+                    className="flex items-center gap-1 text-xs text-text-tertiary ml-auto flex-shrink-0"
+                    title={`Completed on ${new Date(task.completedAt).toLocaleString()}`}
+                >
+                    <span>{formatRelativeTime(task.completedAt)}</span>
                 </div>
+            ) : (
+                <>
+                    {task.dueDate && (
+                        <div className="flex items-center gap-1 text-xs text-text-secondary">
+                            <CalendarIcon className="w-4 h-4" />
+                            {new Date(task.dueDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                        </div>
+                    )}
+                    {task.priority && priorityClasses[task.priority] && (
+                        <div className={`flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full ${priorityClasses[task.priority].bg} ${priorityClasses[task.priority].text}`}>
+                            <FlagIcon className="w-3 h-3" />
+                            {task.priority}
+                        </div>
+                    )}
+                </>
             )}
-            {task.priority && priorityClasses[task.priority] && (
-                <div className={`flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full ${priorityClasses[task.priority].bg} ${priorityClasses[task.priority].text}`}>
-                    <FlagIcon className="w-3 h-3" />
-                    {task.priority}
-                </div>
-            )}
+
             {!task.projectId && onLinkTask && (
                 <button 
                     onClick={() => onLinkTask(task.id)} 
@@ -94,6 +129,11 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, allTasks = [], onToggleTask, 
                 >
                     <LinkIcon className="w-4 h-4" />
                 </button>
+            )}
+             {(onArchive || onDelete) && (
+                <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+                    <ActionMenu onArchive={handleArchive} onDelete={handleDelete} />
+                </div>
             )}
         </div>
     );
