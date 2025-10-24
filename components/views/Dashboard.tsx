@@ -173,78 +173,8 @@ const Dashboard: React.FC<DashboardProps> = ({ projects, areas, tasks, inboxItem
         <p className="text-text-secondary">Your command center for clarity and action.</p>
       </header>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-8 grid-auto-rows-[400px]">
           {/* Row 1 */}
-          <CaptureCard onCapture={onDashboardCapture} />
-
-          <Card icon={<InboxIcon className="w-6 h-6" />} title="Inbox">
-              {inboxItems.length > 0 ? (
-                  <div>
-                      <ul className="space-y-2 mb-4">
-                          {inboxItems.slice(0, 5).map(item => (
-                              <li key={item.id} 
-                                draggable
-                                onDragStart={(e) => {
-                                    e.dataTransfer.setData('text/plain', item.id);
-                                    setDraggedInboxItemId(item.id);
-                                }}
-                                onDragEnd={() => setDraggedInboxItemId(null)}
-                                className={`flex justify-between items-center p-2 group hover:bg-neutral rounded-xl transition-all duration-300 ease-soft cursor-grab ${draggedInboxItemId === item.id ? 'opacity-30' : ''}`}
-                              >
-                                  <button onClick={() => onSelectItem(item)} className="flex items-center gap-2 text-left">
-                                      {getItemIcon(item)}
-                                      <span className="font-medium truncate group-hover:text-accent">{item.title}</span>
-                                  </button>
-                                  <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                      <button onClick={() => onOrganizeItem(item)} className="text-sm bg-accent hover:bg-accent-hover text-accent-content font-semibold px-2 py-1 transition-colors rounded-md active:scale-95">Organize</button>
-                                      <button onClick={() => onDeleteItem(item.id)} className="p-1 text-text-secondary hover:text-destructive"><TrashIcon className="w-4 h-4"/></button>
-                                  </div>
-                              </li>
-                          ))}
-                      </ul>
-                      {inboxItems.length > 5 &&
-                        <button onClick={() => onNavigate('dashboard')} className="w-full text-center text-sm font-semibold text-accent hover:underline p-2">
-                            Process all {inboxItems.length} items &rarr;
-                        </button>
-                      }
-                  </div>
-              ) : (
-                  <p className="text-sm text-text-tertiary text-center py-4">Inbox is clear. Well done!</p>
-              )}
-          </Card>
-
-          <Card icon={<ProjectIcon className="w-6 h-6" />} title="Recent Projects">
-              {recentProjects.length > 0 ? (
-                  <ul className="space-y-2">
-                      {recentProjects.map(project => (
-                          <li key={project.id}
-                            onDragOver={(e) => { if (draggedInboxItemId) e.preventDefault(); }}
-                            onDragEnter={(e) => { if (draggedInboxItemId) { e.preventDefault(); setDropTargetId(project.id); } }}
-                            onDragLeave={() => { if (draggedInboxItemId) { setDropTargetId(null); } }}
-                            onDrop={(e) => {
-                                if (draggedInboxItemId) {
-                                    e.preventDefault();
-                                    const itemId = e.dataTransfer.getData('text/plain');
-                                    if (itemId) onDirectOrganizeItem(itemId, [project.id]);
-                                    setDropTargetId(null);
-                                    setDraggedInboxItemId(null);
-                                }
-                            }}
-                          >
-                              <button onClick={() => onNavigate('projects', project.id)} className={`w-full flex justify-between items-center text-left p-3 rounded-xl transition-all duration-300 ease-soft hover:-translate-y-0.5 ${dropTargetId === project.id ? 'bg-accent/20 ring-2 ring-accent/80 ring-inset' : 'hover:bg-neutral'}`}>
-                                  <div>
-                                    <p className="font-semibold">{project.title}</p>
-                                    <p className="text-xs text-text-secondary truncate">{areas.find(a => a.id === project.areaId)?.title || 'No Area'}</p>
-                                  </div>
-                                  <ArrowRightIcon className="w-4 h-4 text-text-tertiary"/>
-                              </button>
-                          </li>
-                      ))}
-                  </ul>
-              ) : ( <p className="text-sm text-text-tertiary text-center py-4">No active projects yet.</p> )}
-          </Card>
-
-          {/* Row 2 */}
           <div
             onDragOver={(e) => {
                 const item = inboxItems.find(i => i.id === draggedInboxItemId);
@@ -293,68 +223,116 @@ const Dashboard: React.FC<DashboardProps> = ({ projects, areas, tasks, inboxItem
                         <button type="submit" className="px-4 py-2 text-sm font-medium bg-secondary hover:bg-secondary-hover text-secondary-content transition-colors rounded-lg active:scale-95">Add</button>
                     </form>
                 {myDayTasks.length > 0 ? (
-                    <ul className="space-y-1" onDragLeave={() => setDragOverTaskId(null)}>
-                        {myDayTasks.map(task => {
-                            const isFading = fadingOutTaskIds.has(task.id);
-                            return (
-                                <li 
-                                    key={task.id} 
-                                    draggable={true}
-                                    onDragStart={(e) => {
-                                        e.dataTransfer.setData('text/plain', task.id);
-                                        e.dataTransfer.effectAllowed = 'move';
-                                        setDraggedTaskId(task.id);
-                                    }}
-                                    onDragEnd={() => {
-                                        setDraggedTaskId(null);
-                                        setDragOverTaskId(null);
-                                    }}
-                                    onDragOver={(e) => {
-                                        if (draggedTaskId) {
-                                            e.preventDefault();
-                                            e.dataTransfer.dropEffect = 'move';
-                                            setDragOverTaskId(task.id);
-                                        }
-                                    }}
-                                    onDrop={(e) => {
-                                        if (draggedTaskId) {
-                                            e.preventDefault();
-                                            e.stopPropagation(); // Prevent drop on wrapper from firing
-                                            const sourceId = e.dataTransfer.getData('text/plain');
-                                            const targetId = task.id;
-                                            if (sourceId && targetId && sourceId !== targetId) {
-                                                onReorderTasks(sourceId, targetId);
-                                            }
+                    <>
+                        <ul className="space-y-1 max-h-[220px] overflow-hidden" onDragLeave={() => setDragOverTaskId(null)}>
+                            {myDayTasks.slice(0,5).map(task => {
+                                const isFading = fadingOutTaskIds.has(task.id);
+                                return (
+                                    <li 
+                                        key={task.id} 
+                                        draggable={true}
+                                        onDragStart={(e) => {
+                                            e.dataTransfer.setData('text/plain', task.id);
+                                            e.dataTransfer.effectAllowed = 'move';
+                                            setDraggedTaskId(task.id);
+                                        }}
+                                        onDragEnd={() => {
                                             setDraggedTaskId(null);
                                             setDragOverTaskId(null);
-                                        }
-                                    }}
-                                    className={`relative cursor-move transition-opacity ${draggedTaskId === task.id ? 'opacity-30' : 'opacity-100'} ${isFading ? 'task-item-fading' : ''}`}
-                                    >
-                                    {dragOverTaskId === task.id && draggedTaskId !== task.id && (
-                                        <div className="absolute -top-1 left-2 right-2 h-1 bg-accent rounded-full" />
-                                    )}
-                                    <TaskItem 
-                                        task={task} 
-                                        onToggleTask={handleToggleMyDayTask} 
-                                        projectName={task.projectId ? projects.find(p=>p.id === task.projectId)?.title : undefined}
-                                        onUpdateTask={onUpdateTask}
-                                        onLinkTask={onOpenLinkTaskModal}
-                                        isFadingOut={isFading}
-                                    />
-                                </li>
-                            );
-                        })}
-                    </ul>
+                                        }}
+                                        onDragOver={(e) => {
+                                            if (draggedTaskId) {
+                                                e.preventDefault();
+                                                e.dataTransfer.dropEffect = 'move';
+                                                setDragOverTaskId(task.id);
+                                            }
+                                        }}
+                                        onDrop={(e) => {
+                                            if (draggedTaskId) {
+                                                e.preventDefault();
+                                                e.stopPropagation(); // Prevent drop on wrapper from firing
+                                                const sourceId = e.dataTransfer.getData('text/plain');
+                                                const targetId = task.id;
+                                                if (sourceId && targetId && sourceId !== targetId) {
+                                                    onReorderTasks(sourceId, targetId);
+                                                }
+                                                setDraggedTaskId(null);
+                                                setDragOverTaskId(null);
+                                            }
+                                        }}
+                                        className={`relative cursor-move transition-opacity ${draggedTaskId === task.id ? 'opacity-30' : 'opacity-100'} ${isFading ? 'task-item-fading' : ''}`}
+                                        >
+                                        {dragOverTaskId === task.id && draggedTaskId !== task.id && (
+                                            <div className="absolute -top-1 left-2 right-2 h-1 bg-accent rounded-full" />
+                                        )}
+                                        <TaskItem 
+                                            task={task} 
+                                            onToggleTask={handleToggleMyDayTask} 
+                                            projectName={task.projectId ? projects.find(p=>p.id === task.projectId)?.title : undefined}
+                                            onUpdateTask={onUpdateTask}
+                                            onLinkTask={onOpenLinkTaskModal}
+                                            isFadingOut={isFading}
+                                        />
+                                    </li>
+                                );
+                            })}
+                        </ul>
+                        {myDayTasks.length > 5 ? 
+                        <div className="mt-4 pt-2 text-center">
+                            <button onClick={() => onNavigate('tasks')} className="text-sm font-semibold text-accent hover:underline">
+                                View All Tasks &rarr;
+                            </button>
+                        </div>
+                        : null}
+                    </>
                 ) : (
                     <p className="text-sm text-text-tertiary text-center py-4">No tasks for today. Enjoy the calm!</p>
                 )}
             </Card>
           </div>
 
-          <Card icon={<CalendarIcon className="w-6 h-6" />} title="Upcoming">
+          <CaptureCard onCapture={onDashboardCapture} />
+
+          <Card className={`max-h-[${myDayTasks.length > 5 ? '420px' : '400px'}]`} icon={<InboxIcon className="w-6 h-6" />} title="Inbox">
+              {inboxItems.length > 0 ? (
+                  <div>
+                      <ul className="space-y-2 mb-4">
+                          {inboxItems.map(item => (
+                              <li key={item.id} 
+                                draggable
+                                onDragStart={(e) => {
+                                    e.dataTransfer.setData('text/plain', item.id);
+                                    setDraggedInboxItemId(item.id);
+                                }}
+                                onDragEnd={() => setDraggedInboxItemId(null)}
+                                className={`flex justify-between items-center p-2 group hover:bg-neutral rounded-xl transition-all duration-300 ease-soft cursor-grab ${draggedInboxItemId === item.id ? 'opacity-30' : ''}`}
+                              >
+                                  <button onClick={() => onSelectItem(item)} className="flex items-center gap-2 text-left">
+                                      {getItemIcon(item)}
+                                      <span className="font-medium truncate group-hover:text-accent">{item.title}</span>
+                                  </button>
+                                  <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                      <button onClick={() => onOrganizeItem(item)} className="text-sm bg-accent hover:bg-accent-hover text-accent-content font-semibold px-2 py-1 transition-colors rounded-md active:scale-95">Organize</button>
+                                      <button onClick={() => onDeleteItem(item.id)} className="p-1 text-text-secondary hover:text-destructive"><TrashIcon className="w-4 h-4"/></button>
+                                  </div>
+                              </li>
+                          ))}
+                      </ul>
+                      {/* {inboxItems.length > 5 &&
+                        <button onClick={() => onNavigate('dashboard')} className="w-full text-center text-sm font-semibold text-accent hover:underline p-2">
+                            Process all {inboxItems.length} items &rarr;
+                        </button>
+                      } */}
+                  </div>
+              ) : (
+                  <p className="text-sm text-text-tertiary text-center py-4">Inbox is clear. Well done!</p>
+              )}
+          </Card>
+
+          {/* Row 2 */}
+          <Card className='max-h-[350px]' icon={<CalendarIcon className="w-6 h-6" />} title="Upcoming">
                {upcomingTasks.length > 0 ? (
-                   <ul className="space-y-1">
+                   <ul className="space-y-1 max-h-[250px]">
                        {upcomingTasks.map(task => (
                            <li key={task.id}>
                                <div className="flex items-center justify-between p-2 rounded-xl">
@@ -372,9 +350,40 @@ const Dashboard: React.FC<DashboardProps> = ({ projects, areas, tasks, inboxItem
                )}
           </Card>
 
-          <Card icon={<AreaIcon className="w-6 h-6" />} title="Recent Areas">
+          <Card className='max-h-[350px]' icon={<ProjectIcon className="w-6 h-6" />} title="Recent Projects">
+              {recentProjects.length > 0 ? (
+                  <ul className="space-y-2">
+                      {recentProjects.map(project => (
+                          <li key={project.id}
+                            onDragOver={(e) => { if (draggedInboxItemId) e.preventDefault(); }}
+                            onDragEnter={(e) => { if (draggedInboxItemId) { e.preventDefault(); setDropTargetId(project.id); } }}
+                            onDragLeave={() => { if (draggedInboxItemId) { setDropTargetId(null); } }}
+                            onDrop={(e) => {
+                                if (draggedInboxItemId) {
+                                    e.preventDefault();
+                                    const itemId = e.dataTransfer.getData('text/plain');
+                                    if (itemId) onDirectOrganizeItem(itemId, [project.id]);
+                                    setDropTargetId(null);
+                                    setDraggedInboxItemId(null);
+                                }
+                            }}
+                          >
+                              <button onClick={() => onNavigate('projects', project.id)} className={`w-full flex justify-between items-center text-left p-3 rounded-xl transition-all duration-300 ease-soft hover:-translate-y-0.5 ${dropTargetId === project.id ? 'bg-accent/20 ring-2 ring-accent/80 ring-inset' : 'hover:bg-neutral'}`}>
+                                  <div>
+                                    <p className="font-semibold">{project.title}</p>
+                                    <p className="text-xs text-text-secondary truncate">{areas.find(a => a.id === project.areaId)?.title || 'No Area'}</p>
+                                  </div>
+                                  <ArrowRightIcon className="w-4 h-4 text-text-tertiary"/>
+                              </button>
+                          </li>
+                      ))}
+                  </ul>
+              ) : ( <p className="text-sm text-text-tertiary text-center py-4">No active projects yet.</p> )}
+          </Card>
+
+          <Card className='max-h-[350px]' icon={<AreaIcon className="w-6 h-6" />} title="Recent Areas">
               {recentAreas.length > 0 ? (
-                  <div className="grid grid-cols-1 gap-2">
+                  <div className="grid grid-cols-2 gap-3">
                       {recentAreas.map(area => (
                           <div key={area.id}
                             onDragOver={(e) => { if (draggedInboxItemId) e.preventDefault(); }}
@@ -390,11 +399,9 @@ const Dashboard: React.FC<DashboardProps> = ({ projects, areas, tasks, inboxItem
                                 }
                             }}
                           >
-                              <button onClick={() => onNavigate('areas', area.id)} className={`w-full flex justify-between items-center text-left p-3 rounded-xl transition-all duration-300 ease-soft hover:-translate-y-0.5 ${dropTargetId === area.id ? 'bg-accent/20 ring-2 ring-accent/80 ring-inset' : 'hover:bg-neutral'}`}>
-                                  <div>
-                                    <p className="font-semibold">{area.title}</p>
-                                  </div>
-                                  <ArrowRightIcon className="w-4 h-4 text-text-tertiary"/>
+                              <button onClick={() => onNavigate('areas', area.id)} className={`w-full aspect-square flex flex-col items-center justify-center text-center p-2 rounded-xl transition-all duration-300 ease-soft hover:-translate-y-0.5 ${dropTargetId === area.id ? 'bg-accent/20 ring-2 ring-accent/80 ring-inset' : 'hover:bg-neutral'}`}>
+                                  <AreaIcon className="w-6 h-6 mb-1 text-text-secondary"/>
+                                  <p className="font-semibold text-sm leading-tight">{area.title}</p>
                               </button>
                           </div>
                       ))}

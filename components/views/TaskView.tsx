@@ -22,9 +22,9 @@ const priorityClasses: Record<string, { text: string, bg: string }> = {
 const TaskView: React.FC<TaskViewProps> = ({ tasks, projects, onToggleTask }) => {
     const [groupBy, setGroupBy] = useState<GroupBy>('project');
 
-    const groupedTasks = useMemo(() => {
-        const activeTasks = tasks.filter(t => t.status === 'active' && t.projectId);
+    const activeTasks = useMemo(() => tasks.filter(t => t.status === 'active'), [tasks]);
 
+    const groupedTasks = useMemo(() => {
         if (groupBy === 'project') {
             return activeTasks.reduce((acc, task) => {
                 const project = projects.find(p => p.id === task.projectId);
@@ -36,13 +36,12 @@ const TaskView: React.FC<TaskViewProps> = ({ tasks, projects, onToggleTask }) =>
         }
 
         if (groupBy === 'priority') {
-            const groups = activeTasks.reduce((acc, task) => {
+            return activeTasks.reduce((acc, task) => {
                 const key = task.priority || 'No Priority';
                 if (!acc[key]) acc[key] = [];
                 acc[key].push(task);
                 return acc;
             }, {} as Record<string, Task[]>);
-            return groups;
         }
 
         if (groupBy === 'dueDate') {
@@ -55,7 +54,7 @@ const TaskView: React.FC<TaskViewProps> = ({ tasks, projects, onToggleTask }) =>
         }
 
         return {};
-    }, [tasks, projects, groupBy]);
+    }, [activeTasks, projects, groupBy]);
 
     const getSortedGroupKeys = (groups: Record<string, Task[]>) => {
         const keys = Object.keys(groups);
@@ -69,17 +68,23 @@ const TaskView: React.FC<TaskViewProps> = ({ tasks, projects, onToggleTask }) =>
                 return new Date(a).getTime() - new Date(b).getTime()
             });
         }
+        if (groupBy === 'project') {
+            return keys.sort((a, b) => {
+                if (a === 'No Project') return 1;
+                if (b === 'No Project') return -1;
+                return a.localeCompare(b);
+            });
+        }
         return keys.sort();
     }
 
     const sortedGroupKeys = getSortedGroupKeys(groupedTasks);
-    const activeTasks = tasks.filter(t => t.status === 'active' && t.projectId);
 
     return (
         <div className="custom-scrollbar h-full">
             <header className="mb-8">
                 <h1 className="text-3xl font-bold font-heading">All Tasks</h1>
-                <p className="text-text-secondary">All your active tasks from all projects.</p>
+                <p className="text-text-secondary">A complete list of all your active tasks.</p>
             </header>
 
             <div className="mb-6 flex items-center gap-4 sticky top-0 bg-background/80 backdrop-blur-sm py-4 z-10">
@@ -101,7 +106,7 @@ const TaskView: React.FC<TaskViewProps> = ({ tasks, projects, onToggleTask }) =>
                  <EmptyState
                     icon={<ListTodoIcon />}
                     title="All Clear!"
-                    description="You have no active tasks across all your projects. Enjoy the peace, or start a new project to get things moving."
+                    description="You have no active tasks. Enjoy the peace, or capture a new task to get things moving."
                 />
             ) : (
                 <div className="space-y-6">
@@ -116,7 +121,7 @@ const TaskView: React.FC<TaskViewProps> = ({ tasks, projects, onToggleTask }) =>
                                         </button>
                                         <div className="flex-1">
                                             <p className={`${task.completed ? 'line-through text-text-tertiary' : ''}`}>{task.title}</p>
-                                            {groupBy !== 'project' && <p className="text-xs text-text-tertiary">{projects.find(p => p.id === task.projectId)?.title}</p>}
+                                            {groupBy !== 'project' && <p className="text-xs text-text-tertiary">{projects.find(p => p.id === task.projectId)?.title || 'No Project'}</p>}
                                         </div>
                                          {task.dueDate && groupBy !== 'dueDate' && (
                                             <div className="flex items-center gap-1 text-xs text-text-secondary">

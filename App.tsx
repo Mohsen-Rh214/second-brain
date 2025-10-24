@@ -15,6 +15,7 @@ import { PlusIcon } from './components/shared/icons';
 import TaskView from './components/views/TaskView';
 import ReviewView from './components/views/ReviewView';
 import GraphView from './components/views/GraphView';
+import SettingsView from './components/views/SettingsView';
 import CommandBar from './components/modals/CommandBar';
 import LinkTaskModal from './components/modals/LinkTaskModal';
 import { useData } from './store/DataContext';
@@ -335,6 +336,8 @@ const App: React.FC = () => {
             onNavigate={handleNavigate}
             onMarkReviewed={handleMarkReviewed}
           />
+      case 'settings':
+          return <SettingsView />;
       default:
         return <p>Unknown view: {currentView}</p>;
     }

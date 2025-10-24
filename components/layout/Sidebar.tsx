@@ -1,6 +1,6 @@
 import React from 'react';
 import { View } from '../../types';
-import { BrainCircuitIcon, AreaIcon, ProjectIcon, ResourceIcon, ArchiveIcon, SearchIcon, GitMergeIcon, ClipboardCheckIcon, HomeIcon } from '../shared/icons';
+import { BrainCircuitIcon, AreaIcon, ProjectIcon, ResourceIcon, ArchiveIcon, SearchIcon, GitMergeIcon, ClipboardCheckIcon, HomeIcon, SettingsIcon } from '../shared/icons';
 import { useUI } from '../../store/UIContext';
 
 interface SidebarProps {
@@ -109,6 +109,17 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigate, inboxCount }) => {
                     </ul>
                 </div>
             </nav>
+
+            <div className="p-4 border-t border-outline-dark">
+                <ul className="space-y-1">
+                    <NavItem
+                        isActive={currentView === 'settings'}
+                        onClick={() => onNavigate('settings')}
+                        icon={<SettingsIcon className="w-5 h-5" />}
+                        label="Settings"
+                    />
+                </ul>
+            </div>
         </aside>
     );
 };

@@ -85,7 +85,7 @@ const GraphView: React.FC<GraphViewProps> = ({ areas, projects, notes, resources
     }, [onNavigate, notes, resources]);
 
     return (
-        <div className="w-full h-full bg-surface/80 backdrop-blur-xl border border-outline rounded-2xl shadow-md">
+        <div className="w-full h-full overflow-clip bg-surface/80 backdrop-blur-xl border border-outline rounded-2xl shadow-md">
              <ForceGraph2D
                 ref={fgRef}
                 graphData={graphData}

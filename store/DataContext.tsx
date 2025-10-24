@@ -27,7 +27,8 @@ type Action =
     | { type: 'UPDATE_PROJECT'; payload: { projectId: string; updates: { title?: string; description?: string } } }
     | { type: 'UPDATE_AREA'; payload: { areaId: string; updates: { title?: string; description?: string } } }
     | { type: 'ORGANIZE_ITEM'; payload: { itemId: string; newParentIds: string[] } }
-    | { type: 'MARK_REVIEWED'; payload: { itemIds: string[]; type: 'project' | 'area' } };
+    | { type: 'MARK_REVIEWED'; payload: { itemIds: string[]; type: 'project' | 'area' } }
+    | { type: 'REPLACE_STATE'; payload: AppState };
 
 
 const initialState: AppState = {
@@ -48,6 +49,8 @@ const createNewItem = (prefix: string, data: any) => ({
 
 const dataReducer = (state: AppState, action: Action): AppState => {
     switch (action.type) {
+        case 'REPLACE_STATE':
+            return action.payload;
         case 'ADD_ITEM': {
             const { itemData, itemType, parentId } = action.payload;
             switch (itemType) {
