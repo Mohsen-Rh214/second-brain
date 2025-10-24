@@ -165,9 +165,11 @@ const AreaDetail: React.FC<AreaDetailProps> = ({ area, projects, tasks, notes, r
                         {resources.map(resource => (
                             <li key={resource.id} className="p-3 hover:bg-neutral rounded-lg transition-colors">
                                 <div className="flex items-center gap-3">
-                                    {resource.type === 'link' ? <LinkIcon className="w-4 h-4 text-text-tertiary flex-shrink-0" /> : <ResourceIcon className="w-4 h-4 text-text-tertiary flex-shrink-0" />}
+                                    {/* FIX: Check for resource.url instead of non-existent resource.type to determine if it's a link. */}
+                                    {resource.url ? <LinkIcon className="w-4 h-4 text-text-tertiary flex-shrink-0" /> : <ResourceIcon className="w-4 h-4 text-text-tertiary flex-shrink-0" />}
                                     <div className="flex-grow">
-                                        <a href={resource.type === 'link' ? resource.content : undefined} target="_blank" rel="noopener noreferrer" className="hover:underline hover:text-accent">{resource.title}</a>
+                                        {/* FIX: Use resource.url for the href attribute and ensure it's a full URL. */}
+                                        <a href={resource.url ? (resource.url.startsWith('http') ? resource.url : `https://${resource.url}`) : undefined} target="_blank" rel="noopener noreferrer" className="hover:underline hover:text-accent">{resource.title}</a>
                                         <TagList tags={resource.tags} className="mt-1" />
                                     </div>
                                 </div>

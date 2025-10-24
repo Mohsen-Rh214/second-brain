@@ -8,3 +8,16 @@ export const getItemTypeFromId = (id: string): ItemType | null => {
     if (id.startsWith('res-')) return 'resource';
     return null;
 }
+
+export const isUrl = (text: string): boolean => {
+    if (!text.includes('.') || text.includes(' ')) {
+        return false;
+    }
+    try {
+        const url = new URL(text.startsWith('http') ? text : `https://${text}`);
+        // The protocol check is important because new URL('foo:bar') is valid.
+        return url.protocol === 'http:' || url.protocol === 'https:';
+    } catch (e) {
+        return false;
+    }
+};

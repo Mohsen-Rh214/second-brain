@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useReducer, useEffect } from 'react';
 import { Area, Project, Task, Note, Resource, NewItemPayload, Status, ItemType, TaskStage } from '../types';
 import { initialAreas, initialProjects, initialTasks, initialNotes, initialResources } from '../constants';
-import { getItemTypeFromId } from '../utils';
+import { getItemTypeFromId, isUrl } from '../utils';
 
 // State shape
 interface AppState {
@@ -27,7 +27,7 @@ type Action =
     | { type: 'DELETE_ITEM'; payload: { itemId: string } }
     | { type: 'UPDATE_NOTE'; payload: { noteId: string; title: string; content: string; tags: string[] } }
     | { type: 'DRAFT_FROM_NOTE'; payload: { sourceNoteId: string, newNoteId: string } }
-    | { type: 'UPDATE_RESOURCE'; payload: { resourceId: string; title: string; content: string; tags: string[] } }
+    | { type: 'UPDATE_RESOURCE'; payload: { resourceId: string; updates: Partial<Resource> } }
     | { type: 'UPDATE_PROJECT'; payload: { projectId: string; updates: { title?: string; description?: string, tags?: string[] } } }
     | { type: 'UPDATE_AREA'; payload: { areaId: string; updates: { title?: string; description?: string, tags?: string[] } } }
     | { type: 'ORGANIZE_ITEM'; payload: { itemId: string; newParentIds: string[] } }
@@ -137,10 +137,10 @@ const dataReducer = (state: AppState, action: Action): AppState => {
                 const newNote: Note = createNewItem('note', { title, content: content, parentIds: [] });
                 return { ...state, notes: [...state.notes, newNote] };
             } else if (type === 'resource') {
-                let resourceContent = content;
-                if (content.match(/^https?:\/\//)) {
+                const newResourceData: Partial<Resource> = {};
+                if (isUrl(content)) {
                     try {
-                        const url = new URL(content);
+                        const url = new URL(content.startsWith('http') ? content : `https://${content}`);
                         let potentialTitle = url.hostname.replace('www.', '');
                         const lastDotIndex = potentialTitle.lastIndexOf('.');
                         if (lastDotIndex > 0) { // Keep single-word domains like 'localhost'
@@ -150,10 +150,12 @@ const dataReducer = (state: AppState, action: Action): AppState => {
                     } catch {
                         title = 'Link Resource';
                     }
+                    newResourceData.url = content;
                 } else {
-                    title = 'Text Resource';
+                    title = 'Text Snippet';
+                    newResourceData.content = content;
                 }
-                const newResource: Resource = createNewItem('res', { title, type: 'link', content: resourceContent, parentIds: [] });
+                const newResource: Resource = createNewItem('res', { title, ...newResourceData, parentIds: [] });
                 return { ...state, resources: [...state.resources, newResource] };
             }
             return state;
@@ -313,9 +315,14 @@ const dataReducer = (state: AppState, action: Action): AppState => {
             return { ...state, notes: [...state.notes, newNote] };
         }
         case 'UPDATE_RESOURCE': {
-            const { resourceId, title, content, tags } = action.payload;
+            const { resourceId, updates } = action.payload;
             const now = new Date().toISOString();
-            return { ...state, resources: state.resources.map(r => r.id === resourceId ? { ...r, title, content, tags, updatedAt: now } : r) };
+            return {
+                ...state,
+                resources: state.resources.map(r =>
+                    r.id === resourceId ? { ...r, ...updates, updatedAt: now } : r
+                ),
+            };
         }
         case 'UPDATE_PROJECT': {
             const { projectId, updates } = action.payload;

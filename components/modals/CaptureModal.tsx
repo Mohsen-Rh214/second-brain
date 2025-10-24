@@ -31,6 +31,8 @@ const CaptureModal: React.FC<CaptureModalProps> = ({ isOpen, onClose, onSave, pr
   const [priority, setPriority] = useState<Task['priority']>('Medium');
   const [dueDate, setDueDate] = useState('');
   const [tags, setTags] = useState<string[]>([]);
+  const [resourceUrl, setResourceUrl] = useState('');
+  const [resourceContent, setResourceContent] = useState('');
 
 
   useEffect(() => {
@@ -44,6 +46,8 @@ const CaptureModal: React.FC<CaptureModalProps> = ({ isOpen, onClose, onSave, pr
     setTitle('');
     setContent('');
     setDescription('');
+    setResourceUrl('');
+    setResourceContent('');
     setPriority('Medium');
     setDueDate('');
     setTags([]);
@@ -64,8 +68,30 @@ const CaptureModal: React.FC<CaptureModalProps> = ({ isOpen, onClose, onSave, pr
         alert('A new project must be linked to an area. If you need to create an area first, use the Command Bar (Ctrl+K).');
         return;
     }
+
+    let newItem: NewItemPayload = { title, tags };
     
-    const newItem: NewItemPayload = { title, content, description, priority, dueDate, tags };
+    switch(activeType) {
+        case 'task':
+            newItem = { ...newItem, description, priority, dueDate };
+            break;
+        case 'note':
+            newItem = { ...newItem, content };
+            break;
+        case 'project':
+        case 'area':
+            newItem = { ...newItem, description };
+            break;
+        case 'resource':
+            if (resourceUrl.trim() === '' && resourceContent.trim() === '') {
+                alert('A resource must have a URL or some content.');
+                return;
+            }
+            newItem.url = resourceUrl.trim() ? resourceUrl.trim() : undefined;
+            newItem.content = resourceContent.trim() ? resourceContent.trim() : undefined;
+            break;
+    }
+
     onSave(newItem, activeType, parentId);
   };
 
@@ -135,7 +161,7 @@ const CaptureModal: React.FC<CaptureModalProps> = ({ isOpen, onClose, onSave, pr
                     />
                 </div>
               )}
-              {(activeType === 'note' || activeType === 'resource') && (
+              {activeType === 'note' && (
                 <div>
                     <label htmlFor="item-content" className="sr-only">Content</label>
                     <textarea
@@ -143,10 +169,36 @@ const CaptureModal: React.FC<CaptureModalProps> = ({ isOpen, onClose, onSave, pr
                         value={content}
                         onChange={(e) => setContent(e.target.value)}
                         rows={5}
-                        placeholder={ activeType === 'note' ? 'Write your note here...' : 'Enter URL, file path, or text...' }
+                        placeholder="Write your note here..."
                         className="w-full bg-background/50 border border-outline rounded-lg px-3 py-2 text-text-primary focus:outline-none focus:ring-1 focus:ring-accent custom-scrollbar"
                     />
                 </div>
+              )}
+              {activeType === 'resource' && (
+                <>
+                    <div>
+                         <label htmlFor="resource-url" className="sr-only">URL</label>
+                         <input
+                            id="resource-url"
+                            type="text"
+                            value={resourceUrl}
+                            onChange={(e) => setResourceUrl(e.target.value)}
+                            placeholder="URL (Optional)"
+                            className="w-full bg-background/50 border border-outline rounded-lg px-3 py-2 text-text-primary focus:outline-none focus:ring-1 focus:ring-accent"
+                         />
+                    </div>
+                    <div>
+                        <label htmlFor="resource-notes" className="sr-only">Content / Notes</label>
+                        <textarea
+                            id="resource-notes"
+                            value={resourceContent}
+                            onChange={(e) => setResourceContent(e.target.value)}
+                            rows={4}
+                            placeholder="Content / Notes"
+                            className="w-full bg-background/50 border border-outline rounded-lg px-3 py-2 text-text-primary focus:outline-none focus:ring-1 focus:ring-accent custom-scrollbar"
+                        />
+                    </div>
+                </>
               )}
                {activeType === 'task' && (
                 <div className="grid grid-cols-2 gap-4">

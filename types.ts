@@ -52,17 +52,17 @@ export interface Note extends BaseItem {
 }
 
 export interface Resource extends BaseItem {
-  type: 'link' | 'file' | 'text';
-  content: string; // URL for link, path for file, or text content
+  url?: string; // URL for link
+  content?: string; // Main text for text resource or notes for a link
   // A resource can belong to multiple projects and/or areas.
   parentIds: string[]; // Can be project IDs or area IDs
 }
 
 export type NewItemPayload = {
     title: string;
+    url?: string;
     content?: string;
     description?: string;
-    type?: 'link' | 'file' | 'text';
     dueDate?: string;
     priority?: 'Low' | 'Medium' | 'High';
     isMyDay?: boolean;

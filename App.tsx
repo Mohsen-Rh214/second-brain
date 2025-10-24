@@ -4,7 +4,7 @@ import Sidebar from './components/layout/Sidebar';
 import Dashboard from './components/views/Dashboard';
 import CaptureModal from './components/modals/CaptureModal';
 import NoteEditorModal from './components/modals/NoteEditorModal';
-import ResourceEditorModal from './components/modals/ResourceEditorModal';
+import ResourceDetailModal from './components/modals/ResourceEditorModal';
 import ProjectView from './components/views/ProjectView';
 import AreaView from './components/views/AreaView';
 import ArchiveView from './components/views/ArchiveView';
@@ -181,10 +181,9 @@ const App: React.FC = () => {
     showToast('New draft created from note!');
   }, [dataDispatch, showToast, uiDispatch]);
 
-  const handleUpdateResource = useCallback((resourceId: string, title: string, content: string, tags: string[]) => {
-    dataDispatch({ type: 'UPDATE_RESOURCE', payload: { resourceId, title, content, tags } });
-    uiDispatch({ type: 'SET_EDITING_RESOURCE', payload: null });
-  }, [dataDispatch, uiDispatch]);
+  const handleUpdateResource = useCallback((resourceId: string, updates: Partial<Resource>) => {
+    dataDispatch({ type: 'UPDATE_RESOURCE', payload: { resourceId, updates } });
+  }, [dataDispatch]);
   
   const handleUpdateProject = useCallback((projectId: string, updates: { title?: string, description?: string, tags?: string[] }) => {
     dataDispatch({ type: 'UPDATE_PROJECT', payload: { projectId, updates } });
@@ -345,6 +344,8 @@ const App: React.FC = () => {
               onArchive={handleArchiveItem}
               onDelete={handleDeleteItem}
               onOpenCaptureModal={handleOpenCaptureModal}
+              onEditResource={(id) => uiDispatch({ type: 'SET_EDITING_RESOURCE', payload: id })}
+              onNavigate={handleNavigate}
             />
       case 'archives':
           const allItems = [...areas, ...projects, ...tasks, ...notes, ...resources];
@@ -426,7 +427,7 @@ const App: React.FC = () => {
       {isCommandBarOpen && <CommandBar isOpen={isCommandBarOpen} onClose={() => uiDispatch({ type: 'SET_COMMAND_BAR_OPEN', payload: false })} onCommand={handleCommand} areas={areas} projects={projects} notes={notes} resources={resources} tasks={tasks}/>}
       {isCaptureModalOpen && <CaptureModal isOpen={isCaptureModalOpen} onClose={() => uiDispatch({ type: 'SET_CAPTURE_MODAL', payload: { isOpen: false }})} onSave={handleSaveNewItem} projects={projects} areas={areas} context={captureContext}/>}
       {editingNote && <NoteEditorModal isOpen={!!editingNote} onClose={() => uiDispatch({ type: 'SET_EDITING_NOTE', payload: null })} note={editingNote} onSave={handleUpdateNote} onDraftFromNote={handleDraftFromNote} onSaveNewItem={handleCreateTaskFromNote} projects={projects} areas={areas} allNotes={notes} allTasks={tasks} onSelectTask={handleSelectTaskFromModal} />}
-      {editingResource && <ResourceEditorModal isOpen={!!editingResource} onClose={() => uiDispatch({ type: 'SET_EDITING_RESOURCE', payload: null })} resource={editingResource} onSave={handleUpdateResource} allTasks={tasks} onSelectTask={handleSelectTaskFromModal} />}
+      {editingResource && <ResourceDetailModal isOpen={!!editingResource} onClose={() => uiDispatch({ type: 'SET_EDITING_RESOURCE', payload: null })} resource={editingResource} onSave={handleUpdateResource} allTasks={tasks} onSelectTask={handleSelectTaskFromModal} onArchive={handleArchiveItem} onDelete={handleDeleteItem} />}
       {editingTask && <TaskDetailModal isOpen={!!editingTask} onClose={() => uiDispatch({ type: 'SET_EDITING_TASK', payload: null })} task={editingTask} onSave={handleUpdateTask} onAddSubtask={handleAddSubtask} onToggleSubtask={handleToggleTask} onDelete={handleDeleteItem} allTasks={tasks} projects={projects} notes={notes} resources={resources} />}
       {organizingItem && <OrganizeModal isOpen={!!organizingItem} onClose={() => uiDispatch({ type: 'SET_ORGANIZING_ITEM', payload: null })} item={organizingItem} projects={projects} areas={areas} onSave={handleOrganizeItem} />}
       {linkingTask && <LinkTaskModal isOpen={!!linkingTask} onClose={() => uiDispatch({ type: 'SET_LINKING_TASK', payload: null })} onLink={handleLinkTask} taskToLink={linkingTask} projects={projects} />}

@@ -158,8 +158,8 @@ export const initialResources: Resource[] = [
     {
         id: 'res-1',
         title: 'Official TypeScript Docs',
-        type: 'link',
-        content: 'https://www.typescriptlang.org/docs/',
+        url: 'https://www.typescriptlang.org/docs/',
+        content: 'The official documentation is the best place to start. Check the Utility Types section.',
         parentIds: ['proj-1'],
         createdAt: now.toISOString(),
         updatedAt: now.toISOString(),
