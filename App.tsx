@@ -423,7 +423,7 @@ const App: React.FC = () => {
         inboxCount={inboxItems.length}
       />}
       <main className={`flex-1 flex flex-col overflow-y-hidden transition-all duration-300 ease-soft ${isFocusMode ? 'p-0' : 'p-4'}`}>
-        <div className={`flex-1 overflow-y-auto ${isFocusMode ? 'p-6 md:p-8' : ''}`}>
+        <div className={`flex-1 overflow-y-auto custom-scrollbar ${isFocusMode ? 'p-6 md:p-8' : ''}`}>
           {renderView()}
         </div>
       </main>
