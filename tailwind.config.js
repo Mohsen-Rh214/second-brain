@@ -13,8 +13,8 @@ export default {
         'outline': 'rgba(139, 148, 158, 0.2)', // Soft gray outline for glass effect
         'outline-dark': 'rgba(139, 148, 158, 0.3)', // Slightly more prominent outline
 
-        'accent': '#22D3EE',              // Bright Cyan
-        'accent-hover': '#67E8F9',        // Lighter Cyan for hover
+        'accent': '#FF9F0A',              // Bright Cyan
+        'accent-hover': '#FFB340',        // Lighter Cyan for hover
         'accent-content': '#0D1117',      // Dark text on accent for contrast
 
         'secondary': 'rgba(30, 41, 59, 0.7)', // Translucent Slate-800
@@ -38,7 +38,7 @@ export default {
         // Vibrant palette for priorities
         'priority-high': '#F43F5E',        // Rose-500
         'priority-high-bg': 'rgba(244, 63, 94, 0.15)',
-        'priority-medium': '#22D3EE',      // Cyan-400
+        'priority-medium': '#FF9F0A',      // Cyan-400
         'priority-medium-bg': 'rgba(34, 211, 238, 0.15)',
         'priority-low': '#4ADE80',         // Green-400
         'priority-low-bg': 'rgba(74, 222, 128, 0.15)',

@@ -148,9 +148,11 @@ const ProjectDetail: React.FC<ProjectDetailProps> = ({ project, allTasks, tasks,
             }
         },
         onReparent: (sourceId, targetId) => onReparentTask(sourceId, targetId),
-        isReorderAllowed: (sourceTask, targetTask) => sourceTask.parentId === targetTask.parentId,
+        // FIX: Explicitly type parameters to resolve 'unknown' type error.
+        isReorderAllowed: (sourceTask: Task, targetTask: Task) => sourceTask.parentId === targetTask.parentId,
         isReparentAllowed,
-        isPromotable: (task) => !!task.parentId,
+        // FIX: Explicitly type parameter to resolve 'unknown' type error.
+        isPromotable: (task: Task) => !!task.parentId,
         onPromote: (taskId) => {
             dispatch({ type: 'PROMOTE_SUBTASK', payload: { taskId } });
         },
@@ -397,6 +399,7 @@ const ProjectDetail: React.FC<ProjectDetailProps> = ({ project, allTasks, tasks,
                                                             onArchive={onArchive}
                                                             onDelete={onDelete}
                                                             onAddSubtaskClick={() => { setAddingSubtaskTo(task.id); setNewSubtaskTitle(''); }}
+                                                            showHierarchy
                                                         />
                                                     </div>
                                                 </li>

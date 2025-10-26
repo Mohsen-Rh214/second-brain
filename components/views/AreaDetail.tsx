@@ -50,7 +50,7 @@ const ICON_LIST = [
     { name: 'social', component: <UsersIcon className="w-6 h-6" /> },
 ];
 
-const COLOR_PALETTE = ['#F43F5E', '#F97316', '#FBBF24', '#4ADE80', '#22D3EE', '#3B82F6', '#A855F7', '#EC4899'];
+const COLOR_PALETTE = ['#F43F5E', '#F97316', '#FBBF24', '#4ADE80', '#FF9F0A', '#3B82F6', '#A855F7', '#EC4899'];
 
 const StatCard: React.FC<{ icon: React.ReactElement, value: number, label: string }> = ({ icon, value, label }) => (
     <div className="bg-background/50 p-4 rounded-xl border border-outline flex items-center gap-4">

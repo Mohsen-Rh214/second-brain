@@ -69,19 +69,19 @@ body {
   color: #8E8E93 !important; /* text-secondary */
 }
 .ql-active .ql-stroke {
-  stroke: #22D3EE !important; /* accent */
+  stroke: #FF9F0A !important; /* accent */
 }
 .ql-active .ql-fill {
-  fill: #22D3EE !important; /* accent */
+  fill: #FF9F0A !important; /* accent */
 }
 .ql-active .ql-picker-label {
-  color: #22D3EE !important; /* accent */
+  color: #FF9F0A !important; /* accent */
 }
 
 /* Internal link styling in the editor */
 .ql-editor a.internal-link {
   background-color: rgba(34, 211, 238, 0.15); /* accent with alpha */
-  color: #67E8F9; /* accent hover */
+  color: #custom-scrollbar; /* accent hover */
   padding: 2px 6px;
   border-radius: 6px;
   text-decoration: none;

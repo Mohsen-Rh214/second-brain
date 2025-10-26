@@ -36,14 +36,14 @@ export const formatRelativeTime = (dateString: string): string => {
   if (!dateString) return '';
   const date = new Date(dateString);
   const now = new Date();
-  const seconds = Math.round((now.getTime() - date.getTime()) / 1000);
+  const seconds = Math.round((date.getTime() - now.getTime()) / 1000);
 
   const rtf = new Intl.RelativeTimeFormat('en', { numeric: 'auto' });
 
   for (const { unit, seconds: unitSeconds } of timeUnits) {
-    if (seconds >= unitSeconds) {
+    if (Math.abs(seconds) >= unitSeconds) {
       const value = Math.round(seconds / unitSeconds);
-      return rtf.format(-value, unit);
+      return rtf.format(value, unit);
     }
   }
   return 'just now';

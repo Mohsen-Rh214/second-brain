@@ -30,11 +30,12 @@ interface TaskItemProps {
     onArchive?: (id: string) => void;
     onDelete?: (id: string) => void;
     onAddSubtaskClick?: () => void;
+    showHierarchy?: boolean;
 }
 
 const TaskItem: React.FC<TaskItemProps> = ({ 
     task, allTasks = [], notes = [], resources = [], onToggleTask, onUpdateTask, onSelectTask, projectName, onLinkTask, isFadingOut,
-    hasSubtasks, isCollapsed, onToggleCollapse, onArchive, onDelete, onAddSubtaskClick
+    hasSubtasks, isCollapsed, onToggleCollapse, onArchive, onDelete, onAddSubtaskClick, showHierarchy = false
 }) => {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const { isEditing, value, setValue, handleEdit, handleSave, handleKeyDown, inputRef } = useEditable(task.title, (newTitle) => {
@@ -90,13 +91,13 @@ const TaskItem: React.FC<TaskItemProps> = ({
 
     return (
         <div className="flex items-center gap-3 p-2 group hover:bg-neutral rounded-lg transition-all duration-300 ease-soft">
-            {hasSubtasks && onToggleCollapse ? (
+            {showHierarchy && (hasSubtasks && onToggleCollapse ? (
                 <button onClick={onToggleCollapse} className="p-1 rounded-full hover:bg-neutral-hover text-text-secondary">
                     <ChevronDownIcon className={`w-4 h-4 transition-transform duration-200 ${isCollapsed ? '-rotate-90' : ''}`} />
                 </button>
             ) : (
                 <div className="w-6 h-6 flex-shrink-0"></div> // Placeholder for alignment
-            )}
+            ))}
             <button onClick={() => onToggleTask(task.id)} aria-label={isVisuallyCompleted ? 'Mark as incomplete' : 'Mark as complete'} className="flex-shrink-0 text-text-secondary hover:text-accent">
                 {isVisuallyCompleted ? <CheckSquareIcon className="w-5 h-5 text-accent" /> : <SquareIcon className="w-5 h-5" />}
             </button>
