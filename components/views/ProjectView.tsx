@@ -134,7 +134,6 @@ const ProjectView: React.FC<ProjectViewProps> = ({ projects, activeProjectId, on
                         onUpdateTask={onUpdateTask}
                         onUpdateTaskStage={onUpdateTaskStage}
                         onUpdateMultipleTaskStages={onUpdateMultipleTaskStages}
-                        onBack={() => onSelectProject(null)}
                     />
                 ) : (
                     <EmptyState 

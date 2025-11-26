@@ -27,6 +27,7 @@ const CommandBar: React.FC<CommandBarProps> = ({ isOpen, onClose, onCommand, are
   const [activeIndex, setActiveIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
   const resultsRef = useRef<HTMLUListElement>(null);
+  const isKeyboardNavigation = useRef(false);
 
   useEffect(() => {
     if (isOpen) {
@@ -109,12 +110,14 @@ const CommandBar: React.FC<CommandBarProps> = ({ isOpen, onClose, onCommand, are
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'ArrowDown') {
+      if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
         e.preventDefault();
-        setActiveIndex(prev => (prev + 1) % flatCommandList.length);
-      } else if (e.key === 'ArrowUp') {
-        e.preventDefault();
-        setActiveIndex(prev => (prev - 1 + flatCommandList.length) % flatCommandList.length);
+        isKeyboardNavigation.current = true;
+        setActiveIndex(prev => {
+          const nextIndex = (prev + 1) % flatCommandList.length;
+          const prevIndex = (prev - 1 + flatCommandList.length) % flatCommandList.length;
+          return e.key === 'ArrowDown' ? nextIndex : prevIndex;
+        });
       } else if (e.key === 'Enter') {
         e.preventDefault();
         if (flatCommandList[activeIndex]) {
@@ -129,7 +132,10 @@ const CommandBar: React.FC<CommandBarProps> = ({ isOpen, onClose, onCommand, are
   }, [isOpen, activeIndex, flatCommandList]);
   
   useEffect(() => {
-    resultsRef.current?.children[activeIndex]?.scrollIntoView({ block: 'nearest' });
+    if (isKeyboardNavigation.current) {
+        resultsRef.current?.children[activeIndex]?.scrollIntoView({ block: 'nearest' });
+        isKeyboardNavigation.current = false;
+    }
   }, [activeIndex]);
 
   const handleSelect = (command: Command) => {
