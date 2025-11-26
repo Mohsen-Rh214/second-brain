@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Project, Task, Note, Resource, CaptureContext, NewItemPayload, ItemType, TaskStage, ProjectViewType } from '../../types';
-import { CheckSquareIcon, FileTextIcon, LinkIcon, ResourceIcon, ListTodoIcon, LayoutGridIcon, PlusIcon } from '../shared/icons';
+import { CheckSquareIcon, FileTextIcon, LinkIcon, ResourceIcon, ListTodoIcon, LayoutGridIcon, PlusIcon, ChevronLeftIcon } from '../shared/icons';
 import Card from '../shared/Card';
 import ActionMenu from '../shared/ActionMenu';
 import TaskItem from '../shared/TaskItem';
@@ -32,9 +32,10 @@ interface ProjectDetailProps {
     onUpdateTask: (taskId: string, updates: Partial<Pick<Task, 'title' | 'priority' | 'dueDate'>>) => void;
     onUpdateTaskStage: (taskId: string, newStage: TaskStage) => void;
     onUpdateMultipleTaskStages: (taskIds: string[], newStage: TaskStage) => void;
+    onBack: () => void;
 }
 
-const ProjectDetail: React.FC<ProjectDetailProps> = ({ project, allTasks, tasks, notes, resources, onToggleTask, onArchive, onDelete, onSelectNote, onSelectTask, onUpdateProject, onOpenCaptureModal, onSaveNewItem, onAddSubtask, onReparentTask, onUpdateTask, onUpdateTaskStage, onUpdateMultipleTaskStages }) => {
+const ProjectDetail: React.FC<ProjectDetailProps> = ({ project, allTasks, tasks, notes, resources, onToggleTask, onArchive, onDelete, onSelectNote, onSelectTask, onUpdateProject, onOpenCaptureModal, onSaveNewItem, onAddSubtask, onReparentTask, onUpdateTask, onUpdateTaskStage, onUpdateMultipleTaskStages, onBack }) => {
     
     const [isAddingTask, setIsAddingTask] = useState(false);
     const [newTaskTitle, setNewTaskTitle] = useState('');
@@ -247,6 +248,10 @@ const ProjectDetail: React.FC<ProjectDetailProps> = ({ project, allTasks, tasks,
     return (
         <div>
             <header className="mb-8">
+                 <button onClick={onBack} className="md:hidden flex items-center gap-2 mb-4 text-sm text-text-secondary font-semibold">
+                    <ChevronLeftIcon className="w-5 h-5" />
+                    Back to Projects
+                </button>
                 <div className="flex justify-between items-start">
                     {isEditing ? (
                         <div className="flex-1 mr-4 space-y-4">

@@ -11,7 +11,7 @@ import ArchiveView from './components/views/ArchiveView';
 import ResourceView from './components/views/ResourceView';
 import SearchView from './components/views/SearchView';
 import OrganizeModal from './components/modals/OrganizeModal';
-import { PlusIcon } from './components/shared/icons';
+import { PlusIcon, MenuIcon } from './components/shared/icons';
 import TaskView from './components/views/TaskView';
 import ReviewView from './components/views/ReviewView';
 import GraphView from './components/views/GraphView';
@@ -33,11 +33,15 @@ const App: React.FC = () => {
   const { 
     currentView, activeAreaId, activeProjectId, isCaptureModalOpen, captureContext,
     editingNoteId, editingResourceId, editingTaskId, organizingItem, searchQuery, isCommandBarOpen, toastMessage,
-    linkingTask, confirmModal, isFocusMode
+    linkingTask, confirmModal, isFocusMode, isMobileSidebarOpen
   } = uiState;
 
     const handleOpenCaptureModal = useCallback((context: CaptureContext | null = null) => {
     uiDispatch({ type: 'SET_CAPTURE_MODAL', payload: { isOpen: true, context } });
+  }, [uiDispatch]);
+
+  const handleToggleMobileSidebar = useCallback(() => {
+    uiDispatch({ type: 'TOGGLE_MOBILE_SIDEBAR' });
   }, [uiDispatch]);
 
   useEffect(() => {
@@ -51,6 +55,8 @@ const App: React.FC = () => {
                   uiDispatch({ type: 'CLOSE_CONFIRM_MODAL' });
               } else if (isCommandBarOpen) {
                   uiDispatch({ type: 'SET_COMMAND_BAR_OPEN', payload: false });
+              } else if (isMobileSidebarOpen) {
+                  uiDispatch({ type: 'TOGGLE_MOBILE_SIDEBAR' });
               } else if (isCaptureModalOpen) {
                   uiDispatch({ type: 'SET_CAPTURE_MODAL', payload: { isOpen: false }});
               } else if (editingNoteId) {
@@ -90,7 +96,7 @@ const App: React.FC = () => {
       };
       window.addEventListener('keydown', handleKeyDown);
       return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isCommandBarOpen, isCaptureModalOpen, editingNoteId, editingResourceId, editingTaskId, organizingItem, linkingTask, confirmModal, isFocusMode, uiDispatch, handleOpenCaptureModal]);
+  }, [isCommandBarOpen, isCaptureModalOpen, editingNoteId, editingResourceId, editingTaskId, organizingItem, linkingTask, confirmModal, isFocusMode, isMobileSidebarOpen, uiDispatch, handleOpenCaptureModal]);
 
   const showToast = useCallback((message: string) => {
       uiDispatch({ type: 'SHOW_TOAST', payload: message });
@@ -417,20 +423,46 @@ const App: React.FC = () => {
 
 
   return (
-    <div className="h-screen w-screen bg-transparent text-text-primary flex overflow-hidden font-sans">
-      {!isFocusMode && <Sidebar 
-        onNavigate={handleNavigate}
-        inboxCount={inboxItems.length}
-      />}
-      <main className={`flex-1 flex flex-col overflow-y-hidden transition-all duration-300 ease-soft ${isFocusMode ? 'p-0' : 'p-4'}`}>
-        <div className={`flex-1 overflow-y-auto custom-scrollbar ${isFocusMode ? 'p-6 md:p-8' : ''}`}>
+    <div className="h-screen w-screen bg-background text-text-primary flex overflow-hidden font-sans">
+      {/* Desktop Sidebar */}
+      <div className={`hidden md:block flex-shrink-0 transition-all duration-300 ease-soft ${isFocusMode ? 'w-0' : 'w-80'}`}>
+        <div className={`h-full overflow-hidden p-4 ${isFocusMode ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
+          <Sidebar onNavigate={handleNavigate} inboxCount={inboxItems.length} />
+        </div>
+      </div>
+      
+      {/* Mobile Sidebar Overlay */}
+      <div className={`fixed inset-0 z-40 md:hidden transition-opacity duration-300 ${isMobileSidebarOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
+        <div className="absolute inset-0 bg-black/60" onClick={handleToggleMobileSidebar}></div>
+        <div className={`relative h-full w-72 bg-surface/80 backdrop-blur-xl border-r border-outline transition-transform duration-300 ${isMobileSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+            <Sidebar onNavigate={handleNavigate} inboxCount={inboxItems.length} isMobile={true}/>
+        </div>
+      </div>
+
+      <main className="flex-1 flex flex-col overflow-y-hidden">
+        {/* Mobile Header */}
+        <header className="md:hidden flex items-center justify-between p-4 border-b border-outline-dark flex-shrink-0">
+            <button onClick={handleToggleMobileSidebar} className="p-2 -ml-2 text-text-secondary">
+                <MenuIcon className="w-6 h-6" />
+            </button>
+            <h1 className="text-lg font-bold capitalize">{currentView}</h1>
+            <button 
+                onClick={() => uiDispatch({ type: 'SET_COMMAND_BAR_OPEN', payload: true })} 
+                className="p-2 -mr-2 text-text-secondary"
+                aria-label="Open command bar"
+            >
+                <PlusIcon className="w-6 h-6"/>
+            </button>
+        </header>
+        
+        <div className={`flex-1 overflow-y-auto custom-scrollbar ${isFocusMode ? 'p-6 md:p-8' : 'p-4 md:p-6'}`}>
           {renderView()}
         </div>
       </main>
 
       <button 
         onClick={() => uiDispatch({ type: 'SET_COMMAND_BAR_OPEN', payload: true })} 
-        className="absolute bottom-8 right-8 bg-accent hover:bg-accent-hover text-accent-content p-4 rounded-full shadow-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-background focus:ring-accent-hover transition-transform duration-300 ease-soft active:scale-95"
+        className="hidden md:flex absolute bottom-8 right-8 bg-accent hover:bg-accent-hover text-accent-content p-4 rounded-full shadow-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-background focus:ring-accent-hover transition-transform duration-300 ease-soft active:scale-95"
         aria-label="Open command bar"
         >
         <PlusIcon className="w-6 h-6"/>

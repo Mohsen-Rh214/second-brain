@@ -26,6 +26,7 @@ interface UIState {
     draggedItemId: string | null;
     draggedItemType: ItemType | null;
     isFocusMode: boolean;
+    isMobileSidebarOpen: boolean;
 }
 
 type UIAction =
@@ -44,7 +45,8 @@ type UIAction =
     | { type: 'OPEN_CONFIRM_MODAL'; payload: ConfirmModalState }
     | { type: 'CLOSE_CONFIRM_MODAL' }
     | { type: 'SET_DRAGGED_ITEM'; payload: { id: string | null, type: ItemType | null } }
-    | { type: 'TOGGLE_FOCUS_MODE' };
+    | { type: 'TOGGLE_FOCUS_MODE' }
+    | { type: 'TOGGLE_MOBILE_SIDEBAR' };
 
 const initialState: UIState = {
     currentView: 'dashboard',
@@ -64,6 +66,7 @@ const initialState: UIState = {
     draggedItemId: null,
     draggedItemType: null,
     isFocusMode: false,
+    isMobileSidebarOpen: false,
 };
 
 const uiReducer = (state: UIState, action: UIAction): UIState => {
@@ -109,6 +112,8 @@ const uiReducer = (state: UIState, action: UIAction): UIState => {
             return { ...state, draggedItemId: action.payload.id, draggedItemType: action.payload.type };
         case 'TOGGLE_FOCUS_MODE':
             return { ...state, isFocusMode: !state.isFocusMode };
+        case 'TOGGLE_MOBILE_SIDEBAR':
+            return { ...state, isMobileSidebarOpen: !state.isMobileSidebarOpen };
         default:
             return state;
     }

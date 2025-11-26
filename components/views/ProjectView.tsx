@@ -64,8 +64,8 @@ const ProjectView: React.FC<ProjectViewProps> = ({ projects, activeProjectId, on
     };
 
     return (
-        <div className="flex h-full gap-8">
-            <aside className="w-1/3 max-w-sm h-full flex flex-col bg-surface/80 backdrop-blur-xl border border-outline rounded-2xl shadow-md">
+        <div className="flex flex-col md:flex-row h-full md:gap-8">
+            <aside className={`w-full md:w-1/3 md:max-w-sm h-full flex flex-col bg-surface/80 backdrop-blur-xl border border-outline rounded-2xl shadow-md ${activeProjectId ? 'hidden md:flex' : 'flex'}`}>
                 <header className="p-4 border-b border-outline-dark flex-shrink-0 flex items-center justify-between">
                     <h2 className="text-lg font-bold font-heading tracking-tight">Projects</h2>
                      <button 
@@ -113,7 +113,7 @@ const ProjectView: React.FC<ProjectViewProps> = ({ projects, activeProjectId, on
                     })}
                 </ul>
             </aside>
-            <section className="flex-1 overflow-y-auto custom-scrollbar">
+            <section className={`flex-1 overflow-y-auto custom-scrollbar ${activeProjectId ? 'block' : 'hidden md:block'}`}>
                 {selectedProject ? (
                     <ProjectDetail 
                         project={selectedProject}
@@ -134,6 +134,7 @@ const ProjectView: React.FC<ProjectViewProps> = ({ projects, activeProjectId, on
                         onUpdateTask={onUpdateTask}
                         onUpdateTaskStage={onUpdateTaskStage}
                         onUpdateMultipleTaskStages={onUpdateMultipleTaskStages}
+                        onBack={() => onSelectProject(null)}
                     />
                 ) : (
                     <EmptyState 

@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Area, Project, Note, Resource, Task } from '../../types';
 import AreaDetail from './AreaDetail';
-import { AreaIcon, PlusIcon, BriefcaseIcon, HeartIcon, BookOpenIcon, DollarSignIcon, UsersIcon, BrainCircuitIcon } from '../shared/icons';
+import { AreaIcon, PlusIcon, BriefcaseIcon, HeartIcon, BookOpenIcon, DollarSignIcon, UsersIcon, BrainCircuitIcon, ChevronLeftIcon } from '../shared/icons';
 import { CaptureContext } from '../../types';
 import { View } from '../../types';
 import EmptyState from '../shared/EmptyState';
@@ -104,65 +104,63 @@ const AreaView: React.FC<AreaViewProps> = ({ areas, activeAreaId, onSelectArea, 
     };
 
     return (
-        <div className="flex h-full gap-8">
-            {!isFocusMode && (
-                <aside className="w-1/3 max-w-sm h-full flex flex-col bg-surface/80 backdrop-blur-xl border border-outline rounded-2xl shadow-md">
-                    <header className="p-4 border-b border-outline-dark flex-shrink-0 flex items-center justify-between">
-                        <h2 className="text-lg font-bold font-heading tracking-tight">Areas</h2>
-                        <button 
-                            onClick={handleAddNewArea} 
-                            aria-label="Add new area" 
-                            className="p-1.5 text-text-secondary hover:bg-neutral hover:text-text-primary rounded-full transition-colors active:scale-95"
+        <div className="flex flex-col md:flex-row h-full md:gap-8">
+            <aside className={`w-full md:w-1/3 md:max-w-sm h-full flex flex-col bg-surface/80 backdrop-blur-xl border border-outline rounded-2xl shadow-md ${activeAreaId && !isFocusMode ? 'hidden md:flex' : 'flex'}`}>
+                <header className="p-4 border-b border-outline-dark flex-shrink-0 flex items-center justify-between">
+                    <h2 className="text-lg font-bold font-heading tracking-tight">Areas</h2>
+                    <button 
+                        onClick={handleAddNewArea} 
+                        aria-label="Add new area" 
+                        className="p-1.5 text-text-secondary hover:bg-neutral hover:text-text-primary rounded-full transition-colors active:scale-95"
+                    >
+                        <PlusIcon className="w-5 h-5"/>
+                    </button>
+                </header>
+                <ul className="flex-1 overflow-y-auto custom-scrollbar p-2" {...getContainerProps()}>
+                    {areas.map(area => (
+                        <li 
+                            key={area.id}
+                            {...getDragAndDropProps(area.id)}
+                            onDragOver={(e) => handleDragOver(e, area.id)}
+                            onDragLeave={handleDragLeave}
+                            onDrop={(e) => handleDrop(e, area.id)}
+                            className={`relative cursor-grab rounded-xl transition-all duration-300 group ${draggedId === area.id ? 'opacity-30' : ''} ${dropTargetAreaId === area.id ? 'ring-2 ring-accent ring-inset' : ''}`}
                         >
-                            <PlusIcon className="w-5 h-5"/>
-                        </button>
-                    </header>
-                    <ul className="flex-1 overflow-y-auto custom-scrollbar p-2" {...getContainerProps()}>
-                        {areas.map(area => (
-                            <li 
-                                key={area.id}
-                                {...getDragAndDropProps(area.id)}
-                                onDragOver={(e) => handleDragOver(e, area.id)}
-                                onDragLeave={handleDragLeave}
-                                onDrop={(e) => handleDrop(e, area.id)}
-                                className={`relative cursor-grab rounded-xl transition-all duration-300 group ${draggedId === area.id ? 'opacity-30' : ''} ${dropTargetAreaId === area.id ? 'ring-2 ring-accent ring-inset' : ''}`}
+                            {dropAction?.type === 'REORDER' && dropAction.targetId === area.id && (
+                                <div className="absolute -top-1 left-2 right-2 h-0.5 bg-accent rounded-full" />
+                            )}
+                            <button
+                                onClick={() => onSelectArea(area.id)}
+                                className={`w-full text-left p-3 mb-1 transition-all duration-200 rounded-xl border-l-4 ${
+                                    activeAreaId === area.id 
+                                    ? 'bg-neutral' 
+                                    : 'border-transparent hover:bg-neutral'
+                                }`}
+                                style={{ borderColor: activeAreaId === area.id ? area.color : 'transparent' }}
                             >
-                                {dropAction?.type === 'REORDER' && dropAction.targetId === area.id && (
-                                    <div className="absolute -top-1 left-2 right-2 h-0.5 bg-accent rounded-full" />
-                                )}
-                                <button
-                                    onClick={() => onSelectArea(area.id)}
-                                    className={`w-full text-left p-3 mb-1 transition-all duration-200 rounded-xl border-l-4 ${
-                                        activeAreaId === area.id 
-                                        ? 'bg-neutral' 
-                                        : 'border-transparent hover:bg-neutral'
-                                    }`}
-                                    style={{ borderColor: activeAreaId === area.id ? area.color : 'transparent' }}
-                                >
-                                    <div className="flex items-center gap-3">
-                                        <div style={{ color: area.color || 'currentColor' }}>
-                                            {getIconByName(area.icon || 'default', 'w-5 h-5 flex-shrink-0')}
-                                        </div>
-                                        <div className="flex-1 min-w-0">
-                                            <h3 className="font-semibold text-text-primary truncate">{area.title}</h3>
-                                            <p className="text-xs text-text-secondary truncate">{area.description}</p>
-                                            <TagList tags={area.tags} className="mt-2" />
-                                        </div>
+                                <div className="flex items-center gap-3">
+                                    <div style={{ color: area.color || 'currentColor' }}>
+                                        {getIconByName(area.icon || 'default', 'w-5 h-5 flex-shrink-0')}
                                     </div>
-                                </button>
-                                <button
-                                    onClick={(e) => handleQuickAdd(e, area.id)}
-                                    aria-label={`Quick add to ${area.title}`}
-                                    className="absolute top-1/2 -translate-y-1/2 right-2 p-1.5 bg-secondary hover:bg-secondary-hover rounded-full text-secondary-content opacity-0 group-hover:opacity-100 focus:opacity-100 transition-all duration-200"
-                                >
-                                    <PlusIcon className="w-4 h-4" />
-                                </button>
-                            </li>
-                        ))}
-                    </ul>
-                </aside>
-            )}
-            <section className="flex-1 overflow-y-auto custom-scrollbar">
+                                    <div className="flex-1 min-w-0">
+                                        <h3 className="font-semibold text-text-primary truncate">{area.title}</h3>
+                                        <p className="text-xs text-text-secondary truncate">{area.description}</p>
+                                        <TagList tags={area.tags} className="mt-2" />
+                                    </div>
+                                </div>
+                            </button>
+                            <button
+                                onClick={(e) => handleQuickAdd(e, area.id)}
+                                aria-label={`Quick add to ${area.title}`}
+                                className="absolute top-1/2 -translate-y-1/2 right-2 p-1.5 bg-secondary hover:bg-secondary-hover rounded-full text-secondary-content opacity-0 group-hover:opacity-100 focus:opacity-100 transition-all duration-200"
+                            >
+                                <PlusIcon className="w-4 h-4" />
+                            </button>
+                        </li>
+                    ))}
+                </ul>
+            </aside>
+            <section className={`flex-1 overflow-y-auto custom-scrollbar ${activeAreaId ? 'block' : 'hidden md:block'}`}>
                 {selectedArea ? (
                     <AreaDetail
                         area={selectedArea}

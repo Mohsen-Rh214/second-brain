@@ -201,7 +201,7 @@ const CaptureModal: React.FC<CaptureModalProps> = ({ isOpen, onClose, onSave, pr
                 </>
               )}
                {activeType === 'task' && (
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                          <label htmlFor="task-priority" className="block text-sm font-medium text-text-secondary mb-2">Priority</label>
                          <select

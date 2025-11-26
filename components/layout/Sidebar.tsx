@@ -6,6 +6,7 @@ import { useUI } from '../../store/UIContext';
 interface SidebarProps {
   onNavigate: (view: View) => void;
   inboxCount: number;
+  isMobile?: boolean;
 }
 
 const navItems: { view: View; label: string; icon: React.ReactElement }[] = [
@@ -14,8 +15,8 @@ const navItems: { view: View; label: string; icon: React.ReactElement }[] = [
 ];
 
 const libraryItems: { view: View; label: string; icon: React.ReactElement }[] = [
-    { view: 'projects', label: 'Projects', icon: <ProjectIcon className="w-5 h-5" /> },
   { view: 'areas', label: 'Areas', icon: <AreaIcon className="w-5 h-5" /> },
+  { view: 'projects', label: 'Projects', icon: <ProjectIcon className="w-5 h-5" /> },
   { view: 'calendar', label: 'Calendar', icon: <CalendarIcon className="w-5 h-5" /> },
   { view: 'resources', label: 'Resources', icon: <ResourceIcon className="w-5 h-5" /> },
   { view: 'archives', label: 'Archives', icon: <ArchiveIcon className="w-5 h-5" /> },
@@ -55,12 +56,19 @@ const NavItem = React.memo(function NavItem({ isActive, onClick, icon, label, ba
     );
 });
 
-const Sidebar: React.FC<SidebarProps> = ({ onNavigate, inboxCount }) => {
+const Sidebar: React.FC<SidebarProps> = ({ onNavigate, inboxCount, isMobile = false }) => {
     const { state: uiState, dispatch: uiDispatch } = useUI();
     const { currentView, searchQuery } = uiState;
 
+    const handleNavigation = (view: View) => {
+        onNavigate(view);
+        if (isMobile) {
+            uiDispatch({ type: 'TOGGLE_MOBILE_SIDEBAR' });
+        }
+    };
+
     return (
-        <aside className="w-72 h-[calc(100vh-2rem)] m-4 flex-shrink-0 flex flex-col bg-surface/80 backdrop-blur-xl border border-outline rounded-2xl shadow-md">
+        <aside className="w-72 h-full flex flex-col bg-surface/80 backdrop-blur-xl border border-outline rounded-2xl shadow-md">
             <header className="flex items-center gap-3 p-4 border-b border-outline-dark">
                 <BrainIcon className="w-7 h-7 text-accent" />
                 <h1 className="text-xl font-bold font-heading text-text-primary tracking-tight">Second Brain</h1>
@@ -87,7 +95,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigate, inboxCount }) => {
                             <NavItem
                                 key={item.view}
                                 isActive={currentView === item.view}
-                                onClick={() => onNavigate(item.view)}
+                                onClick={() => handleNavigation(item.view)}
                                 icon={item.icon}
                                 label={item.label}
                                 badgeCount={item.view === 'dashboard' ? inboxCount : undefined}
@@ -102,7 +110,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigate, inboxCount }) => {
                             <NavItem
                                 key={item.view}
                                 isActive={currentView === item.view}
-                                onClick={() => onNavigate(item.view)}
+                                onClick={() => handleNavigation(item.view)}
                                 icon={item.icon}
                                 label={item.label}
                             />
@@ -115,7 +123,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigate, inboxCount }) => {
                 <ul className="space-y-1">
                     <NavItem
                         isActive={currentView === 'settings'}
-                        onClick={() => onNavigate('settings')}
+                        onClick={() => handleNavigation('settings')}
                         icon={<SettingsIcon className="w-5 h-5" />}
                         label="Settings"
                     />

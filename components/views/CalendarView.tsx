@@ -16,6 +16,7 @@ const priorityClasses: Record<string, string> = {
 
 const CalendarView: React.FC<CalendarViewProps> = ({ tasks, projects, onNavigate }) => {
     const [currentDate, setCurrentDate] = useState(new Date());
+    const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
     const tasksByDate = useMemo(() => {
         const map = new Map<string, Task[]>();
@@ -69,7 +70,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({ tasks, projects, onNavigate
 
     return (
         <div className="flex flex-col h-full">
-            <header className="mb-8 flex justify-between items-center">
+            <header className="mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div>
                     <h1 className="text-3xl font-bold font-heading">{currentDate.toLocaleString('default', { month: 'long', year: 'numeric' })}</h1>
                     <p className="text-text-secondary">A monthly overview of your tasks.</p>
@@ -84,8 +85,11 @@ const CalendarView: React.FC<CalendarViewProps> = ({ tasks, projects, onNavigate
             </header>
 
             <div className="grid grid-cols-7 gap-px text-center text-sm font-semibold text-text-secondary bg-outline-dark border border-outline-dark rounded-t-lg overflow-hidden">
-                {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
-                    <div key={day} className="py-2 bg-surface">{day}</div>
+                {dayNames.map(dayName => (
+                    <div key={dayName} className="py-2 bg-surface">
+                        <span className="hidden sm:inline">{dayName}</span>
+                        <span className="sm:hidden">{dayName.charAt(0)}</span>
+                    </div>
                 ))}
             </div>
             <div className="grid grid-cols-7 grid-rows-6 gap-px flex-1 bg-outline-dark border-l border-r border-b border-outline-dark rounded-b-lg overflow-hidden">
@@ -96,27 +100,22 @@ const CalendarView: React.FC<CalendarViewProps> = ({ tasks, projects, onNavigate
                     const isCurrentMonth = day.getMonth() === currentDate.getMonth();
 
                     return (
-                        <div key={dateKey} className={`relative p-2 bg-surface flex flex-col ${isCurrentMonth ? '' : 'bg-background/50'}`}>
-                            <span className={`mb-1 ${isToday ? 'bg-accent text-accent-content rounded-full w-6 h-6 flex items-center justify-center font-bold' : ''} ${isCurrentMonth ? '' : 'text-text-tertiary'}`}>
-                                {day.getDate()}
-                            </span>
-                            <ul className="space-y-1 overflow-y-auto custom-scrollbar flex-1 -mx-1 px-1">
+                        // FIX: Corrected corrupted className and added missing closing tags and component structure.
+                        <div key={dateKey} className={`relative p-2 bg-surface flex flex-col ${isCurrentMonth ? '' : 'bg-background/30'}`}>
+                            <span className={`absolute top-2 right-2 text-xs font-bold ${isToday ? 'bg-accent text-accent-content rounded-full w-6 h-6 flex items-center justify-center' : 'text-text-secondary'}`}>{day.getDate()}</span>
+                            <div className="mt-8 space-y-1 overflow-y-auto custom-scrollbar -mr-2 pr-2">
                                 {dayTasks.map(task => (
-                                    <li key={task.id}>
-                                        <button 
-                                            onClick={() => handleTaskClick(task)}
-                                            className="w-full text-left text-xs p-1 rounded-md bg-secondary hover:bg-secondary-hover transition-colors"
-                                        >
-                                            <div className="flex items-center gap-1.5">
-                                                <span className={`w-1.5 h-1.5 rounded-full ${priorityClasses[task.priority || 'Medium'] || 'bg-text-tertiary'}`}></span>
-                                                <span className="truncate">{task.title}</span>
-                                            </div>
-                                        </button>
-                                    </li>
+                                    <button 
+                                        key={task.id}
+                                        onClick={() => handleTaskClick(task)}
+                                        className={`w-full text-left p-1.5 rounded-md text-xs font-semibold ${priorityClasses[task.priority || 'Low'] || 'bg-secondary'}`}
+                                    >
+                                        <p className="truncate text-white">{task.title}</p>
+                                    </button>
                                 ))}
-                            </ul>
+                            </div>
                         </div>
-                    )
+                    );
                 })}
             </div>
         </div>

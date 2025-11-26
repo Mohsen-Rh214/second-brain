@@ -129,8 +129,8 @@ const TaskView: React.FC<TaskViewProps> = ({ tasks, projects, onToggleTask, onSe
                 <p className="text-text-secondary">A complete list of all your active tasks.</p>
             </header>
 
-            <div className="mb-6 flex items-center justify-between sticky top-0 bg-background/80 backdrop-blur-sm py-4 z-10">
-                <div className="flex items-center gap-4">
+            <div className="mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sticky top-0 bg-background/80 backdrop-blur-sm py-4 z-10">
+                <div className="flex items-center gap-2 sm:gap-4">
                     <span className="text-sm font-medium text-text-secondary">Group by:</span>
                     <div className="flex gap-2">
                         {(['project', 'priority', 'dueDate'] as GroupBy[]).map(option => (

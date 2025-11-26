@@ -187,12 +187,12 @@ const ResourceView: React.FC<ResourceViewProps> = ({ resources, projects, areas,
     return (
         <div>
             <style>{customCSS}</style>
-            <header className="mb-8 flex justify-between items-start">
+            <header className="mb-8 flex flex-col sm:flex-row justify-between items-start gap-4">
                 <div>
                     <h1 className="text-3xl font-bold font-heading">Resources</h1>
                     <p className="text-text-secondary">Your personal library of links, files, and text snippets.</p>
                 </div>
-                 <div className="flex items-center gap-4">
+                 <div className="flex items-center gap-2 sm:gap-4 flex-wrap">
                     <FilterSortControls
                         tags={allTags}
                         sortOptions={resourceSortOptions}

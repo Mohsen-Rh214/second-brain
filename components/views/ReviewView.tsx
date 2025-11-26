@@ -132,7 +132,7 @@ const ReviewView: React.FC<ReviewViewProps> = ({ inboxCount, projects, areas, ta
                             const isActive = index === activeStepIndex;
                             return (
                                 <li key={step.id} className="flex items-center gap-3">
-                                    <span className={`w-8 h-8 flex items-center justify-center font-bold text-sm rounded-full transition-colors ${
+                                    <span className={`w-8 h-8 flex items-center justify-center font-bold text-sm rounded-full transition-colors flex-shrink-0 ${
                                         isActive ? 'bg-accent text-accent-content' : isCompleted ? 'bg-surface text-text-primary border border-outline-dark' : 'bg-surface text-text-secondary border border-outline-dark'
                                     }`}>
                                         {isCompleted ? '✓' : index + 1}

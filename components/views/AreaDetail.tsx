@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Area, Project, Note, Resource, View, CaptureContext, Task } from '../../types';
-import { ProjectIcon, FileTextIcon, ResourceIcon, LinkIcon, AreaIcon, BriefcaseIcon, HeartIcon, BookOpenIcon, DollarSignIcon, UsersIcon, BrainCircuitIcon, ListTodoIcon, CalendarIcon, MaximizeIcon, MinimizeIcon } from '../shared/icons';
+import { ProjectIcon, FileTextIcon, ResourceIcon, LinkIcon, AreaIcon, BriefcaseIcon, HeartIcon, BookOpenIcon, DollarSignIcon, UsersIcon, BrainCircuitIcon, ListTodoIcon, CalendarIcon, MaximizeIcon, MinimizeIcon, ChevronLeftIcon } from '../shared/icons';
 import Card from '../shared/Card';
 import ActionMenu from '../shared/ActionMenu';
 import ProgressBar from '../shared/ProgressBar';

@@ -182,7 +182,7 @@ const Dashboard: React.FC<DashboardProps> = ({ projects, areas, tasks, inboxItem
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           <div
-            className="h-[400px]"
+            className="min-h-[350px] lg:min-h-[400px]"
             onDragOver={(e) => {
                 if (draggedItemType === 'task') {
                     e.preventDefault();
@@ -284,10 +284,10 @@ const Dashboard: React.FC<DashboardProps> = ({ projects, areas, tasks, inboxItem
                 )}
             </Card>
           </div>
-          <div className="h-[400px]">
+          <div className="min-h-[350px] lg:min-h-[400px]">
              <CaptureCard onCapture={onDashboardCapture} />
           </div>
-          <div className="h-[400px]">
+          <div className="min-h-[350px] lg:min-h-[400px]">
             <Card icon={<InboxIcon className="w-6 h-6" />} title="Inbox">
                 {inboxItems.length > 0 ? (
                     <ul className="space-y-2">
@@ -322,7 +322,7 @@ const Dashboard: React.FC<DashboardProps> = ({ projects, areas, tasks, inboxItem
                 )}
             </Card>
           </div>
-           <div className="h-[400px]">
+           <div className="min-h-[350px] lg:min-h-[400px]">
             <Card icon={<CalendarIcon className="w-6 h-6" />} title="Upcoming">
                 {upcomingTasks.length > 0 ? (
                     <ul className="space-y-2">
@@ -343,7 +343,7 @@ const Dashboard: React.FC<DashboardProps> = ({ projects, areas, tasks, inboxItem
                 )}
             </Card>
           </div>
-          <div className="h-[400px]">
+          <div className="min-h-[350px] lg:min-h-[400px]">
              <Card icon={<ProjectIcon className="w-6 h-6" />} title="Recent Projects">
                  {recentProjects.length > 0 ? (
                     <ul className="space-y-2">
@@ -374,7 +374,7 @@ const Dashboard: React.FC<DashboardProps> = ({ projects, areas, tasks, inboxItem
                 ) : ( <p className="text-sm text-text-tertiary text-center py-2">No active projects yet.</p> )}
             </Card>
           </div>
-          <div className="h-[400px]">
+          <div className="min-h-[350px] lg:min-h-[400px]">
             <Card icon={<AreaIcon className="w-6 h-6" />} title="Recent Areas">
                 {recentAreas.length > 0 ? (
                     <ul className="space-y-2">
