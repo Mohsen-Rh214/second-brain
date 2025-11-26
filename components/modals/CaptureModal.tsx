@@ -210,9 +210,9 @@ const CaptureModal: React.FC<CaptureModalProps> = ({ isOpen, onClose, onSave, pr
                             onChange={(e) => setPriority(e.target.value as Task['priority'])}
                             className="w-full bg-background/50 border border-outline rounded-lg px-3 py-2 text-text-primary focus:outline-none focus:ring-1 focus:ring-accent"
                          >
-                            <option>Low</option>
-                            <option>Medium</option>
-                            <option>High</option>
+                            <option className="text-black bg-white">Low</option>
+                            <option className="text-black bg-white">Medium</option>
+                            <option className="text-black bg-white">High</option>
                          </select>
                     </div>
                      <div>
@@ -238,9 +238,9 @@ const CaptureModal: React.FC<CaptureModalProps> = ({ isOpen, onClose, onSave, pr
                         onChange={(e) => setParentId(e.target.value || null)}
                         className={`w-full bg-background/50 border border-outline rounded-lg px-3 py-2 text-text-primary focus:outline-none focus:ring-1 focus:ring-accent`}
                     >
-                        <option value="">None</option>
+                        <option value="" className="text-black bg-white">None</option>
                         {filteredParentOptions.map(opt => (
-                            <option key={opt.value} value={opt.value}>{opt.label}</option>
+                            <option key={opt.value} value={opt.value} className="text-black bg-white">{opt.label}</option>
                         ))}
                     </select>
                 </div>

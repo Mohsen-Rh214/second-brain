@@ -100,7 +100,6 @@ const CalendarView: React.FC<CalendarViewProps> = ({ tasks, projects, onNavigate
                     const isCurrentMonth = day.getMonth() === currentDate.getMonth();
 
                     return (
-                        // FIX: Corrected corrupted className and added missing closing tags and component structure.
                         <div key={dateKey} className={`relative p-2 bg-surface flex flex-col ${isCurrentMonth ? '' : 'bg-background/30'}`}>
                             <span className={`absolute top-2 right-2 text-xs font-bold ${isToday ? 'bg-accent text-accent-content rounded-full w-6 h-6 flex items-center justify-center' : 'text-text-secondary'}`}>{day.getDate()}</span>
                             <div className="mt-8 space-y-1 overflow-y-auto custom-scrollbar -mr-2 pr-2">
