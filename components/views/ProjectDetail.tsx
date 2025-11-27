@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Project, Task, Note, Resource, CaptureContext, NewItemPayload, ItemType, TaskStage, ProjectViewType } from '../../types';
-import { CheckSquareIcon, FileTextIcon, LinkIcon, ResourceIcon, ListTodoIcon, LayoutGridIcon, PlusIcon } from '../shared/icons';
+import { CheckSquareIcon, FileTextIcon, LinkIcon, ResourceIcon, ListTodoIcon, LayoutGridIcon, PlusIcon, ChevronLeftIcon } from '../shared/icons';
 import Card from '../shared/Card';
 import ActionMenu from '../shared/ActionMenu';
 import TaskItem from '../shared/TaskItem';
@@ -32,9 +32,10 @@ interface ProjectDetailProps {
     onUpdateTask: (taskId: string, updates: Partial<Pick<Task, 'title' | 'priority' | 'dueDate'>>) => void;
     onUpdateTaskStage: (taskId: string, newStage: TaskStage) => void;
     onUpdateMultipleTaskStages: (taskIds: string[], newStage: TaskStage) => void;
+    onBack: () => void;
 }
 
-const ProjectDetail: React.FC<ProjectDetailProps> = ({ project, allTasks, tasks, notes, resources, onToggleTask, onArchive, onDelete, onSelectNote, onSelectTask, onUpdateProject, onOpenCaptureModal, onSaveNewItem, onAddSubtask, onReparentTask, onUpdateTask, onUpdateTaskStage, onUpdateMultipleTaskStages }) => {
+const ProjectDetail: React.FC<ProjectDetailProps> = ({ project, allTasks, tasks, notes, resources, onToggleTask, onArchive, onDelete, onSelectNote, onSelectTask, onUpdateProject, onOpenCaptureModal, onSaveNewItem, onAddSubtask, onReparentTask, onUpdateTask, onUpdateTaskStage, onUpdateMultipleTaskStages, onBack }) => {
     
     const [isAddingTask, setIsAddingTask] = useState(false);
     const [newTaskTitle, setNewTaskTitle] = useState('');
@@ -245,44 +246,49 @@ const ProjectDetail: React.FC<ProjectDetailProps> = ({ project, allTasks, tasks,
         <div>
             <header className="mb-8">
                 <div className="flex justify-between items-start">
-                    {isEditing ? (
-                        <div className="flex-1 mr-4 space-y-4">
-                            <div>
-                                <label htmlFor="project-title" className="sr-only">Title</label>
-                                <input
-                                    id="project-title"
-                                    type="text"
-                                    value={titleEditor.value}
-                                    onChange={(e) => titleEditor.setValue(e.target.value)}
-                                    className="w-full bg-background/50 border border-outline rounded-lg px-3 py-2 text-4xl font-bold text-text-primary focus:outline-none focus:ring-1 focus:ring-accent font-heading tracking-tight"
-                                />
+                     <div className="flex-1 flex items-start gap-2">
+                        <button onClick={onBack} className="md:hidden p-2 -ml-2 text-text-secondary hover:text-text-primary">
+                            <ChevronLeftIcon className="w-6 h-6" />
+                        </button>
+                        {isEditing ? (
+                            <div className="flex-1 space-y-4">
+                                <div>
+                                    <label htmlFor="project-title" className="sr-only">Title</label>
+                                    <input
+                                        id="project-title"
+                                        type="text"
+                                        value={titleEditor.value}
+                                        onChange={(e) => titleEditor.setValue(e.target.value)}
+                                        className="w-full bg-background/50 border border-outline rounded-lg px-3 py-2 text-4xl font-bold text-text-primary focus:outline-none focus:ring-1 focus:ring-accent font-heading tracking-tight"
+                                    />
+                                </div>
+                                <div>
+                                    <label htmlFor="project-description" className="sr-only">Description</label>
+                                     <textarea
+                                        id="project-description"
+                                        value={descriptionEditor.value}
+                                        onChange={(e) => descriptionEditor.setValue(e.target.value)}
+                                        rows={3}
+                                        className="w-full bg-background/50 border border-outline rounded-lg px-3 py-2 text-text-secondary focus:outline-none focus:ring-1 focus:ring-accent custom-scrollbar max-w-prose"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-text-secondary mb-2">Tags</label>
+                                    <TagInput tags={tags} onTagsChange={setTags} />
+                                </div>
+                                 <div className="flex gap-2 mt-2">
+                                    <button onClick={handleSave} className="px-3 py-1.5 text-sm bg-accent hover:bg-accent-hover text-accent-content transition-all rounded-lg active:scale-95">Save</button>
+                                    <button onClick={handleCancel} className="px-3 py-1.5 text-sm bg-secondary hover:bg-secondary-hover text-secondary-content transition-all rounded-lg active:scale-95">Cancel</button>
+                                </div>
                             </div>
-                            <div>
-                                <label htmlFor="project-description" className="sr-only">Description</label>
-                                 <textarea
-                                    id="project-description"
-                                    value={descriptionEditor.value}
-                                    onChange={(e) => descriptionEditor.setValue(e.target.value)}
-                                    rows={3}
-                                    className="w-full bg-background/50 border border-outline rounded-lg px-3 py-2 text-text-secondary focus:outline-none focus:ring-1 focus:ring-accent custom-scrollbar max-w-prose"
-                                />
+                        ) : (
+                             <div className="flex-1">
+                                <h1 className="text-4xl font-bold mb-2 font-heading tracking-tight">{project.title}</h1>
+                                <p className="text-text-secondary max-w-prose mb-4">{project.description}</p>
+                                <TagList tags={project.tags} />
                             </div>
-                            <div>
-                                <label className="block text-sm font-medium text-text-secondary mb-2">Tags</label>
-                                <TagInput tags={tags} onTagsChange={setTags} />
-                            </div>
-                             <div className="flex gap-2 mt-2">
-                                <button onClick={handleSave} className="px-3 py-1.5 text-sm bg-accent hover:bg-accent-hover text-accent-content transition-all rounded-lg active:scale-95">Save</button>
-                                <button onClick={handleCancel} className="px-3 py-1.5 text-sm bg-secondary hover:bg-secondary-hover text-secondary-content transition-all rounded-lg active:scale-95">Cancel</button>
-                            </div>
-                        </div>
-                    ) : (
-                         <div>
-                            <h1 className="text-4xl font-bold mb-2 font-heading tracking-tight">{project.title}</h1>
-                            <p className="text-text-secondary max-w-prose mb-4">{project.description}</p>
-                            <TagList tags={project.tags} />
-                        </div>
-                    )}
+                        )}
+                    </div>
                     <div className="flex-shrink-0 ml-4">
                        <ActionMenu 
                           isOpen={isMenuOpen}

@@ -115,7 +115,7 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ isOpen, onClose, onSa
           </header>
           
           <div className="flex-1 overflow-y-auto custom-scrollbar p-6 space-y-6">
-              <div className="grid grid-cols-3 gap-4 text-sm">
+              <div className="flex flex-col gap-4 text-sm">
                   <div className="flex items-center gap-2 bg-background/50 p-2 rounded-lg border border-outline">
                       <ProjectIcon className="w-4 h-4 text-text-secondary"/>
                       <span className="text-text-secondary">Project:</span>
@@ -125,9 +125,9 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ isOpen, onClose, onSa
                       <FlagIcon className="w-4 h-4 text-text-secondary"/>
                       <span className="text-text-secondary">Priority:</span>
                        <select value={priority || 'Medium'} onChange={(e) => setPriority(e.target.value as Task['priority'])} className="bg-transparent font-semibold focus:outline-none">
-                          <option>Low</option>
-                          <option>Medium</option>
-                          <option>High</option>
+                          <option className="text-black bg-white">Low</option>
+                          <option className="text-black bg-white">Medium</option>
+                          <option className="text-black bg-white">High</option>
                       </select>
                   </div>
                    <div className="flex items-center gap-2 bg-background/50 p-2 rounded-lg border border-outline">

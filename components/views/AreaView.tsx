@@ -55,12 +55,11 @@ const AreaView: React.FC<AreaViewProps> = ({ areas, activeAreaId, onSelectArea, 
     });
     
     useEffect(() => {
-        if (areas.length > 0 && (!activeAreaId || !areas.some(a => a.id === activeAreaId))) {
-            onSelectArea(areas[0].id);
-        } else if (areas.length === 0) {
+        if (activeAreaId && !areas.some(a => a.id === activeAreaId)) {
             onSelectArea(null);
         }
     }, [areas, activeAreaId, onSelectArea]);
+
 
     const selectedArea = areas.find(a => a.id === activeAreaId) || null;
 
@@ -176,6 +175,7 @@ const AreaView: React.FC<AreaViewProps> = ({ areas, activeAreaId, onSelectArea, 
                         onNavigate={onNavigate}
                         isFocusMode={isFocusMode}
                         onToggleFocusMode={onToggleFocusMode}
+                        onBack={() => onSelectArea(null)}
                     />
                 ) : (
                      <EmptyState 

@@ -10,6 +10,7 @@ interface ConfirmModalState {
 
 interface UIState {
     currentView: View;
+    previousView: View | null;
     activeAreaId: string | null;
     activeProjectId: string | null;
     isCaptureModalOpen: boolean;
@@ -50,6 +51,7 @@ type UIAction =
 
 const initialState: UIState = {
     currentView: 'dashboard',
+    previousView: null,
     activeAreaId: null,
     activeProjectId: null,
     isCaptureModalOpen: false,
@@ -73,13 +75,18 @@ const uiReducer = (state: UIState, action: UIAction): UIState => {
     switch (action.type) {
         case 'SET_VIEW': {
             const { view, itemId } = action.payload;
+
+            // Only update previousView if the main view type is changing
+            const previousView = state.currentView !== view ? state.currentView : state.previousView;
+            
             return {
                 ...state,
                 currentView: view,
+                previousView: previousView,
                 searchQuery: '',
                 activeAreaId: view === 'areas' ? (itemId || state.activeAreaId) : null,
                 activeProjectId: view === 'projects' ? (itemId || state.activeProjectId) : null,
-                isFocusMode: view !== 'areas' ? false : state.isFocusMode, // Exit focus mode if navigating away
+                isFocusMode: view !== 'areas' ? false : state.isFocusMode,
             };
         }
         case 'SET_ACTIVE_AREA':

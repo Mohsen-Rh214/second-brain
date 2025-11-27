@@ -192,7 +192,7 @@ const ResourceView: React.FC<ResourceViewProps> = ({ resources, projects, areas,
                     <h1 className="text-3xl font-bold font-heading">Resources</h1>
                     <p className="text-text-secondary">Your personal library of links, files, and text snippets.</p>
                 </div>
-                 <div className="flex items-center gap-2 sm:gap-4 flex-wrap">
+                 <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
                     <FilterSortControls
                         tags={allTags}
                         sortOptions={resourceSortOptions}
@@ -203,7 +203,7 @@ const ResourceView: React.FC<ResourceViewProps> = ({ resources, projects, areas,
                     />
                     <button 
                         onClick={handleAddResource}
-                        className="flex items-center gap-2 bg-accent hover:bg-accent-hover text-accent-content font-semibold px-4 py-2 transition-colors rounded-lg shadow-sm active:scale-95"
+                        className="flex items-center justify-center gap-2 bg-accent hover:bg-accent-hover text-accent-content font-semibold px-4 py-2 transition-colors rounded-lg shadow-sm active:scale-95"
                     >
                         <PlusIcon className="w-5 h-5"/>
                         Add Resource

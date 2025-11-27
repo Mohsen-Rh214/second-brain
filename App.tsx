@@ -341,6 +341,7 @@ const App: React.FC = () => {
             onUpdateTask={handleUpdateTask}
             onUpdateTaskStage={handleUpdateTaskStage}
             onUpdateMultipleTaskStages={handleUpdateMultipleTaskStages}
+            onNavigate={handleNavigate}
             />;
       case 'areas':
           return <AreaView
