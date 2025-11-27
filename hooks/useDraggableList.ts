@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 
 type ReorderAction = { type: 'REORDER'; targetId: string };
 type ReparentAction = { type: 'REPARENT'; targetId: string };

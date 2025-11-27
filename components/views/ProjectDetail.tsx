@@ -107,8 +107,7 @@ const ProjectDetail: React.FC<ProjectDetailProps> = ({ project, allTasks, tasks,
         return taskTree;
     }, [project, allTasks]);
 
-
-    const isReparentAllowed = (sourceTask: Task, targetTask: Task): boolean => {
+    const isReparentAllowed = (sourceTask: any, targetTask: any): boolean => {
         if (sourceTask.id === targetTask.id) return false;
         
         const isDescendant = (childId: string, parentId: string): boolean => {

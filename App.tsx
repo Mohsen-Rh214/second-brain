@@ -24,6 +24,7 @@ import { useUI } from './store/UIContext';
 import { getItemTypeFromId } from './utils';
 import CalendarView from './components/views/CalendarView';
 import ConfirmModal from './components/modals/ConfirmModal';
+import DocsView from './components/views/DocsView';
 
 const App: React.FC = () => {
   const { state: dataState, dispatch: dataDispatch } = useData();
@@ -404,6 +405,8 @@ const App: React.FC = () => {
           />
       case 'settings':
           return <SettingsView />;
+      case 'docs':
+          return <DocsView />;
       default:
         return <p>Unknown view: {currentView}</p>;
     }

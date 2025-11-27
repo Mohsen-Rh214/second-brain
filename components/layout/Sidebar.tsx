@@ -1,6 +1,6 @@
 import React from 'react';
 import { View } from '../../types';
-import { BrainIcon, AreaIcon, ProjectIcon, ResourceIcon, ArchiveIcon, SearchIcon, GitMergeIcon, ClipboardCheckIcon, HomeIcon, SettingsIcon, CalendarIcon } from '../shared/icons';
+import { BrainIcon, AreaIcon, ProjectIcon, ResourceIcon, ArchiveIcon, SearchIcon, GitMergeIcon, ClipboardCheckIcon, HomeIcon, SettingsIcon, CalendarIcon, BookOpenIcon } from '../shared/icons';
 import { useUI } from '../../store/UIContext';
 
 interface SidebarProps {
@@ -21,6 +21,10 @@ const libraryItems: { view: View; label: string; icon: React.ReactElement }[] = 
   { view: 'resources', label: 'Resources', icon: <ResourceIcon className="w-5 h-5" /> },
   { view: 'archives', label: 'Archives', icon: <ArchiveIcon className="w-5 h-5" /> },
   { view: 'graph', label: 'Graph', icon: <GitMergeIcon className="w-5 h-5" /> },
+];
+
+const guideItems: { view: View; label: string; icon: React.ReactElement }[] = [
+  { view: 'docs', label: 'Docs', icon: <BookOpenIcon className="w-5 h-5" /> },
 ];
 
 const NavItem = React.memo(function NavItem({ isActive, onClick, icon, label, badgeCount }: {
@@ -107,6 +111,20 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigate, inboxCount, isMobile = fa
                     <h2 className="px-2 mb-2 text-xs font-semibold text-text-tertiary uppercase tracking-wider">Library</h2>
                     <ul className="space-y-1">
                         {libraryItems.map(item => (
+                            <NavItem
+                                key={item.view}
+                                isActive={currentView === item.view}
+                                onClick={() => handleNavigation(item.view)}
+                                icon={item.icon}
+                                label={item.label}
+                            />
+                        ))}
+                    </ul>
+                </div>
+                <div>
+                    <h2 className="px-2 mb-2 text-xs font-semibold text-text-tertiary uppercase tracking-wider">Guide</h2>
+                    <ul className="space-y-1">
+                        {guideItems.map(item => (
                             <NavItem
                                 key={item.view}
                                 isActive={currentView === item.view}
