@@ -67,8 +67,8 @@ const CaptureCard = React.memo(function CaptureCard({ onCapture }: { onCapture: 
                     onDragOver={handleDragOver}
                     onDrop={handleDrop}
                 />
-                <div className="flex justify-between items-center">
-                    <div className="flex items-center gap-2">
+                <div className="flex flex-col sm:flex-row justify-between items-center gap-3">
+                    <div className="flex items-center gap-2 self-start sm:self-center">
                         {typeButtons.map(btn => (
                              <button
                                 key={btn.id}
@@ -84,7 +84,7 @@ const CaptureCard = React.memo(function CaptureCard({ onCapture }: { onCapture: 
                              </button>
                         ))}
                     </div>
-                    <button type="submit" className="px-4 py-2 text-sm font-medium bg-secondary hover:bg-secondary-hover text-secondary-content transition-colors rounded-lg active:scale-95">Add</button>
+                    <button type="submit" className="w-full sm:w-auto px-4 py-2 text-sm font-medium bg-secondary hover:bg-secondary-hover text-secondary-content transition-colors rounded-lg active:scale-95">Add</button>
                 </div>
              </form>
         </div>
@@ -182,7 +182,7 @@ const Dashboard: React.FC<DashboardProps> = ({ projects, areas, tasks, inboxItem
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           <div
-            className="min-h-[350px] lg:min-h-[400px]"
+            className="h-full"
             onDragOver={(e) => {
                 if (draggedItemType === 'task') {
                     e.preventDefault();
@@ -284,10 +284,10 @@ const Dashboard: React.FC<DashboardProps> = ({ projects, areas, tasks, inboxItem
                 )}
             </Card>
           </div>
-          <div className="min-h-[350px] lg:min-h-[400px]">
+          <div className="h-full">
              <CaptureCard onCapture={onDashboardCapture} />
           </div>
-          <div className="min-h-[350px] lg:min-h-[400px]">
+          <div className="h-full">
             <Card icon={<InboxIcon className="w-6 h-6" />} title="Inbox">
                 {inboxItems.length > 0 ? (
                     <ul className="space-y-2">
@@ -322,7 +322,7 @@ const Dashboard: React.FC<DashboardProps> = ({ projects, areas, tasks, inboxItem
                 )}
             </Card>
           </div>
-           <div className="min-h-[350px] lg:min-h-[400px]">
+           <div className="h-full">
             <Card icon={<CalendarIcon className="w-6 h-6" />} title="Upcoming">
                 {upcomingTasks.length > 0 ? (
                     <ul className="space-y-2">
@@ -343,7 +343,7 @@ const Dashboard: React.FC<DashboardProps> = ({ projects, areas, tasks, inboxItem
                 )}
             </Card>
           </div>
-          <div className="min-h-[350px] lg:min-h-[400px]">
+          <div className="h-full">
              <Card icon={<ProjectIcon className="w-6 h-6" />} title="Recent Projects">
                  {recentProjects.length > 0 ? (
                     <ul className="space-y-2">
@@ -374,7 +374,7 @@ const Dashboard: React.FC<DashboardProps> = ({ projects, areas, tasks, inboxItem
                 ) : ( <p className="text-sm text-text-tertiary text-center py-2">No active projects yet.</p> )}
             </Card>
           </div>
-          <div className="min-h-[350px] lg:min-h-[400px]">
+          <div className="h-full">
             <Card icon={<AreaIcon className="w-6 h-6" />} title="Recent Areas">
                 {recentAreas.length > 0 ? (
                     <ul className="space-y-2">

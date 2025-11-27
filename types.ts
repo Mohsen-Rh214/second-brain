@@ -76,7 +76,7 @@ export type NewItemPayload = {
 
 export type InboxItem = Note | Resource | Task;
 
-export type View = 'dashboard' | 'inbox' | 'areas' | 'projects' | 'tasks' | 'resources' | 'archives' | 'graph' | 'review' | 'settings' | 'calendar';
+export type View = 'dashboard' | 'inbox' | 'areas' | 'projects' | 'tasks' | 'resources' | 'archives' | 'graph' | 'review' | 'settings' | 'calendar' | 'docs';
 
 export type ItemType = 'note' | 'task' | 'resource' | 'project' | 'area';
 export type DashboardCaptureType = 'note' | 'task' | 'resource';

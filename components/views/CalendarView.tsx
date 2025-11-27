@@ -100,14 +100,14 @@ const CalendarView: React.FC<CalendarViewProps> = ({ tasks, projects, onNavigate
                     const isCurrentMonth = day.getMonth() === currentDate.getMonth();
 
                     return (
-                        <div key={dateKey} className={`relative p-2 bg-surface flex flex-col ${isCurrentMonth ? '' : 'bg-background/30'}`}>
-                            <span className={`absolute top-2 right-2 text-xs font-bold ${isToday ? 'bg-accent text-accent-content rounded-full w-6 h-6 flex items-center justify-center' : 'text-text-secondary'}`}>{day.getDate()}</span>
-                            <div className="mt-8 space-y-1 overflow-y-auto custom-scrollbar -mr-2 pr-2">
+                        <div key={dateKey} className={`relative p-1 sm:p-2 bg-surface flex flex-col ${isCurrentMonth ? '' : 'bg-background/30'}`}>
+                            <span className={`absolute top-1 right-1 sm:top-2 sm:right-2 text-[10px] sm:text-xs font-bold ${isToday ? 'bg-accent text-accent-content rounded-full w-5 h-5 sm:w-6 sm:h-6 flex items-center justify-center' : 'text-text-secondary'}`}>{day.getDate()}</span>
+                            <div className="mt-6 sm:mt-8 space-y-1 overflow-y-auto custom-scrollbar -mr-1 sm:-mr-2 pr-1 sm:pr-2">
                                 {dayTasks.map(task => (
                                     <button 
                                         key={task.id}
                                         onClick={() => handleTaskClick(task)}
-                                        className={`w-full text-left p-1.5 rounded-md text-xs font-semibold ${priorityClasses[task.priority || 'Low'] || 'bg-secondary'}`}
+                                        className={`w-full text-left p-1 sm:p-1.5 rounded text-[10px] sm:text-xs font-semibold ${priorityClasses[task.priority || 'Low'] || 'bg-secondary'}`}
                                     >
                                         <p className="truncate text-white">{task.title}</p>
                                     </button>

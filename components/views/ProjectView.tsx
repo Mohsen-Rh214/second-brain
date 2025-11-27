@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { Project, Task, Note, Resource, NewItemPayload, ItemType, TaskStage } from '../../types';
+import { Project, Task, Note, Resource, NewItemPayload, ItemType, TaskStage, View } from '../../types';
 import ProjectDetail from './ProjectDetail';
 import { ProjectIcon, PlusIcon } from '../shared/icons';
 import ProgressBar from '../shared/ProgressBar';
@@ -8,6 +8,7 @@ import EmptyState from '../shared/EmptyState';
 import TagList from '../shared/TagList';
 import { useData } from '../../store/DataContext';
 import { useDraggableList } from '../../hooks/useDraggableList';
+import { useUI } from '../../store/UIContext';
 
 interface ProjectViewProps {
     projects: Project[];
@@ -30,10 +31,12 @@ interface ProjectViewProps {
     onUpdateTask: (taskId: string, updates: Partial<Pick<Task, 'title' | 'priority' | 'dueDate'>>) => void;
     onUpdateTaskStage: (taskId: string, newStage: TaskStage) => void;
     onUpdateMultipleTaskStages: (taskIds: string[], newStage: TaskStage) => void;
+    onNavigate: (view: View, itemId: string | null) => void;
 }
 
-const ProjectView: React.FC<ProjectViewProps> = ({ projects, activeProjectId, onSelectProject, allTasks, tasks, notes, resources, onToggleTask, onArchive, onDelete, onSelectNote, onSelectTask, onUpdateProject, onOpenCaptureModal, onSaveNewItem, onAddSubtask, onReparentTask, onUpdateTask, onUpdateTaskStage, onUpdateMultipleTaskStages }) => {
+const ProjectView: React.FC<ProjectViewProps> = ({ projects, activeProjectId, onSelectProject, allTasks, tasks, notes, resources, onToggleTask, onArchive, onDelete, onSelectNote, onSelectTask, onUpdateProject, onOpenCaptureModal, onSaveNewItem, onAddSubtask, onReparentTask, onUpdateTask, onUpdateTaskStage, onUpdateMultipleTaskStages, onNavigate }) => {
     const { dispatch } = useData();
+    const { state: uiState } = useUI();
 
     const { draggedId, dropAction, getDragAndDropProps, getContainerProps } = useDraggableList<Project>({
         items: projects,
@@ -43,10 +46,8 @@ const ProjectView: React.FC<ProjectViewProps> = ({ projects, activeProjectId, on
     });
 
     useEffect(() => {
-        // If there's no active project, or the active one is no longer in the list, select the first one.
-        if (projects.length > 0 && (!activeProjectId || !projects.some(p => p.id === activeProjectId))) {
-            onSelectProject(projects[0].id);
-        } else if (projects.length === 0) {
+
+        if (activeProjectId && !projects.some(p => p.id === activeProjectId)) {
             onSelectProject(null);
         }
     }, [projects, activeProjectId, onSelectProject]);
@@ -61,6 +62,14 @@ const ProjectView: React.FC<ProjectViewProps> = ({ projects, activeProjectId, on
         const projectTasks = tasks.filter(t => project.taskIds.includes(t.id));
         const completed = projectTasks.filter(t => t.stage === 'Done').length;
         return { completed, total: projectTasks.length };
+    };
+
+    const handleBack = () => {
+        if (uiState.previousView === 'areas' && selectedProject?.areaId) {
+            onNavigate('areas', selectedProject.areaId);
+        } else {
+            onSelectProject(null);
+        }
     };
 
     return (
@@ -134,6 +143,7 @@ const ProjectView: React.FC<ProjectViewProps> = ({ projects, activeProjectId, on
                         onUpdateTask={onUpdateTask}
                         onUpdateTaskStage={onUpdateTaskStage}
                         onUpdateMultipleTaskStages={onUpdateMultipleTaskStages}
+                        onBack={handleBack}
                     />
                 ) : (
                     <EmptyState 
